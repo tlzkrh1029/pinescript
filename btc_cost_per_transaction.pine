@@ -20,13 +20,13 @@ normalize(src, minval, maxval) =>
 
 normalizedCostPerTransaction = normalize(costpertransaction, 0, 1)
 
-maShortPeriod = input.int(20, title="Short Period", minval=1)
+maShortPeriod = input.int(5, title="Short Period", minval=1)
 maMidPeriod = input.int(50, title="Mid Period", minval=1)
 maLongPeriod = input.int(200, title="Long Period", minval=1)
 
 maType = input.string(title="Type of Moving Average", defval="SMA", options=["SMA", "EMA", "WMA"])
 
-staleDays = input.int(3, title="Warn if data is older than (days)", minval=1)
+staleDays = input.int(3, title="Warn if data is older than (days)", minval=1, display=display.none)
 
 maFunc(src, len, maType) =>
     if maType == "SMA"
@@ -41,9 +41,9 @@ maMidCPT = maFunc(normalizedCostPerTransaction, maMidPeriod, maType)
 maLongCPT = maFunc(normalizedCostPerTransaction, maLongPeriod, maType)
 
 
-plot(maShortCPT, title="CPT MA Short", color=color.green, linewidth=1)
-plot(maMidCPT, title="CPT MA Mid", color=color.yellow, linewidth=1)
-plot(maLongCPT, title="CPT MA Long", color=color.red, linewidth=1)
+plot(maShortCPT, title="CPT MA Short", color=#4CAF50, linewidth=2)
+plot(maMidCPT, title="CPT MA Mid", color=#2962FF, linewidth=1)
+plot(maLongCPT, title="CPT MA Long", color=#000000, linewidth=1)
 
 // ta.* functions skip na values, so a frozen feed shows up as flat lines instead of gaps.
 // Show a warning when the source data stops updating.
