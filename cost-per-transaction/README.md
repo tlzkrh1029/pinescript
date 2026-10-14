@@ -4,6 +4,7 @@
 
 - 스크립트: [`btc_cost_per_transaction.pine`](btc_cost_per_transaction.pine) (Pine Script v5)
 - 차트 범례에 표시되는 이름: `BTC %ex`
+- 진입·관망 규칙 검토: [`BACKTEST.md`](BACKTEST.md), 전략 스크립트 [`btc_cpt_strategy.pine`](btc_cpt_strategy.pine), 계산 스크립트 [`research/cpt_backtest.py`](research/cpt_backtest.py)
 
 ## 계산 방식
 
@@ -23,7 +24,7 @@
 | 채굴자 수익(USD) | `COINMETRICS:BTC_MINERREVENUEUSD` | Coin Metrics |
 | 트랜잭션 수 | `COINMETRICS:BTC_TXCOUNT` | Coin Metrics |
 
-두 심볼 모두 일봉(`'D'`)으로 요청합니다. 당일 데이터는 다음 날 반영되므로, 오늘 봉에는 전날 값이 쓰입니다.
+두 심볼 모두 일봉(`'D'`)으로 요청합니다. 당일 데이터는 다음 날 반영되므로, 실시간으로 진행 중인 오늘 봉에는 전날 값이 쓰입니다. 그러나 차트를 다시 불러오면 과거 봉에는 그날의 데이터가 붙습니다. 따라서 과거 구간에 보이는 신호는 실제로 알 수 있었던 시점보다 하루 일찍 나타납니다. 이 차이가 매매 결과에 주는 영향은 [`BACKTEST.md`](BACKTEST.md)에 정리했습니다.
 
 ## 기본 설정
 
@@ -53,6 +54,11 @@
 2. 이미 차트에 붙어 있는 지표에는 예전 설정이 남아 있습니다. 새 기본값을 쓰려면 지표 설정 창에서 **Defaults → Reset settings**를 누릅니다.
 
 ## 변경 이력
+
+### 2026-10-14: 진입·관망 규칙 검토 추가
+
+- CPT 5선과 200선의 위치로 보유 여부를 정하는 규칙과, 여기에 일봉 50일선 조건을 더한 규칙을 2014년 이후 데이터로 검토했습니다. 결과는 [`BACKTEST.md`](BACKTEST.md)에 정리했습니다.
+- 같은 규칙을 TradingView Strategy Tester에서 확인할 수 있도록 [`btc_cpt_strategy.pine`](btc_cpt_strategy.pine)을 추가했습니다. 지표 스크립트는 바꾸지 않았습니다.
 
 ### 2026-10-14: 데이터 출처를 Coin Metrics로 교체
 

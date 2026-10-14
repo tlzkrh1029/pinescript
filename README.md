@@ -4,4 +4,4 @@ TradingView에서 사용하는 Pine Script 지표를 보관하는 저장소입�
 
 | 폴더 | 지표 | 설명 |
 |---|---|---|
-| [`cost-per-transaction`](cost-per-transaction/) | BTC Cost per Transaction (`BTC %ex`) | 채굴자 수익 ÷ 트랜잭션 수를 정규화하고 이동평균 3개로 표시합니다. |
+| [`cost-per-transaction`](cost-per-transaction/) | BTC Cost per Transaction (`BTC %ex`) | 채굴자 수익 ÷ 트랜잭션 수를 정규화하고 이동평균 3개로 표시합니다. 진입·관망 규칙을 검토한 [백테스트](cost-per-transaction/BACKTEST.md)와 전략 스크립트가 함께 있습니다. |

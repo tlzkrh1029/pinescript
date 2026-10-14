@@ -1,0 +1,77 @@
+//@version=5
+strategy('BTC cost per transaction in/out strategy (backtest of BTC %ex rules)', 'BTC %ex strategy', overlay=true,
+     initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=99,
+     commission_type=strategy.commission.percent, commission_value=0.1)
+
+// Long-only in/out test of the BTC %ex indicator (btc_cost_per_transaction.pine).
+// Same CPT calculation; the position is held while the CPT condition (and optionally a price SMA filter) is true.
+revenueSymbol = 'COINMETRICS:BTC_MINERREVENUEUSD'
+txCountSymbol = 'COINMETRICS:BTC_TXCOUNT'
+
+maShortPeriod = input.int(5, title="Short Period", minval=1, group="CPT lines")
+maMidPeriod = input.int(50, title="Mid Period", minval=1, group="CPT lines")
+maLongPeriod = input.int(200, title="Long Period", minval=1, group="CPT lines")
+maType = input.string(title="Type of Moving Average", defval="SMA", options=["SMA", "EMA", "WMA"], group="CPT lines")
+
+entryRule = input.string("Short > Long", title="CPT condition", options=["Short > Long", "Short > Mid and Short > Long"], group="Rules")
+usePriceFilter = input.bool(true, title="Also require close > price SMA", group="Rules")
+priceSmaLength = input.int(50, title="Price SMA length", minval=1, group="Rules")
+confirmBars = input.int(1, title="Bars a new state must hold before switching", minval=1, group="Rules")
+publishedOnly = input.bool(true, title="Use only data published by bar close", group="Rules",
+     tooltip="Coin Metrics publishes day D after D closes, but on historical bars TradingView shows it on bar D. When on, historical bars use the previous day's value, as they would have in real time.")
+startTime = input.time(timestamp("01 Jan 2014 00:00 +0000"), title="Backtest start", group="Rules")
+staleDays = input.int(3, title="Warn if data is older than (days)", minval=1, display=display.none)
+
+[minerRevenue, revenueTime] = request.security(revenueSymbol, 'D', [close, time])
+[txCount, txCountTime] = request.security(txCountSymbol, 'D', [close, time])
+costpertransaction = txCount > 0 ? minerRevenue / txCount : na
+lastDataTime = math.min(revenueTime, txCountTime)
+// A Coin Metrics day is published only after that day ends. On historical bars TradingView still attaches it
+// to a bar that closes no later than that, so step back one bar; on live bars the value is already from an earlier day.
+cptKnown = publishedOnly and lastDataTime + 86400000 >= time_close ? costpertransaction[1] : costpertransaction
+
+normalize(src, minval, maxval) =>
+    minSrc = ta.lowest(src, 100)
+    maxSrc = ta.highest(src, 100)
+    rng = maxSrc - minSrc
+    rng > 0 ? (src - minSrc) / rng * (maxval - minval) + minval : na
+
+maFunc(src, len, maType) =>
+    if maType == "SMA"
+        ta.sma(src, len)
+    else if maType == "EMA"
+        ta.ema(src, len)
+    else
+        ta.wma(src, len)
+
+normalizedCostPerTransaction = normalize(cptKnown, 0, 1)
+maShortCPT = maFunc(normalizedCostPerTransaction, maShortPeriod, maType)
+maMidCPT = maFunc(normalizedCostPerTransaction, maMidPeriod, maType)
+maLongCPT = maFunc(normalizedCostPerTransaction, maLongPeriod, maType)
+
+priceSma = ta.sma(close, priceSmaLength)
+cptOn = entryRule == "Short > Long" ? maShortCPT > maLongCPT : maShortCPT > maMidCPT and maShortCPT > maLongCPT
+priceOn = not usePriceFilter or close > priceSma
+rawOn = cptOn and priceOn
+
+// Switch only after the new state has held for confirmBars bars in a row.
+onCount = math.sum(rawOn ? 1 : 0, confirmBars)
+goLong = onCount == confirmBars
+goFlat = onCount == 0
+
+if time >= startTime and goLong and strategy.position_size == 0
+    strategy.entry("Long", strategy.long)
+if goFlat and strategy.position_size > 0
+    strategy.close("Long")
+
+plot(usePriceFilter ? priceSma : na, title="Price SMA", color=color.orange, linewidth=1)
+bgcolor(strategy.position_size > 0 ? color.new(color.green, 88) : na, title="In market")
+
+var table infoTable = table.new(position.top_right, 1, 2)
+if barstate.islast
+    if not (timeframe.isdaily and timeframe.multiplier == 1)
+        table.cell(infoTable, 0, 0, 'Use a 1D chart: all periods are counted in bars', text_color=color.white, bgcolor=color.red)
+    if na(lastDataTime)
+        table.cell(infoTable, 0, 1, 'No data from ' + txCountSymbol, text_color=color.white, bgcolor=color.red)
+    else if (time - lastDataTime) / 86400000 > staleDays
+        table.cell(infoTable, 0, 1, 'Data not updated since ' + str.format_time(lastDataTime, 'yyyy-MM-dd', 'UTC'), text_color=color.white, bgcolor=color.red)
