@@ -1,0 +1,58 @@
+//@version=5
+indicator('BTC cost per transaction (Coin Metrics: miner revenue / tx count)', 'BTC %ex')
+
+// Cost per transaction = miners revenue (USD) / number of transactions.
+// QUANDL:BCHAIN/CPTRA (now BCHAIN:CPTRA) has not been updated since 2026-06-22,
+// so the same metric is rebuilt from Coin Metrics series that are still updated daily.
+revenueSymbol = 'COINMETRICS:BTC_MINERREVENUEUSD'
+txCountSymbol = 'COINMETRICS:BTC_TXCOUNT'
+
+[minerRevenue, revenueTime] = request.security(revenueSymbol, 'D', [close, time])
+[txCount, txCountTime] = request.security(txCountSymbol, 'D', [close, time])
+costpertransaction = txCount > 0 ? minerRevenue / txCount : na
+
+normalize(src, minval, maxval) =>
+    minSrc = ta.lowest(src, 100)
+    maxSrc = ta.highest(src, 100)
+    rng = maxSrc - minSrc
+    // A flat window (e.g. a frozen feed) has no range; return na instead of dividing by zero.
+    rng > 0 ? (src - minSrc) / rng * (maxval - minval) + minval : na
+
+normalizedCostPerTransaction = normalize(costpertransaction, 0, 1)
+
+maShortPeriod = input.int(20, title="Short Period", minval=1)
+maMidPeriod = input.int(50, title="Mid Period", minval=1)
+maLongPeriod = input.int(200, title="Long Period", minval=1)
+
+maType = input.string(title="Type of Moving Average", defval="SMA", options=["SMA", "EMA", "WMA"])
+
+staleDays = input.int(3, title="Warn if data is older than (days)", minval=1)
+
+maFunc(src, len, maType) =>
+    if maType == "SMA"
+        ta.sma(src, len)
+    else if maType == "EMA"
+        ta.ema(src, len)
+    else
+        ta.wma(src, len)
+
+maShortCPT = maFunc(normalizedCostPerTransaction, maShortPeriod, maType)
+maMidCPT = maFunc(normalizedCostPerTransaction, maMidPeriod, maType)
+maLongCPT = maFunc(normalizedCostPerTransaction, maLongPeriod, maType)
+
+
+plot(maShortCPT, title="CPT MA Short", color=color.green, linewidth=1)
+plot(maMidCPT, title="CPT MA Mid", color=color.yellow, linewidth=1)
+plot(maLongCPT, title="CPT MA Long", color=color.red, linewidth=1)
+
+// ta.* functions skip na values, so a frozen feed shows up as flat lines instead of gaps.
+// Show a warning when the source data stops updating.
+var table staleTable = table.new(position.top_right, 1, 1)
+if barstate.islast
+    lastDataTime = math.min(revenueTime, txCountTime)
+    if na(lastDataTime)
+        table.cell(staleTable, 0, 0, 'No data from ' + txCountSymbol, text_color=color.white, bgcolor=color.red)
+    else if (time - lastDataTime) / 86400000 > staleDays
+        table.cell(staleTable, 0, 0, 'Data not updated since ' + str.format_time(lastDataTime, 'yyyy-MM-dd', 'UTC'), text_color=color.white, bgcolor=color.red)
+
+//
