@@ -1,67 +1,127 @@
 //@version=6
 // Original TOP1000 rank snapshot, 2026-09-21. Membership does not rerank automatically.
 // Excludes stablecoins, gold-backed tokens, PI/JST/FLR/NEXO/GNO/FF/SUN/GT.
-// Shared chart scale: normalized to the host close at the leftmost visible bar.
+// Shared chart scale: each line starts at the host close of the bar where its base price is taken (the leftmost visible bar).
+// A coin whose data starts inside the visible range is based at its first bar instead and marked with "*" and "since <date>".
 indicator("Crypto Ranks 1-10 (8)", shorttitle="1-10위 · 8개", overlay=true, max_labels_count=100)
 showLabels = input.bool(true, "코인 이름과 등락률 표시")
 lineWidth = input.int(1, "선 두께", minval=1, maxval=4)
-var float hostBase = na
-if time == chart.left_visible_bar_time
-    hostBase := close
+showBoard = input.bool(true, "등락률 순위표 표시")
+boardPos = input.string(position.top_center, "순위표 위치", options=[position.top_left, position.top_center, position.top_right, position.middle_left, position.middle_right, position.bottom_left, position.bottom_center, position.bottom_right])
 
-f_compare(float price, string ticker, color ink) =>
+// Per-coin readouts collected on the last bar and drawn as one table sorted by return.
+var rets = array.new<float>()
+var names = array.new<string>()
+var inks = array.new<color>()
+var tips = array.new<string>()
+if barstate.islast
+    rets.clear()
+    names.clear()
+    inks.clear()
+    tips.clear()
+
+// Black or white text, whichever has the higher WCAG contrast on the coin colour.
+f_linear(float channel) =>
+    float s = channel / 255
+    s <= 0.04045 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4)
+
+f_textColor(color ink) =>
+    0.2126 * f_linear(color.r(ink)) + 0.7152 * f_linear(color.g(ink)) + 0.0722 * f_linear(color.b(ink)) > 0.179 ? color.black : color.white
+
+f_compare(float price, string ticker, string sym, color ink) =>
     var float coinBase = na
+    var float hostAnchor = na
+    var int baseTime = na
+    var int baseDay = na
     var float lastValue = na
     var float lastReturn = na
     var float lastPrice = na
+    var label tag = na
     if time >= chart.left_visible_bar_time and na(coinBase) and not na(price) and price > 0
         coinBase := price
+        hostAnchor := close
+        baseTime := time
+        baseDay := time_tradingday
     float change = not na(coinBase) ? (price / coinBase - 1) * 100 : na
-    float rebased = not na(hostBase) ? hostBase * (1 + change / 100) : na
+    float rebased = not na(hostAnchor) ? hostAnchor * (1 + change / 100) : na
     if time <= chart.right_visible_bar_time and not na(rebased)
         lastValue := rebased
         lastReturn := change
         lastPrice := price
-    if barstate.islast and showLabels and not na(lastValue)
-        label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(ink, 100), textcolor=ink, size=size.small, tooltip="CRYPTO:" + ticker + " | USD " + str.tostring(lastPrice, "#.########") + " | visible-range change " + str.tostring(lastReturn, "#.##") + "%")
+    if barstate.islast
+        // Replace the previous bar's label so realtime bars do not leave copies behind.
+        label.delete(tag)
+        if not na(lastValue)
+            bool late = baseTime > chart.left_visible_bar_time
+            // Daily bars of overnight sessions open the evening before the date on the axis, so use the trading day there.
+            string sinceText = timeframe.isintraday ? str.format_time(baseTime, "yyyy-MM-dd HH:mm z") : timeframe.isdaily and timeframe.multiplier == 1 ? str.format_time(baseDay, "yyyy-MM-dd", "UTC") : str.format_time(baseTime, "yyyy-MM-dd")
+            string since = late ? " (since " + sinceText + ")" : ""
+            string tip = sym + " | USD " + str.tostring(lastPrice, lastPrice < 0.001 ? "#.############" : "#.########") + " | " + (late ? "change" + since : "visible-range change") + " " + str.tostring(lastReturn, "#.##") + "%"
+            if showLabels
+                // When scrolled back, the rightmost visible bar touches the price scale, so point the label inward.
+                tag := label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%" + since, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=ink, textcolor=f_textColor(ink), size=size.small, tooltip=tip)
+            rets.push(lastReturn)
+            names.push(late ? ticker + "*" : ticker)
+            inks.push(ink)
+            tips.push(tip)
     rebased
 
 // Original rank 1: BTC
 p1 = request.security("CRYPTO:BTCUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v1 = f_compare(p1, "BTC", #22d356)
+v1 = f_compare(p1, "BTC", "CRYPTO:BTCUSD", #22d356)
 plot(v1, title="CRYPTO:BTCUSD", color=#22d356, linewidth=lineWidth, display=display.pane)
 
 // Original rank 2: ETH
 p2 = request.security("CRYPTO:ETHUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v2 = f_compare(p2, "ETH", #8922d3)
+v2 = f_compare(p2, "ETH", "CRYPTO:ETHUSD", #8922d3)
 plot(v2, title="CRYPTO:ETHUSD", color=#8922d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 4: BNB
 p4 = request.security("CRYPTO:BNBUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v4 = f_compare(p4, "BNB", #22b5d3)
+v4 = f_compare(p4, "BNB", "CRYPTO:BNBUSD", #22b5d3)
 plot(v4, title="CRYPTO:BNBUSD", color=#22b5d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 5: XRP
 p5 = request.security("CRYPTO:XRPUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v5 = f_compare(p5, "XRP", #d32282)
+v5 = f_compare(p5, "XRP", "CRYPTO:XRPUSD", #d32282)
 plot(v5, title="CRYPTO:XRPUSD", color=#d32282, linewidth=lineWidth, display=display.pane)
 
 // Original rank 7: SOL
 p7 = request.security("CRYPTO:SOLUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v7 = f_compare(p7, "SOL", #2a22d3)
+v7 = f_compare(p7, "SOL", "CRYPTO:SOLUSD", #2a22d3)
 plot(v7, title="CRYPTO:SOLUSD", color=#2a22d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 8: TRX
 p8 = request.security("CRYPTO:TRXUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v8 = f_compare(p8, "TRX", #d35d22)
+v8 = f_compare(p8, "TRX", "CRYPTO:TRXUSD", #d35d22)
 plot(v8, title="CRYPTO:TRXUSD", color=#d35d22, linewidth=lineWidth, display=display.pane)
 
 // Original rank 9: ZEC
 p9 = request.security("CRYPTO:ZECUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v9 = f_compare(p9, "ZEC", #22d391)
+v9 = f_compare(p9, "ZEC", "CRYPTO:ZECUSD", #22d391)
 plot(v9, title="CRYPTO:ZECUSD", color=#22d391, linewidth=lineWidth, display=display.pane)
 
 // Original rank 10: HYPE
 p10 = request.security("CRYPTO:HYPEHUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v10 = f_compare(p10, "HYPE", #c422d3)
+v10 = f_compare(p10, "HYPE", "CRYPTO:HYPEHUSD", #c422d3)
 plot(v10, title="CRYPTO:HYPEHUSD", color=#c422d3, linewidth=lineWidth, display=display.pane)
+
+// Up to 20 rows per column pair; larger groups wrap into a second pair.
+var table board = table.new(boardPos, 4, 22, bgcolor=color.new(chart.bg_color, 10))
+if barstate.islast
+    board.clear(0, 0, 3, 21)
+    int n = rets.size()
+    if showBoard and n > 0
+        // The chart legend is drawn over the top of the pane, so a table placed there starts with a blank row.
+        int top = boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right ? 1 : 0
+        if top == 1
+            board.cell(0, 0, " ", text_size=size.normal)
+        int perCol = n > 20 ? int(math.ceil(n / 2.0)) : n
+        board.cell(0, top, "1-10위", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_left)
+        for [k, i] in rets.sort_indices(order.descending)
+            int c = k < perCol ? 0 : 2
+            int r = top + 1 + k % perCol
+            float ret = rets.get(i)
+            color ink = inks.get(i)
+            board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=size.small, text_halign=text.align_left, tooltip=tips.get(i))
+            board.cell(c + 1, r, (ret >= 0 ? "+" : "") + str.tostring(ret, "0.00") + "%", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip=tips.get(i))

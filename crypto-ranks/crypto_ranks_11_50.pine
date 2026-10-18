@@ -1,187 +1,247 @@
 //@version=6
 // Original TOP1000 rank snapshot, 2026-09-21. Membership does not rerank automatically.
 // Excludes stablecoins, gold-backed tokens, PI/JST/FLR/NEXO/GNO/FF/SUN/GT.
-// Shared chart scale: normalized to the host close at the leftmost visible bar.
+// Shared chart scale: each line starts at the host close of the bar where its base price is taken (the leftmost visible bar).
+// A coin whose data starts inside the visible range is based at its first bar instead and marked with "*" and "since <date>".
 indicator("Crypto Ranks 11-50 (32)", shorttitle="11-50위 · 32개", overlay=true, max_labels_count=100)
-showLabels = input.bool(true, "코인 이름과 등락률 표시")
+showLabels = input.bool(false, "코인 이름과 등락률 표시")
 lineWidth = input.int(1, "선 두께", minval=1, maxval=4)
-var float hostBase = na
-if time == chart.left_visible_bar_time
-    hostBase := close
+showBoard = input.bool(true, "등락률 순위표 표시")
+boardPos = input.string(position.bottom_center, "순위표 위치", options=[position.top_left, position.top_center, position.top_right, position.middle_left, position.middle_right, position.bottom_left, position.bottom_center, position.bottom_right])
 
-f_compare(float price, string ticker, color ink) =>
+// Per-coin readouts collected on the last bar and drawn as one table sorted by return.
+var rets = array.new<float>()
+var names = array.new<string>()
+var inks = array.new<color>()
+var tips = array.new<string>()
+if barstate.islast
+    rets.clear()
+    names.clear()
+    inks.clear()
+    tips.clear()
+
+// Black or white text, whichever has the higher WCAG contrast on the coin colour.
+f_linear(float channel) =>
+    float s = channel / 255
+    s <= 0.04045 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4)
+
+f_textColor(color ink) =>
+    0.2126 * f_linear(color.r(ink)) + 0.7152 * f_linear(color.g(ink)) + 0.0722 * f_linear(color.b(ink)) > 0.179 ? color.black : color.white
+
+f_compare(float price, string ticker, string sym, color ink) =>
     var float coinBase = na
+    var float hostAnchor = na
+    var int baseTime = na
+    var int baseDay = na
     var float lastValue = na
     var float lastReturn = na
     var float lastPrice = na
+    var label tag = na
     if time >= chart.left_visible_bar_time and na(coinBase) and not na(price) and price > 0
         coinBase := price
+        hostAnchor := close
+        baseTime := time
+        baseDay := time_tradingday
     float change = not na(coinBase) ? (price / coinBase - 1) * 100 : na
-    float rebased = not na(hostBase) ? hostBase * (1 + change / 100) : na
+    float rebased = not na(hostAnchor) ? hostAnchor * (1 + change / 100) : na
     if time <= chart.right_visible_bar_time and not na(rebased)
         lastValue := rebased
         lastReturn := change
         lastPrice := price
-    if barstate.islast and showLabels and not na(lastValue)
-        label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(ink, 100), textcolor=ink, size=size.small, tooltip="CRYPTO:" + ticker + " | USD " + str.tostring(lastPrice, "#.########") + " | visible-range change " + str.tostring(lastReturn, "#.##") + "%")
+    if barstate.islast
+        // Replace the previous bar's label so realtime bars do not leave copies behind.
+        label.delete(tag)
+        if not na(lastValue)
+            bool late = baseTime > chart.left_visible_bar_time
+            // Daily bars of overnight sessions open the evening before the date on the axis, so use the trading day there.
+            string sinceText = timeframe.isintraday ? str.format_time(baseTime, "yyyy-MM-dd HH:mm z") : timeframe.isdaily and timeframe.multiplier == 1 ? str.format_time(baseDay, "yyyy-MM-dd", "UTC") : str.format_time(baseTime, "yyyy-MM-dd")
+            string since = late ? " (since " + sinceText + ")" : ""
+            string tip = sym + " | USD " + str.tostring(lastPrice, lastPrice < 0.001 ? "#.############" : "#.########") + " | " + (late ? "change" + since : "visible-range change") + " " + str.tostring(lastReturn, "#.##") + "%"
+            if showLabels
+                // When scrolled back, the rightmost visible bar touches the price scale, so point the label inward.
+                tag := label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%" + since, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=ink, textcolor=f_textColor(ink), size=size.small, tooltip=tip)
+            rets.push(lastReturn)
+            names.push(late ? ticker + "*" : ticker)
+            inks.push(ink)
+            tips.push(tip)
     rebased
 
 // Original rank 11: DOGE
 p11 = request.security("CRYPTO:DOGEUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v11 = f_compare(p11, "DOGE", #aed322)
+v11 = f_compare(p11, "DOGE", "CRYPTO:DOGEUSD", #aed322)
 plot(v11, title="CRYPTO:DOGEUSD", color=#aed322, linewidth=lineWidth, display=display.pane)
 
 // Original rank 12: XMR
 p12 = request.security("CRYPTO:XMRUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v12 = f_compare(p12, "XMR", #227ad3)
+v12 = f_compare(p12, "XMR", "CRYPTO:XMRUSD", #227ad3)
 plot(v12, title="CRYPTO:XMRUSD", color=#227ad3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 13: LINK
 p13 = request.security("CRYPTO:LINKUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v13 = f_compare(p13, "LINK", #d32247)
-plot(v13, title="CRYPTO:LINKUSD", color=#d32247, linewidth=lineWidth, display=display.pane)
+v13 = f_compare(p13, "LINK", "CRYPTO:LINKUSD", #ff99ae)
+plot(v13, title="CRYPTO:LINKUSD", color=#ff99ae, linewidth=lineWidth, display=display.pane)
 
 // Original rank 14: ADA
 p14 = request.security("CRYPTO:ADAUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v14 = f_compare(p14, "ADA", #22d331)
-plot(v14, title="CRYPTO:ADAUSD", color=#22d331, linewidth=lineWidth, display=display.pane)
+v14 = f_compare(p14, "ADA", "CRYPTO:ADAUSD", #00990d)
+plot(v14, title="CRYPTO:ADAUSD", color=#00990d, linewidth=lineWidth, display=display.pane)
 
 // Original rank 15: LEO
 p15 = request.security("CRYPTO:LEOUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v15 = f_compare(p15, "LEO", #6522d3)
-plot(v15, title="CRYPTO:LEOUSD", color=#6522d3, linewidth=lineWidth, display=display.pane)
+v15 = f_compare(p15, "LEO", "CRYPTO:LEOUSD", #c8a6ff)
+plot(v15, title="CRYPTO:LEOUSD", color=#c8a6ff, linewidth=lineWidth, display=display.pane)
 
 // Original rank 16: XLM
 p16 = request.security("CRYPTO:XLMUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v16 = f_compare(p16, "XLM", #d39822)
+v16 = f_compare(p16, "XLM", "CRYPTO:XLMUSD", #d39822)
 plot(v16, title="CRYPTO:XLMUSD", color=#d39822, linewidth=lineWidth, display=display.pane)
 
 // Original rank 17: NEAR
 p17 = request.security("CRYPTO:NEARUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v17 = f_compare(p17, "NEAR", #22d3cc)
+v17 = f_compare(p17, "NEAR", "CRYPTO:NEARUSD", #22d3cc)
 plot(v17, title="CRYPTO:NEARUSD", color=#22d3cc, linewidth=lineWidth, display=display.pane)
 
 // Original rank 18: UNI
 p18 = request.security("CRYPTO:UNIUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v18 = f_compare(p18, "UNI", #d322a6)
-plot(v18, title="CRYPTO:UNIUSD", color=#d322a6, linewidth=lineWidth, display=display.pane)
+v18 = f_compare(p18, "UNI", "CRYPTO:UNIUSD", #ff66d8)
+plot(v18, title="CRYPTO:UNIUSD", color=#ff66d8, linewidth=lineWidth, display=display.pane)
 
 // Original rank 19: BCH
 p19 = request.security("CRYPTO:BCHUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v19 = f_compare(p19, "BCH", #73d322)
+v19 = f_compare(p19, "BCH", "CRYPTO:BCHUSD", #73d322)
 plot(v19, title="CRYPTO:BCHUSD", color=#73d322, linewidth=lineWidth, display=display.pane)
 
 // Original rank 20: AVAX
 p20 = request.security("CRYPTO:AVAXUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v20 = f_compare(p20, "AVAX", #223fd3)
+v20 = f_compare(p20, "AVAX", "CRYPTO:AVAXUSD", #223fd3)
 plot(v20, title="CRYPTO:AVAXUSD", color=#223fd3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 23: LTC
 p23 = request.security("CRYPTO:LTCUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v23 = f_compare(p23, "LTC", #a022d3)
-plot(v23, title="CRYPTO:LTCUSD", color=#a022d3, linewidth=lineWidth, display=display.pane)
+v23 = f_compare(p23, "LTC", "CRYPTO:LTCUSD", #a074b2)
+plot(v23, title="CRYPTO:LTCUSD", color=#a074b2, linewidth=lineWidth, display=display.pane)
 
 // Original rank 24: CC
 p24 = request.security("CRYPTO:CCCAUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v24 = f_compare(p24, "CC", #d2d322)
+v24 = f_compare(p24, "CC", "CRYPTO:CCCAUSD", #d2d322)
 plot(v24, title="CRYPTO:CCCAUSD", color=#d2d322, linewidth=lineWidth, display=display.pane)
 
 // Original rank 26: SUI
 p26 = request.security("CRYPTO:SUIUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v26 = f_compare(p26, "SUI", #d3226b)
+v26 = f_compare(p26, "SUI", "CRYPTO:SUIUSD", #d3226b)
 plot(v26, title="CRYPTO:SUIUSD", color=#d3226b, linewidth=lineWidth, display=display.pane)
 
 // Original rank 27: GRAM
 p27 = request.security("CRYPTO:GRAMUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v27 = f_compare(p27, "GRAM", #38d322)
-plot(v27, title="CRYPTO:GRAMUSD", color=#38d322, linewidth=lineWidth, display=display.pane)
+v27 = f_compare(p27, "GRAM", "CRYPTO:GRAMUSD", #0b5900)
+plot(v27, title="CRYPTO:GRAMUSD", color=#0b5900, linewidth=lineWidth, display=display.pane)
 
 // Original rank 28: HBAR
 p28 = request.security("CRYPTO:HBARUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v28 = f_compare(p28, "HBAR", #4022d3)
-plot(v28, title="CRYPTO:HBARUSD", color=#4022d3, linewidth=lineWidth, display=display.pane)
+v28 = f_compare(p28, "HBAR", "CRYPTO:HBARUSD", #514b73)
+plot(v28, title="CRYPTO:HBARUSD", color=#514b73, linewidth=lineWidth, display=display.pane)
 
 // Original rank 29: M
 p29 = request.security("CRYPTO:MEMECOREUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v29 = f_compare(p29, "M", #d37422)
+v29 = f_compare(p29, "M", "CRYPTO:MEMECOREUSD", #d37422)
 plot(v29, title="CRYPTO:MEMECOREUSD", color=#d37422, linewidth=lineWidth, display=display.pane)
 
 // Original rank 30: SHIB
 p30 = request.security("CRYPTO:SHIBUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v30 = f_compare(p30, "SHIB", #22d3a7)
+v30 = f_compare(p30, "SHIB", "CRYPTO:SHIBUSD", #22d3a7)
 plot(v30, title="CRYPTO:SHIBUSD", color=#22d3a7, linewidth=lineWidth, display=display.pane)
 
 // Original rank 32: TAO
 p32 = request.security("CRYPTO:TAOBUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v32 = f_compare(p32, "TAO", #97d322)
-plot(v32, title="CRYPTO:TAOBUSD", color=#97d322, linewidth=lineWidth, display=display.pane)
+v32 = f_compare(p32, "TAO", "CRYPTO:TAOBUSD", #5a6642)
+plot(v32, title="CRYPTO:TAOBUSD", color=#5a6642, linewidth=lineWidth, display=display.pane)
 
 // Original rank 33: CRO
 p33 = request.security("CRYPTO:CROUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v33 = f_compare(p33, "CRO", #2264d3)
+v33 = f_compare(p33, "CRO", "CRYPTO:CROUSD", #2264d3)
 plot(v33, title="CRYPTO:CROUSD", color=#2264d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 36: OKB
 p36 = request.security("CRYPTO:OKBUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v36 = f_compare(p36, "OKB", #7b22d3)
+v36 = f_compare(p36, "OKB", "CRYPTO:OKBUSD", #7b22d3)
 plot(v36, title="CRYPTO:OKBUSD", color=#7b22d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 38: ENA
 p38 = request.security("CRYPTO:ENAUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v38 = f_compare(p38, "ENA", #22c3d3)
+v38 = f_compare(p38, "ENA", "CRYPTO:ENAUSD", #22c3d3)
 plot(v38, title="CRYPTO:ENAUSD", color=#22c3d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 39: AAVE
 p39 = request.security("CRYPTO:AAVEUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v39 = f_compare(p39, "AAVE", #d32290)
+v39 = f_compare(p39, "AAVE", "CRYPTO:AAVEUSD", #d32290)
 plot(v39, title="CRYPTO:AAVEUSD", color=#d32290, linewidth=lineWidth, display=display.pane)
 
 // Original rank 40: ONDO
 p40 = request.security("CRYPTO:ONDOUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v40 = f_compare(p40, "ONDO", #5cd322)
-plot(v40, title="CRYPTO:ONDOUSD", color=#5cd322, linewidth=lineWidth, display=display.pane)
+v40 = f_compare(p40, "ONDO", "CRYPTO:ONDOUSD", #6b8c5b)
+plot(v40, title="CRYPTO:ONDOUSD", color=#6b8c5b, linewidth=lineWidth, display=display.pane)
 
 // Original rank 41: PUMP
 p41 = request.security("CRYPTO:PUMPFUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v41 = f_compare(p41, "PUMP", #2229d3)
-plot(v41, title="CRYPTO:PUMPFUSD", color=#2229d3, linewidth=lineWidth, display=display.pane)
+v41 = f_compare(p41, "PUMP", "CRYPTO:PUMPFUSD", #8085ff)
+plot(v41, title="CRYPTO:PUMPFUSD", color=#8085ff, linewidth=lineWidth, display=display.pane)
 
 // Original rank 42: ASTER
 p42 = request.security("CRYPTO:ASTER2USD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v42 = f_compare(p42, "ASTER", #d34f22)
+v42 = f_compare(p42, "ASTER", "CRYPTO:ASTER2USD", #d34f22)
 plot(v42, title="CRYPTO:ASTER2USD", color=#d34f22, linewidth=lineWidth, display=display.pane)
 
 // Original rank 43: MNT
 p43 = request.security("CRYPTO:MNTUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v43 = f_compare(p43, "MNT", #22d383)
+v43 = f_compare(p43, "MNT", "CRYPTO:MNTUSD", #22d383)
 plot(v43, title="CRYPTO:MNTUSD", color=#22d383, linewidth=lineWidth, display=display.pane)
 
 // Original rank 44: DOT
 p44 = request.security("CRYPTO:DOTUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v44 = f_compare(p44, "DOT", #b622d3)
+v44 = f_compare(p44, "DOT", "CRYPTO:DOTUSD", #b622d3)
 plot(v44, title="CRYPTO:DOTUSD", color=#b622d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 46: WLFI
 p46 = request.security("CRYPTO:WLFIOUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v46 = f_compare(p46, "WLFI", #2288d3)
+v46 = f_compare(p46, "WLFI", "CRYPTO:WLFIOUSD", #2288d3)
 plot(v46, title="CRYPTO:WLFIOUSD", color=#2288d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 47: PEPE
 p47 = request.security("CRYPTO:PEPEUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v47 = f_compare(p47, "PEPE", #d32255)
+v47 = f_compare(p47, "PEPE", "CRYPTO:PEPEUSD", #d32255)
 plot(v47, title="CRYPTO:PEPEUSD", color=#d32255, linewidth=lineWidth, display=display.pane)
 
 // Original rank 48: SKY
 p48 = request.security("CRYPTO:SKY2USD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v48 = f_compare(p48, "SKY", #22d323)
+v48 = f_compare(p48, "SKY", "CRYPTO:SKY2USD", #22d323)
 plot(v48, title="CRYPTO:SKY2USD", color=#22d323, linewidth=lineWidth, display=display.pane)
 
 // Original rank 49: WLD
 p49 = request.security("CRYPTO:WLDWUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v49 = f_compare(p49, "WLD", #5722d3)
+v49 = f_compare(p49, "WLD", "CRYPTO:WLDWUSD", #5722d3)
 plot(v49, title="CRYPTO:WLDWUSD", color=#5722d3, linewidth=lineWidth, display=display.pane)
 
 // Original rank 50: ICP
 p50 = request.security("CRYPTO:ICPUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-v50 = f_compare(p50, "ICP", #d38a22)
+v50 = f_compare(p50, "ICP", "CRYPTO:ICPUSD", #d38a22)
 plot(v50, title="CRYPTO:ICPUSD", color=#d38a22, linewidth=lineWidth, display=display.pane)
+
+// Up to 20 rows per column pair; larger groups wrap into a second pair.
+var table board = table.new(boardPos, 4, 22, bgcolor=color.new(chart.bg_color, 10))
+if barstate.islast
+    board.clear(0, 0, 3, 21)
+    int n = rets.size()
+    if showBoard and n > 0
+        // The chart legend is drawn over the top of the pane, so a table placed there starts with a blank row.
+        int top = boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right ? 1 : 0
+        if top == 1
+            board.cell(0, 0, " ", text_size=size.normal)
+        int perCol = n > 20 ? int(math.ceil(n / 2.0)) : n
+        board.cell(0, top, "11-50위", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_left)
+        for [k, i] in rets.sort_indices(order.descending)
+            int c = k < perCol ? 0 : 2
+            int r = top + 1 + k % perCol
+            float ret = rets.get(i)
+            color ink = inks.get(i)
+            board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=size.small, text_halign=text.align_left, tooltip=tips.get(i))
+            board.cell(c + 1, r, (ret >= 0 ? "+" : "") + str.tostring(ret, "0.00") + "%", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip=tips.get(i))
