@@ -1,0 +1,137 @@
+//@version=6
+// Original TOP1000 rank snapshot, 2026-09-21. Membership does not rerank automatically.
+// Excludes stablecoins, gold-backed tokens, PI/JST/FLR/NEXO/GNO/FF/SUN/GT.
+// Shared chart scale: normalized to the host close at the leftmost visible bar.
+indicator("Crypto Ranks 101-125 (22)", shorttitle="101-125위 · 22개", overlay=true, max_labels_count=100)
+showLabels = input.bool(true, "코인 이름과 등락률 표시")
+lineWidth = input.int(1, "선 두께", minval=1, maxval=4)
+var float hostBase = na
+if time == chart.left_visible_bar_time
+    hostBase := close
+
+f_compare(float price, string ticker, color ink) =>
+    var float coinBase = na
+    var float lastValue = na
+    var float lastReturn = na
+    var float lastPrice = na
+    if time >= chart.left_visible_bar_time and na(coinBase) and not na(price) and price > 0
+        coinBase := price
+    float change = not na(coinBase) ? (price / coinBase - 1) * 100 : na
+    float rebased = not na(hostBase) ? hostBase * (1 + change / 100) : na
+    if time <= chart.right_visible_bar_time and not na(rebased)
+        lastValue := rebased
+        lastReturn := change
+        lastPrice := price
+    if barstate.islast and showLabels and not na(lastValue)
+        label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(ink, 100), textcolor=ink, size=size.small, tooltip="CRYPTO:" + ticker + " | USD " + str.tostring(lastPrice, "#.########") + " | visible-range change " + str.tostring(lastReturn, "#.##") + "%")
+    rebased
+
+// Original rank 101: TIA
+p101 = request.security("CRYPTO:TIA2USD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v101 = f_compare(p101, "TIA", #227fd3)
+plot(v101, title="CRYPTO:TIA2USD", color=#227fd3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 102: XTZ
+p102 = request.security("CRYPTO:XTZUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v102 = f_compare(p102, "XTZ", #d3224c)
+plot(v102, title="CRYPTO:XTZUSD", color=#d3224c, linewidth=lineWidth, display=display.pane)
+
+// Original rank 103: LDO
+p103 = request.security("CRYPTO:LDOUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v103 = f_compare(p103, "LDO", #22d32c)
+plot(v103, title="CRYPTO:LDOUSD", color=#22d32c, linewidth=lineWidth, display=display.pane)
+
+// Original rank 104: STRK
+p104 = request.security("CRYPTO:STRKSUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v104 = f_compare(p104, "STRK", #5f22d3)
+plot(v104, title="CRYPTO:STRKSUSD", color=#5f22d3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 105: BSV
+p105 = request.security("CRYPTO:BSVUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v105 = f_compare(p105, "BSV", #d39322)
+plot(v105, title="CRYPTO:BSVUSD", color=#d39322, linewidth=lineWidth, display=display.pane)
+
+// Original rank 106: BTT
+p106 = request.security("CRYPTO:BTTUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v106 = f_compare(p106, "BTT", #22d3c6)
+plot(v106, title="CRYPTO:BTTUSD", color=#22d3c6, linewidth=lineWidth, display=display.pane)
+
+// Original rank 108: AR
+p108 = request.security("CRYPTO:ARUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v108 = f_compare(p108, "AR", #78d322)
+plot(v108, title="CRYPTO:ARUSD", color=#78d322, linewidth=lineWidth, display=display.pane)
+
+// Original rank 111: DCR
+p111 = request.security("CRYPTO:DCRUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v111 = f_compare(p111, "DCR", #22d367)
+plot(v111, title="CRYPTO:DCRUSD", color=#22d367, linewidth=lineWidth, display=display.pane)
+
+// Original rank 112: LUNC
+p112 = request.security("CRYPTO:LUNCUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v112 = f_compare(p112, "LUNC", #9a22d3)
+plot(v112, title="CRYPTO:LUNCUSD", color=#9a22d3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 113: MON
+p113 = request.security("CRYPTO:MONADUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v113 = f_compare(p113, "MON", #d3ce22)
+plot(v113, title="CRYPTO:MONADUSD", color=#d3ce22, linewidth=lineWidth, display=display.pane)
+
+// Original rank 114: KITE
+p114 = request.security("CRYPTO:KITEUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v114 = f_compare(p114, "KITE", #22a4d3)
+plot(v114, title="CRYPTO:KITEUSD", color=#22a4d3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 115: OP
+p115 = request.security("CRYPTO:OPUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v115 = f_compare(p115, "OP", #d32270)
+plot(v115, title="CRYPTO:OPUSD", color=#d32270, linewidth=lineWidth, display=display.pane)
+
+// Original rank 116: IMX
+p116 = request.security("CRYPTO:IMXUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v116 = f_compare(p116, "IMX", #3dd322)
+plot(v116, title="CRYPTO:IMXUSD", color=#3dd322, linewidth=lineWidth, display=display.pane)
+
+// Original rank 117: CFX
+p117 = request.security("CRYPTO:CFXUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v117 = f_compare(p117, "CFX", #3b22d3)
+plot(v117, title="CRYPTO:CFXUSD", color=#3b22d3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 118: ENS
+p118 = request.security("CRYPTO:ENSUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v118 = f_compare(p118, "ENS", #d36e22)
+plot(v118, title="CRYPTO:ENSUSD", color=#d36e22, linewidth=lineWidth, display=display.pane)
+
+// Original rank 119: SYRUP
+p119 = request.security("CRYPTO:SYRUPUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v119 = f_compare(p119, "SYRUP", #22d3a2)
+plot(v119, title="CRYPTO:SYRUPUSD", color=#22d3a2, linewidth=lineWidth, display=display.pane)
+
+// Original rank 120: BONK
+p120 = request.security("CRYPTO:BONKUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v120 = f_compare(p120, "BONK", #d322d0)
+plot(v120, title="CRYPTO:BONKUSD", color=#d322d0, linewidth=lineWidth, display=display.pane)
+
+// Original rank 121: XPL
+p121 = request.security("CRYPTO:XPLUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v121 = f_compare(p121, "XPL", #9cd322)
+plot(v121, title="CRYPTO:XPLUSD", color=#9cd322, linewidth=lineWidth, display=display.pane)
+
+// Original rank 122: JTO
+p122 = request.security("CRYPTO:JTOUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v122 = f_compare(p122, "JTO", #2269d3)
+plot(v122, title="CRYPTO:JTOUSD", color=#2269d3, linewidth=lineWidth, display=display.pane)
+
+// Original rank 123: FLOKI
+p123 = request.security("CRYPTO:FLOKIUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v123 = f_compare(p123, "FLOKI", #d32235)
+plot(v123, title="CRYPTO:FLOKIUSD", color=#d32235, linewidth=lineWidth, display=display.pane)
+
+// Original rank 124: TWT
+p124 = request.security("CRYPTO:TWTUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v124 = f_compare(p124, "TWT", #22d343)
+plot(v124, title="CRYPTO:TWTUSD", color=#22d343, linewidth=lineWidth, display=display.pane)
+
+// Original rank 125: GRT
+p125 = request.security("CRYPTO:GRTUSD", timeframe.period, close, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+v125 = f_compare(p125, "GRT", #7622d3)
+plot(v125, title="CRYPTO:GRTUSD", color=#7622d3, linewidth=lineWidth, display=display.pane)
