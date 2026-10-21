@@ -6,4 +6,4 @@
 
 | 폴더 | 대상 | 설명 |
 |---|---|---|
-| [`cryptonewton`](cryptonewton/) | Razor Harmonics (Elite Edition) | XABCD 하모닉 패턴을 자동으로 찾아 점수와 등급을 매기고, 진입가·손절가·목표가와 자체 성과표를 표시하는 지표입니다. |
+| [`cryptonewton`](cryptonewton/) | Razor Harmonics, Razor Divergence Hunter (Razor Alpha) | XABCD 하모닉 패턴과 오실레이터 다이버전스를 찾아 점수와 등급을 매기고, 진입가·손절가·목표가와 자체 성과표를 표시하는 판매용 지표입니다. 스크린샷 10장을 바이낸스 4시간봉과 대조해 규칙을 역산했습니다. |
