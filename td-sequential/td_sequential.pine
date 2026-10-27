@@ -13,7 +13,8 @@ showSetup = input.bool(true, 'Show setup count', group='Display')
 setupFrom = input.int(1, 'Show setup count from', minval=1, maxval=9, group='Display')
 showCountdown = input.bool(true, 'Show countdown count', group='Display')
 showTdst = input.bool(true, 'Show TDST lines', group='Display')
-bigSize = input.string(size.huge, 'Size of 9 and 13', options=[size.normal, size.large, size.huge], group='Display')
+nineSize = input.int(15, 'Size of 9', minval=8, maxval=60, group='Display')
+thirteenSize = input.int(18, 'Size of 13', minval=8, maxval=60, group='Display')
 
 buySetupColor = input.color(#089981, 'Buy setup', group='Colors')
 sellSetupColor = input.color(#F23645, 'Sell setup', group='Colors')
@@ -137,42 +138,43 @@ countdownText(below, txt, lines) =>
     pad = str.repeat('\n', lines)
     below ? pad + txt : txt + pad
 
-// Label text sizes in points (Pine manual): small ~10, normal 12, large 18, huge 24.
+// Label text sizes are in points; size.small is about 10 (Pine manual).
 // A small countdown number on the same bar as a big 9 needs enough small blank lines to clear the 9.
-bigPt = bigSize == size.huge ? 24 : bigSize == size.large ? 18 : 12
-linesPastBigNine = math.ceil(bigPt / 10.0) + 1
-// A big 13 only shares its side of the bar with a small setup number (1-8); one large/huge blank line clears it.
-lines13 = bigPt >= 18 ? 1 : 2
+linesPastBigNine = math.ceil(nineSize / 10.0) + 1
+// A big 13 only shares its side of the bar with a small setup number (1-8); one blank line of 14pt or more clears it.
+lines13 = thirteenSize >= 14 ? 1 : 2
 
 if showSetup
     if buySetup >= setupFrom and buySetup < 9
         countLabel(true, str.tostring(buySetup), buySetupColor, size.small, 'Buy setup ' + str.tostring(buySetup))
     else if buySetupDone
         // A setup that is not perfected is drawn faded.
-        buyNine = countLabel(true, '9', buyPerfected ? buySetupColor : color.new(buySetupColor, 50), bigSize, buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)')
+        buyNine = countLabel(true, '9', buyPerfected ? buySetupColor : color.new(buySetupColor, 50), nineSize, buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)')
         label.set_text_formatting(buyNine, text.format_bold)
 
     if sellSetup >= setupFrom and sellSetup < 9
         countLabel(false, str.tostring(sellSetup), sellSetupColor, size.small, 'Sell setup ' + str.tostring(sellSetup))
     else if sellSetupDone
-        sellNine = countLabel(false, '9', sellPerfected ? sellSetupColor : color.new(sellSetupColor, 50), bigSize, sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)')
+        sellNine = countLabel(false, '9', sellPerfected ? sellSetupColor : color.new(sellSetupColor, 50), nineSize, sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)')
         label.set_text_formatting(sellNine, text.format_bold)
 
 if showCountdown
     if buyCountdownBar
         buyText = buyCountdownDeferred ? '+' : str.tostring(buyCountdown)
         buyTip = buyCountdownDeferred ? 'Buy countdown 13 deferred: low is above the close of countdown bar 8' : 'Buy countdown ' + buyText
-        buyLines = buyCountdownDone ? lines13 : showSetup and buySetupDone ? linesPastBigNine : 2
-        buyLabel = countLabel(true, countdownText(true, buyText, buyLines), buyCountdownColor, buyCountdownDone ? bigSize : size.small, buyTip)
         if buyCountdownDone
-            label.set_text_formatting(buyLabel, text.format_bold)
+            buyThirteen = countLabel(true, countdownText(true, buyText, lines13), buyCountdownColor, thirteenSize, buyTip)
+            label.set_text_formatting(buyThirteen, text.format_bold)
+        else
+            countLabel(true, countdownText(true, buyText, showSetup and buySetupDone ? linesPastBigNine : 2), buyCountdownColor, size.small, buyTip)
     if sellCountdownBar
         sellText = sellCountdownDeferred ? '+' : str.tostring(sellCountdown)
         sellTip = sellCountdownDeferred ? 'Sell countdown 13 deferred: high is below the close of countdown bar 8' : 'Sell countdown ' + sellText
-        sellLines = sellCountdownDone ? lines13 : showSetup and sellSetupDone ? linesPastBigNine : 2
-        sellLabel = countLabel(false, countdownText(false, sellText, sellLines), sellCountdownColor, sellCountdownDone ? bigSize : size.small, sellTip)
         if sellCountdownDone
-            label.set_text_formatting(sellLabel, text.format_bold)
+            sellThirteen = countLabel(false, countdownText(false, sellText, lines13), sellCountdownColor, thirteenSize, sellTip)
+            label.set_text_formatting(sellThirteen, text.format_bold)
+        else
+            countLabel(false, countdownText(false, sellText, showSetup and sellSetupDone ? linesPastBigNine : 2), sellCountdownColor, size.small, sellTip)
 
 // ---- Data window and alerts
 plot(buySetup > 0 ? buySetup : na, 'Buy setup count', buySetupColor, display=display.data_window, precision=0)
