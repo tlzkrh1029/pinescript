@@ -141,11 +141,17 @@ paddedText(below, txt, lines) =>
     pad = str.repeat('\n', lines)
     below ? pad + txt : txt + pad
 
-// Label text sizes are in points; plotshape() text and size.small are about 10.
-// A countdown 1 on the same bar as a big 9 needs enough small blank lines to clear the 9.
-linesPastBigNine = math.ceil(nineSize / 10.0) + 1
-// A big 13 only shares its side of the bar with a small setup number (1-8); one blank line of 14pt or more clears it.
-lines13 = thirteenSize >= 14 ? 1 : 2
+// TradingView's chart renderer puts style_none label text pt / 0.48 px from the bar (past an invisible shape half as
+// tall as the label size, pt / 0.24), adds floor(pt / 6) px of padding, and gives each line pt + round(pt / 6) px.
+// plotshape() text has a fixed 12 px font, and the setup count next to the bar ends about 32.5 px out.
+labelTextStart(pt) => pt / 0.48 + math.floor(pt / 6.0)
+labelLineHeight(pt) => pt + math.round(pt / 6.0)
+// Blank lines a label of size pt needs so its text starts at least px pixels from the bar.
+labelLinesTo(pt, px) => math.max(0, math.ceil((px - labelTextStart(pt)) / labelLineHeight(pt)))
+
+// The 13 starts just past the setup count next to the bar, and a countdown 1 on a 9 bar just past the 9.
+lines13 = labelLinesTo(thirteenSize, 34)
+linesPastBigNine = labelLinesTo(12, labelTextStart(nineSize) + labelLineHeight(nineSize) + 2)
 
 buyNineShown = showSetup and buySetupDone
 sellNineShown = showSetup and sellSetupDone
@@ -167,9 +173,9 @@ if showCountdown and sellCountdownDone
 
 // A setup 9 restarts its countdown, so the only countdown number that can share a bar with a 9 is 1.
 if showCountdown and buyCountdownBar and buyNineShown
-    countLabel(true, paddedText(true, '1', linesPastBigNine), buyCountdownColor, size.small, 'Buy countdown 1')
+    countLabel(true, paddedText(true, '1', linesPastBigNine), buyCountdownColor, 12, 'Buy countdown 1')
 if showCountdown and sellCountdownBar and sellNineShown
-    countLabel(false, paddedText(false, '1', linesPastBigNine), sellCountdownColor, size.small, 'Sell countdown 1')
+    countLabel(false, paddedText(false, '1', linesPastBigNine), sellCountdownColor, 12, 'Sell countdown 1')
 
 // Setup counts 1-8 sit next to the bar and countdown counts 1-12 and '+' one line further out.
 // Below the bar a leading newline is trimmed unless a zero-width space comes first (Pine manual, plotshape() text),
