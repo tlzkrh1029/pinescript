@@ -141,6 +141,8 @@ countdownText(below, txt, lines) =>
 // A small countdown number on the same bar as a big 9 needs enough small blank lines to clear the 9.
 bigPt = bigSize == size.huge ? 24 : bigSize == size.large ? 18 : 12
 linesPastBigNine = math.ceil(bigPt / 10.0) + 1
+// A big 13 only shares its side of the bar with a small setup number (1-8); one large/huge blank line clears it.
+lines13 = bigPt >= 18 ? 1 : 2
 
 if showSetup
     if buySetup >= setupFrom and buySetup < 9
@@ -160,14 +162,14 @@ if showCountdown
     if buyCountdownBar
         buyText = buyCountdownDeferred ? '+' : str.tostring(buyCountdown)
         buyTip = buyCountdownDeferred ? 'Buy countdown 13 deferred: low is above the close of countdown bar 8' : 'Buy countdown ' + buyText
-        buyLines = not buyCountdownDone and showSetup and buySetupDone ? linesPastBigNine : 2
+        buyLines = buyCountdownDone ? lines13 : showSetup and buySetupDone ? linesPastBigNine : 2
         buyLabel = countLabel(true, countdownText(true, buyText, buyLines), buyCountdownColor, buyCountdownDone ? bigSize : size.small, buyTip)
         if buyCountdownDone
             label.set_text_formatting(buyLabel, text.format_bold)
     if sellCountdownBar
         sellText = sellCountdownDeferred ? '+' : str.tostring(sellCountdown)
         sellTip = sellCountdownDeferred ? 'Sell countdown 13 deferred: high is below the close of countdown bar 8' : 'Sell countdown ' + sellText
-        sellLines = not sellCountdownDone and showSetup and sellSetupDone ? linesPastBigNine : 2
+        sellLines = sellCountdownDone ? lines13 : showSetup and sellSetupDone ? linesPastBigNine : 2
         sellLabel = countLabel(false, countdownText(false, sellText, sellLines), sellCountdownColor, sellCountdownDone ? bigSize : size.small, sellTip)
         if sellCountdownDone
             label.set_text_formatting(sellLabel, text.format_bold)
