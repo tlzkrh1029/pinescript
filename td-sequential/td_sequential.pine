@@ -129,52 +129,99 @@ if sellCountdownBar
     else
         sellCountdownDeferred := true
 
-// ---- Labels
+// ---- Numbers
+// 9 and 13 are labels so they can be drawn large and bold. TradingView keeps only the last 500 labels,
+// which still covers about 10,000 bars because 9s and 13s are rare.
+// The other numbers are plotshape() text, which covers the whole history but has a fixed text size.
 countLabel(below, txt, col, sz, tip) =>
     label.new(bar_index, below ? low : high, txt, yloc=below ? yloc.belowbar : yloc.abovebar, style=label.style_none, textcolor=col, size=sz, tooltip=tip)
 
-// Countdown text is pushed away from the bar with blank lines so it does not cover a setup count on the same bar.
-countdownText(below, txt, lines) =>
+// Label text is pushed away from the bar with blank lines so it does not cover a number closer to the bar.
+paddedText(below, txt, lines) =>
     pad = str.repeat('\n', lines)
     below ? pad + txt : txt + pad
 
-// Label text sizes are in points; size.small is about 10 (Pine manual).
-// A small countdown number on the same bar as a big 9 needs enough small blank lines to clear the 9.
+// Label text sizes are in points; plotshape() text and size.small are about 10.
+// A countdown 1 on the same bar as a big 9 needs enough small blank lines to clear the 9.
 linesPastBigNine = math.ceil(nineSize / 10.0) + 1
 // A big 13 only shares its side of the bar with a small setup number (1-8); one blank line of 14pt or more clears it.
 lines13 = thirteenSize >= 14 ? 1 : 2
 
-if showSetup
-    if buySetup >= setupFrom and buySetup < 9
-        countLabel(true, str.tostring(buySetup), buySetupColor, size.small, 'Buy setup ' + str.tostring(buySetup))
-    else if buySetupDone
-        // A setup that is not perfected is drawn faded.
-        buyNine = countLabel(true, '9', buyPerfected ? buySetupColor : color.new(buySetupColor, 50), nineSize, buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)')
-        label.set_text_formatting(buyNine, text.format_bold)
+buyNineShown = showSetup and buySetupDone
+sellNineShown = showSetup and sellSetupDone
 
-    if sellSetup >= setupFrom and sellSetup < 9
-        countLabel(false, str.tostring(sellSetup), sellSetupColor, size.small, 'Sell setup ' + str.tostring(sellSetup))
-    else if sellSetupDone
-        sellNine = countLabel(false, '9', sellPerfected ? sellSetupColor : color.new(sellSetupColor, 50), nineSize, sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)')
-        label.set_text_formatting(sellNine, text.format_bold)
+if buyNineShown
+    // A setup that is not perfected is drawn faded.
+    buyNine = countLabel(true, '9', buyPerfected ? buySetupColor : color.new(buySetupColor, 50), nineSize, buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)')
+    label.set_text_formatting(buyNine, text.format_bold)
+if sellNineShown
+    sellNine = countLabel(false, '9', sellPerfected ? sellSetupColor : color.new(sellSetupColor, 50), nineSize, sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)')
+    label.set_text_formatting(sellNine, text.format_bold)
 
-if showCountdown
-    if buyCountdownBar
-        buyText = buyCountdownDeferred ? '+' : str.tostring(buyCountdown)
-        buyTip = buyCountdownDeferred ? 'Buy countdown 13 deferred: low is above the close of countdown bar 8' : 'Buy countdown ' + buyText
-        if buyCountdownDone
-            buyThirteen = countLabel(true, countdownText(true, buyText, lines13), buyCountdownColor, thirteenSize, buyTip)
-            label.set_text_formatting(buyThirteen, text.format_bold)
-        else
-            countLabel(true, countdownText(true, buyText, showSetup and buySetupDone ? linesPastBigNine : 2), buyCountdownColor, size.small, buyTip)
-    if sellCountdownBar
-        sellText = sellCountdownDeferred ? '+' : str.tostring(sellCountdown)
-        sellTip = sellCountdownDeferred ? 'Sell countdown 13 deferred: high is below the close of countdown bar 8' : 'Sell countdown ' + sellText
-        if sellCountdownDone
-            sellThirteen = countLabel(false, countdownText(false, sellText, lines13), sellCountdownColor, thirteenSize, sellTip)
-            label.set_text_formatting(sellThirteen, text.format_bold)
-        else
-            countLabel(false, countdownText(false, sellText, showSetup and sellSetupDone ? linesPastBigNine : 2), sellCountdownColor, size.small, sellTip)
+if showCountdown and buyCountdownDone
+    buyThirteen = countLabel(true, paddedText(true, '13', lines13), buyCountdownColor, thirteenSize, 'Buy countdown 13')
+    label.set_text_formatting(buyThirteen, text.format_bold)
+if showCountdown and sellCountdownDone
+    sellThirteen = countLabel(false, paddedText(false, '13', lines13), sellCountdownColor, thirteenSize, 'Sell countdown 13')
+    label.set_text_formatting(sellThirteen, text.format_bold)
+
+// A setup 9 restarts its countdown, so the only countdown number that can share a bar with a 9 is 1.
+if showCountdown and buyCountdownBar and buyNineShown
+    countLabel(true, paddedText(true, '1', linesPastBigNine), buyCountdownColor, size.small, 'Buy countdown 1')
+if showCountdown and sellCountdownBar and sellNineShown
+    countLabel(false, paddedText(false, '1', linesPastBigNine), sellCountdownColor, size.small, 'Sell countdown 1')
+
+// Setup counts 1-8 sit next to the bar and countdown counts 1-12 and '+' one line further out.
+// Below the bar a leading newline is trimmed unless a zero-width space comes first (Pine manual, plotshape() text),
+// so the countdown texts below the bar start with an invisible U+200B character.
+buySetupMark = showSetup and buySetup >= setupFrom and buySetup < 9 ? buySetup : 0
+sellSetupMark = showSetup and sellSetup >= setupFrom and sellSetup < 9 ? sellSetup : 0
+// Countdown number drawn on this bar: 1-12, 14 for '+', 0 for none (13 and a 1 next to a 9 are labels).
+buyCountdownMark = showCountdown and buyCountdownBar and not buyCountdownDone and not buyNineShown ? (buyCountdownDeferred ? 14 : buyCountdown) : 0
+sellCountdownMark = showCountdown and sellCountdownBar and not sellCountdownDone and not sellNineShown ? (sellCountdownDeferred ? 14 : sellCountdown) : 0
+
+plotshape(buySetupMark == 1, 'Buy setup 1', location=location.belowbar, color=na, text='1', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 2, 'Buy setup 2', location=location.belowbar, color=na, text='2', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 3, 'Buy setup 3', location=location.belowbar, color=na, text='3', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 4, 'Buy setup 4', location=location.belowbar, color=na, text='4', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 5, 'Buy setup 5', location=location.belowbar, color=na, text='5', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 6, 'Buy setup 6', location=location.belowbar, color=na, text='6', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 7, 'Buy setup 7', location=location.belowbar, color=na, text='7', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buySetupMark == 8, 'Buy setup 8', location=location.belowbar, color=na, text='8', textcolor=buySetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 1, 'Sell setup 1', location=location.abovebar, color=na, text='1', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 2, 'Sell setup 2', location=location.abovebar, color=na, text='2', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 3, 'Sell setup 3', location=location.abovebar, color=na, text='3', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 4, 'Sell setup 4', location=location.abovebar, color=na, text='4', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 5, 'Sell setup 5', location=location.abovebar, color=na, text='5', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 6, 'Sell setup 6', location=location.abovebar, color=na, text='6', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 7, 'Sell setup 7', location=location.abovebar, color=na, text='7', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellSetupMark == 8, 'Sell setup 8', location=location.abovebar, color=na, text='8', textcolor=sellSetupColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 1, 'Buy countdown 1', location=location.belowbar, color=na, text='​\n1', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 2, 'Buy countdown 2', location=location.belowbar, color=na, text='​\n2', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 3, 'Buy countdown 3', location=location.belowbar, color=na, text='​\n3', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 4, 'Buy countdown 4', location=location.belowbar, color=na, text='​\n4', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 5, 'Buy countdown 5', location=location.belowbar, color=na, text='​\n5', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 6, 'Buy countdown 6', location=location.belowbar, color=na, text='​\n6', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 7, 'Buy countdown 7', location=location.belowbar, color=na, text='​\n7', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 8, 'Buy countdown 8', location=location.belowbar, color=na, text='​\n8', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 9, 'Buy countdown 9', location=location.belowbar, color=na, text='​\n9', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 10, 'Buy countdown 10', location=location.belowbar, color=na, text='​\n10', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 11, 'Buy countdown 11', location=location.belowbar, color=na, text='​\n11', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 12, 'Buy countdown 12', location=location.belowbar, color=na, text='​\n12', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(buyCountdownMark == 14, 'Buy countdown +', location=location.belowbar, color=na, text='​\n+', textcolor=buyCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 1, 'Sell countdown 1', location=location.abovebar, color=na, text='1\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 2, 'Sell countdown 2', location=location.abovebar, color=na, text='2\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 3, 'Sell countdown 3', location=location.abovebar, color=na, text='3\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 4, 'Sell countdown 4', location=location.abovebar, color=na, text='4\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 5, 'Sell countdown 5', location=location.abovebar, color=na, text='5\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 6, 'Sell countdown 6', location=location.abovebar, color=na, text='6\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 7, 'Sell countdown 7', location=location.abovebar, color=na, text='7\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 8, 'Sell countdown 8', location=location.abovebar, color=na, text='8\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 9, 'Sell countdown 9', location=location.abovebar, color=na, text='9\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 10, 'Sell countdown 10', location=location.abovebar, color=na, text='10\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 11, 'Sell countdown 11', location=location.abovebar, color=na, text='11\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 12, 'Sell countdown 12', location=location.abovebar, color=na, text='12\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
+plotshape(sellCountdownMark == 14, 'Sell countdown +', location=location.abovebar, color=na, text='+\n', textcolor=sellCountdownColor, size=size.tiny, editable=false, display=display.pane)
 
 // ---- Data window and alerts
 plot(buySetup > 0 ? buySetup : na, 'Buy setup count', buySetupColor, display=display.data_window, precision=0)
