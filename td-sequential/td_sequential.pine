@@ -158,10 +158,10 @@ if showCountdown
         countLabel(false, countdownText(false, sellText), sellCountdownColor, sellCountdownDone ? size.normal : size.small, sellTip)
 
 // ---- Data window and alerts
-plot(buySetup > 0 ? buySetup : na, 'Buy setup', buySetupColor, display=display.data_window)
-plot(sellSetup > 0 ? sellSetup : na, 'Sell setup', sellSetupColor, display=display.data_window)
-plot(buyCountdownActive or buyCountdownDone ? buyCountdown : na, 'Buy countdown', buyCountdownColor, display=display.data_window)
-plot(sellCountdownActive or sellCountdownDone ? sellCountdown : na, 'Sell countdown', sellCountdownColor, display=display.data_window)
+plot(buySetup > 0 ? buySetup : na, 'Buy setup count', buySetupColor, display=display.data_window, precision=0)
+plot(sellSetup > 0 ? sellSetup : na, 'Sell setup count', sellSetupColor, display=display.data_window, precision=0)
+plot(buyCountdownActive or buyCountdownDone ? buyCountdown : na, 'Buy countdown count', buyCountdownColor, display=display.data_window, precision=0)
+plot(sellCountdownActive or sellCountdownDone ? sellCountdown : na, 'Sell countdown count', sellCountdownColor, display=display.data_window, precision=0)
 
 alertcondition(buySetupDone, 'Buy setup 9', 'TD Sequential: buy setup 9 on {{ticker}} ({{interval}})')
 alertcondition(sellSetupDone, 'Sell setup 9', 'TD Sequential: sell setup 9 on {{ticker}} ({{interval}})')
