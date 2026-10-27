@@ -5,3 +5,4 @@ TradingView에서 사용하는 Pine Script 지표를 보관하는 저장소입�
 | 폴더 | 지표 | 설명 |
 |---|---|---|
 | [`cost-per-transaction`](cost-per-transaction/) | BTC Cost per Transaction (`BTC %ex`) | 채굴자 수익 ÷ 트랜잭션 수를 정규화하고 이동평균 3개로 표시합니다. |
+| [`td-sequential`](td-sequential/) | TD Sequential (`TD Seq`) | DeMark의 셋업 9와 카운트다운 13을 차트에 숫자로 표시하고 TDST 선을 그립니다. |

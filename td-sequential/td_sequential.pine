@@ -1,0 +1,169 @@
+//@version=6
+indicator('TD Sequential (setup 9, countdown 13, TDST)', 'TD Seq', overlay=true, max_labels_count=500, max_lines_count=500)
+
+// TD Sequential (Tom DeMark)
+// - Setup: 9 consecutive closes below (buy) / above (sell) the close 4 bars earlier,
+//   starting on a price flip (the previous bar closed on the other side of its own close 4 bars earlier).
+// - Countdown: starts when a setup completes. 13 closes, not necessarily consecutive,
+//   at or below the low (buy) / at or above the high (sell) 2 bars earlier.
+//   Bar 13 must also trade at or below (buy) / at or above (sell) the close of countdown bar 8.
+// - TDST: highest true high of a buy setup (resistance) / lowest true low of a sell setup (support).
+
+showSetup = input.bool(true, 'Show setup count', group='Display')
+setupFrom = input.int(1, 'Show setup count from', minval=1, maxval=9, group='Display')
+showCountdown = input.bool(true, 'Show countdown count', group='Display')
+showTdst = input.bool(true, 'Show TDST lines', group='Display')
+
+buySetupColor = input.color(#089981, 'Buy setup', group='Colors')
+sellSetupColor = input.color(#F23645, 'Sell setup', group='Colors')
+buyCountdownColor = input.color(#2962FF, 'Buy countdown', group='Colors')
+sellCountdownColor = input.color(#FF9800, 'Sell countdown', group='Colors')
+tdstResistanceColor = input.color(#F23645, 'TDST resistance (buy setup)', group='Colors')
+tdstSupportColor = input.color(#089981, 'TDST support (sell setup)', group='Colors')
+
+// ---- Setup
+trueHigh = math.max(high, nz(close[1], high))
+trueLow = math.min(low, nz(close[1], low))
+setupHigh = ta.highest(trueHigh, 9)
+setupLow = ta.lowest(trueLow, 9)
+
+bearishFlip = close < close[4] and close[1] > close[5]
+bullishFlip = close > close[4] and close[1] < close[5]
+
+// Counting continues past 9 while the condition holds, but only 1-9 are labeled.
+var int buySetup = 0
+var int sellSetup = 0
+buySetup := close < close[4] and (buySetup > 0 or bearishFlip) ? buySetup + 1 : 0
+sellSetup := close > close[4] and (sellSetup > 0 or bullishFlip) ? sellSetup + 1 : 0
+
+buySetupDone = buySetup == 9
+sellSetupDone = sellSetup == 9
+
+// Perfection: the low of bar 8 or 9 is at or below the lows of bars 6 and 7 (mirrored for sell).
+buyPerfected = math.min(low, low[1]) <= math.min(low[2], low[3])
+sellPerfected = math.max(high, high[1]) >= math.max(high[2], high[3])
+
+// ---- TDST
+var float tdstResistance = na
+var float tdstSupport = na
+var line tdstResistanceLine = na
+var line tdstSupportLine = na
+
+if buySetupDone
+    tdstResistance := setupHigh
+    if showTdst
+        // End the previous level here and draw the new one from bar 1 of this setup.
+        if not na(tdstResistanceLine)
+            line.set_x2(tdstResistanceLine, bar_index)
+            line.set_extend(tdstResistanceLine, extend.none)
+        tdstResistanceLine := line.new(bar_index - 8, tdstResistance, bar_index, tdstResistance, extend=extend.right, color=tdstResistanceColor, style=line.style_dashed)
+
+if sellSetupDone
+    tdstSupport := setupLow
+    if showTdst
+        if not na(tdstSupportLine)
+            line.set_x2(tdstSupportLine, bar_index)
+            line.set_extend(tdstSupportLine, extend.none)
+        tdstSupportLine := line.new(bar_index - 8, tdstSupport, bar_index, tdstSupport, extend=extend.right, color=tdstSupportColor, style=line.style_dashed)
+
+// ---- Countdown
+var bool buyCountdownActive = false
+var bool sellCountdownActive = false
+var int buyCountdown = 0
+var int sellCountdown = 0
+var float buyBar8Close = na
+var float sellBar8Close = na
+
+// A completed setup starts a new countdown in its direction, replacing any unfinished one,
+// and cancels the countdown in the opposite direction.
+if buySetupDone
+    buyCountdownActive := true
+    buyCountdown := 0
+    buyBar8Close := na
+    sellCountdownActive := false
+
+if sellSetupDone
+    sellCountdownActive := true
+    sellCountdown := 0
+    sellBar8Close := na
+    buyCountdownActive := false
+
+// Cancel when the whole bar moves beyond the TDST level of the setup that started the countdown.
+if buyCountdownActive and trueLow > tdstResistance
+    buyCountdownActive := false
+if sellCountdownActive and trueHigh < tdstSupport
+    sellCountdownActive := false
+
+// The countdown can start on setup bar 9 itself.
+buyCountdownBar = buyCountdownActive and close <= low[2]
+sellCountdownBar = sellCountdownActive and close >= high[2]
+buyCountdownDone = false
+sellCountdownDone = false
+buyCountdownDeferred = false
+sellCountdownDeferred = false
+
+if buyCountdownBar
+    if buyCountdown < 12
+        buyCountdown += 1
+        if buyCountdown == 8
+            buyBar8Close := close
+    else if low <= buyBar8Close
+        buyCountdown := 13
+        buyCountdownDone := true
+        buyCountdownActive := false
+    else
+        // Bar 13 has to trade at or below the close of countdown bar 8. Until it does, the bar is marked '+'.
+        buyCountdownDeferred := true
+
+if sellCountdownBar
+    if sellCountdown < 12
+        sellCountdown += 1
+        if sellCountdown == 8
+            sellBar8Close := close
+    else if high >= sellBar8Close
+        sellCountdown := 13
+        sellCountdownDone := true
+        sellCountdownActive := false
+    else
+        sellCountdownDeferred := true
+
+// ---- Labels
+countLabel(below, txt, col, sz, tip) =>
+    label.new(bar_index, below ? low : high, txt, yloc=below ? yloc.belowbar : yloc.abovebar, style=label.style_none, textcolor=col, size=sz, tooltip=tip)
+
+// Countdown text is pushed away from the bar with blank lines so it does not cover a setup count on the same bar.
+countdownText(below, txt) =>
+    below ? '\n\n' + txt : txt + '\n\n'
+
+if showSetup
+    if buySetup >= setupFrom and buySetup < 9
+        countLabel(true, str.tostring(buySetup), buySetupColor, size.small, 'Buy setup ' + str.tostring(buySetup))
+    else if buySetupDone
+        // A setup that is not perfected is drawn faded.
+        countLabel(true, '9', buyPerfected ? buySetupColor : color.new(buySetupColor, 50), size.normal, buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)')
+
+    if sellSetup >= setupFrom and sellSetup < 9
+        countLabel(false, str.tostring(sellSetup), sellSetupColor, size.small, 'Sell setup ' + str.tostring(sellSetup))
+    else if sellSetupDone
+        countLabel(false, '9', sellPerfected ? sellSetupColor : color.new(sellSetupColor, 50), size.normal, sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)')
+
+if showCountdown
+    if buyCountdownBar
+        buyText = buyCountdownDeferred ? '+' : str.tostring(buyCountdown)
+        buyTip = buyCountdownDeferred ? 'Buy countdown 13 deferred: low is above the close of countdown bar 8' : 'Buy countdown ' + buyText
+        countLabel(true, countdownText(true, buyText), buyCountdownColor, buyCountdownDone ? size.normal : size.small, buyTip)
+    if sellCountdownBar
+        sellText = sellCountdownDeferred ? '+' : str.tostring(sellCountdown)
+        sellTip = sellCountdownDeferred ? 'Sell countdown 13 deferred: high is below the close of countdown bar 8' : 'Sell countdown ' + sellText
+        countLabel(false, countdownText(false, sellText), sellCountdownColor, sellCountdownDone ? size.normal : size.small, sellTip)
+
+// ---- Data window and alerts
+plot(buySetup > 0 ? buySetup : na, 'Buy setup', buySetupColor, display=display.data_window)
+plot(sellSetup > 0 ? sellSetup : na, 'Sell setup', sellSetupColor, display=display.data_window)
+plot(buyCountdownActive or buyCountdownDone ? buyCountdown : na, 'Buy countdown', buyCountdownColor, display=display.data_window)
+plot(sellCountdownActive or sellCountdownDone ? sellCountdown : na, 'Sell countdown', sellCountdownColor, display=display.data_window)
+
+alertcondition(buySetupDone, 'Buy setup 9', 'TD Sequential: buy setup 9 on {{ticker}} ({{interval}})')
+alertcondition(sellSetupDone, 'Sell setup 9', 'TD Sequential: sell setup 9 on {{ticker}} ({{interval}})')
+alertcondition(buyCountdownDone, 'Buy countdown 13', 'TD Sequential: buy countdown 13 on {{ticker}} ({{interval}})')
+alertcondition(sellCountdownDone, 'Sell countdown 13', 'TD Sequential: sell countdown 13 on {{ticker}} ({{interval}})')
