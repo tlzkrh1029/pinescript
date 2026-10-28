@@ -27,7 +27,7 @@ indicator('TD Sequential (setup 9, countdown 13, TDST)', 'TD Seq', overlay=true,
 //   background countdown takes over. A later setup that reaches 18 (Perl) / 22 (DeMARK) bars before an opposite price
 //   flip recycles the countdown the same way, and a 13 already printed turns into 'R'.
 //   A background countdown also takes over when the drawn one ends. A countdown that completes 13 on a bar is not
-//   cancelled or recycled on that bar.
+//   cancelled or recycled on that bar, except by the length recycle: there the 'R' takes the place of that 13.
 // - Risk level: the lowest true low of the setup (9) or of the countdown from bar 1 to 13 minus the true range of that
 //   bar (highest true high plus its true range, for sell).
 
@@ -121,6 +121,7 @@ lines13PastCountdownRow = labelLinesTo(thirteenSize, 48.5)
 pastThirteen = labelTextStart(thirteenSize) + (lines13 + 1) * labelLineHeight(thirteenSize) + 2
 linesPastThirteen = labelLinesTo(12, pastThirteen)
 lines13PastThirteen = labelLinesTo(thirteenSize, pastThirteen)
+lines13PastFarThirteen = labelLinesTo(thirteenSize, labelTextStart(thirteenSize) + (lines13PastCountdownRow + 1) * labelLineHeight(thirteenSize) + 2)
 linesPastFarThirteen = labelLinesTo(12, labelTextStart(thirteenSize) + (lines13PastCountdownRow + 1) * labelLineHeight(thirteenSize) + 2)
 linesPastThirteenOnNine = labelLinesTo(12, labelTextStart(thirteenSize) + (lines13PastBigNine + 1) * labelLineHeight(thirteenSize) + 2)
 
@@ -346,8 +347,8 @@ completesNow(Countdown cd, bool buy) =>
         result := probeDone
     result
 
-// Background countdowns. Removed from the list once they end; recycles drop them, except one that completes 13 on that
-// bar and still prints it.
+// Background countdowns. Removed from the list once they end. A size recycle drops them, except one that completes 13 on
+// that bar and still prints it; a length recycle drops them all, since their 13 would turn into 'R' on that bar anyway.
 extendAll(array<Countdown> cds, int setupCount) =>
     for cd in cds
         extendSetup(cd, setupCount)
@@ -872,10 +873,10 @@ if recycleOn and sellSetup == recycleCount
 // like an 'R' that replaced a 13.
 laterRecycleTip(side, byCount, ratio) => side + ' countdown recycled (R): a later ' + str.lower(side) + ' setup ' + (byCount ? 'reached ' + str.tostring(recycleCount) + ' bars' : 'grew to ' + ratioText(ratio) + ', inside ' + sizeWindowText)
 if showCountdown and buyRecycledLater
-    buyR = countLabel(true, paddedText(true, 'R', buyThirteen ? lines13PastThirteen : lines13PastCountdownRow), buyThirteenColor, thirteenSize, laterRecycleTip('Buy', buyRecycledByCount, buyExtensionRatio) + buyContinueNote)
+    buyR = countLabel(true, paddedText(true, 'R', buyThirteen ? (buyThirteenPastCount ? lines13PastFarThirteen : lines13PastThirteen) : lines13PastCountdownRow), buyThirteenColor, thirteenSize, laterRecycleTip('Buy', buyRecycledByCount, buyExtensionRatio) + buyContinueNote)
     label.set_text_formatting(buyR, text.format_bold)
 if showCountdown and sellRecycledLater
-    sellR = countLabel(false, paddedText(false, 'R', sellThirteen ? lines13PastThirteen : lines13PastCountdownRow), sellThirteenColor, thirteenSize, laterRecycleTip('Sell', sellRecycledByCount, sellExtensionRatio) + sellContinueNote)
+    sellR = countLabel(false, paddedText(false, 'R', sellThirteen ? (sellThirteenPastCount ? lines13PastFarThirteen : lines13PastThirteen) : lines13PastCountdownRow), sellThirteenColor, thirteenSize, laterRecycleTip('Sell', sellRecycledByCount, sellExtensionRatio) + sellContinueNote)
     label.set_text_formatting(sellR, text.format_bold)
 
 // A background countdown that takes over after the drawn one completes 13 shows its count past the 13 if it counted on
