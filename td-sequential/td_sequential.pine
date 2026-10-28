@@ -50,25 +50,25 @@ showLatePerfection = input.bool(true, 'Mark a setup perfected after bar 9', grou
 showRisk = input.bool(true, 'Show the risk level after 13', group='Display')
 riskBars = input.int(12, 'Risk level line length after 13 (bars)', minval=1, maxval=100, group='Display')
 showSetupRisk = input.bool(false, 'Show the risk level line after 9 (4 bars)', group='Display', tooltip='The tooltip of the 9 always shows the level. The line uses the color of the 9.')
-nineSize = input.int(15, 'Size of 9', minval=8, maxval=60, group='Display')
-thirteenSize = input.int(18, 'Size of 13', minval=8, maxval=60, group='Display')
+nineSize = input.int(22, 'Size of 9', minval=8, maxval=60, group='Display')
+thirteenSize = input.int(24, 'Size of 13', minval=8, maxval=60, group='Display')
 
-// Default colors are dark so that they read on a mid-grey chart background (#B8B8B8): each has a contrast ratio of
-// about 4.6-4.8 there (TradingView's default #089981 / #F23645 / #2962FF / #FF9800 had 1.1-2.5). Buy setup dark green,
-// buy countdown dark teal green, sell setup dark red, sell countdown violet. The two buy colors are as far apart in hue
-// as two greens can be at this darkness; their rows and the size of the 13 also tell them apart.
-buyNineColor = input.color(#005200, 'Buy setup 9', group='Colors')
+// Default colors are chosen for a mid-grey chart background (#B8B8B8), where only dark colors read (TradingView's default
+// #089981 / #F23645 / #2962FF / #FF9800 had contrast ratios of 1.1-2.5 there). Buy setup light olive green (#596B00, the
+// lightest olive that keeps a contrast of 3.0), buy countdown dark teal green, sell setup dark red and sell countdown
+// violet (4.6-4.7 each). On each side of the bar the setup and countdown colors differ in hue.
+buyNineColor = input.color(#596B00, 'Buy setup 9', group='Colors')
 sellNineColor = input.color(#940200, 'Sell setup 9', group='Colors')
 buyThirteenColor = input.color(#00524A, 'Buy countdown 13, R and risk level', group='Colors')
 sellThirteenColor = input.color(#6100C2, 'Sell countdown 13, R and risk level', group='Colors')
 tdstResistanceColor = input.color(#940200, 'TDST resistance (buy setup)', group='Colors')
-tdstSupportColor = input.color(#005200, 'TDST support (sell setup)', group='Colors')
+tdstSupportColor = input.color(#596B00, 'TDST support (sell setup)', group='Colors')
 
 // The other numbers are plotshape() text, and their colors must be constants: TradingView counts an input or series
 // color as one more plot, and 42 plotshape() calls with input colors went over the 64-plot limit (runtime error RE10140).
 // Plot counts in use: 44 plotshape() + 4 plot() + 14 alertcondition() = 62 of 64. For another background, change these
 // four constants.
-buySetupTextColor = #005200
+buySetupTextColor = #596B00
 sellSetupTextColor = #940200
 buyCountdownTextColor = #00524A
 sellCountdownTextColor = #6100C2
