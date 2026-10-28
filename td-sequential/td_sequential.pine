@@ -54,22 +54,23 @@ nineSize = input.int(15, 'Size of 9', minval=8, maxval=60, group='Display')
 thirteenSize = input.int(18, 'Size of 13', minval=8, maxval=60, group='Display')
 
 // Default colors are dark so that they read on a mid-grey chart background (#B8B8B8): each has a contrast ratio of
-// about 4.7 there (TradingView's default #089981 / #F23645 / #2962FF / #FF9800 had 1.1-2.5). Buy setup dark green, sell
-// setup dark red, buy countdown blue, sell countdown violet; the two marks on one side of the bar differ most in hue.
-buyNineColor = input.color(#00521B, 'Buy setup 9', group='Colors')
+// about 4.6-4.8 there (TradingView's default #089981 / #F23645 / #2962FF / #FF9800 had 1.1-2.5). Buy setup dark green,
+// buy countdown dark teal green, sell setup dark red, sell countdown violet. The two buy colors are as far apart in hue
+// as two greens can be at this darkness; their rows and the size of the 13 also tell them apart.
+buyNineColor = input.color(#005200, 'Buy setup 9', group='Colors')
 sellNineColor = input.color(#940200, 'Sell setup 9', group='Colors')
-buyThirteenColor = input.color(#0035BD, 'Buy countdown 13, R and risk level', group='Colors')
+buyThirteenColor = input.color(#00524A, 'Buy countdown 13, R and risk level', group='Colors')
 sellThirteenColor = input.color(#6100C2, 'Sell countdown 13, R and risk level', group='Colors')
 tdstResistanceColor = input.color(#940200, 'TDST resistance (buy setup)', group='Colors')
-tdstSupportColor = input.color(#00521B, 'TDST support (sell setup)', group='Colors')
+tdstSupportColor = input.color(#005200, 'TDST support (sell setup)', group='Colors')
 
 // The other numbers are plotshape() text, and their colors must be constants: TradingView counts an input or series
 // color as one more plot, and 42 plotshape() calls with input colors went over the 64-plot limit (runtime error RE10140).
 // Plot counts in use: 44 plotshape() + 4 plot() + 14 alertcondition() = 62 of 64. For another background, change these
 // four constants.
-buySetupTextColor = #00521B
+buySetupTextColor = #005200
 sellSetupTextColor = #940200
-buyCountdownTextColor = #0035BD
+buyCountdownTextColor = #00524A
 sellCountdownTextColor = #6100C2
 
 isCombo = countdownMode == 'Combo'
