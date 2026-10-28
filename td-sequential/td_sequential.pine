@@ -462,18 +462,21 @@ if sellSetupDone
     cancelAllUnlessCompleting(buyBackground, true)
 
 // Recycle by length: a later setup that overlaps the countdown reaches 18 / 22 bars before an opposite price flip.
-// Its bar 1 is recycleCount - 1 bars back, after bar 1 of the countdown's own setup. Its background countdown takes over
-// and every other countdown of an earlier setup is dropped.
+// Its bar 1 is recycleCount - 1 bars back, after bar 1 of the countdown's own setup. Its background countdown takes over.
+// Every background countdown belongs to a setup that began before this run, so the run recycles them all, also when the
+// drawn countdown is the run's own.
 laterRunStart = bar_index - recycleCount + 1
 buyRecycledByCount = recycleOn and buyActive.active and buySetup == recycleCount and laterRunStart > buyActive.start
 sellRecycledByCount = recycleOn and sellActive.active and sellSetup == recycleCount and laterRunStart > sellActive.start
 if buyRecycledByCount
     j = runningSetupIndex(buyBackground)
     buyActive := j >= 0 and array.get(buyBackground, j).start == laterRunStart ? array.get(buyBackground, j) : Countdown.new()
-    array.clear(buyBackground)
 if sellRecycledByCount
     j = runningSetupIndex(sellBackground)
     sellActive := j >= 0 and array.get(sellBackground, j).start == laterRunStart ? array.get(sellBackground, j) : Countdown.new()
+if recycleOn and buySetup == recycleCount
+    array.clear(buyBackground)
+if recycleOn and sellSetup == recycleCount
     array.clear(sellBackground)
 
 // Recycle by size on a later bar: a background countdown's setup is still extending past 9, so the size test is
@@ -506,7 +509,8 @@ sellRecycledLater = sellRecycledByCount or sellRecycledByExtension
 // closes all inside the running setup's true range keep the running countdown (Perl's 'setup within a setup'),
 // a true range in the size window takes over and restarts the countdown (the background countdowns are dropped), and
 // anything else keeps the running countdown while this setup's own countdown counts in the background. A running
-// countdown that completes 13 on this bar is left to finish.
+// countdown that completes 13 on this bar is left to finish; if this setup passes the size test against it, the other
+// background countdowns are dropped so that this setup's countdown follows the 13.
 buyRestarts = false
 sellRestarts = false
 buyRecycledBySize = false
@@ -515,20 +519,30 @@ float buySizeRatio = na
 float sellSizeRatio = na
 bool buyInside = false
 bool sellInside = false
+bool buyFollowsBySize = false
+bool sellFollowsBySize = false
 if buySetupDone
     buyRestarts := not buyActiveCompletes
-    if recycleOn and buyActive.active and not buyActiveCompletes
+    if recycleOn and buyActive.active
         buySizeRatio := sizeRatio(buyActive, setupHigh, setupLow)
         buyInside := closesInside(buyActive, setupCloseHigh, setupCloseLow)
-        buyRestarts := not buyInside and sizeRecycles(buySizeRatio)
-        buyRecycledBySize := buyRestarts
+        qualifies = not buyInside and sizeRecycles(buySizeRatio)
+        if buyActiveCompletes
+            buyFollowsBySize := qualifies
+        else
+            buyRestarts := qualifies
+            buyRecycledBySize := qualifies
 if sellSetupDone
     sellRestarts := not sellActiveCompletes
-    if recycleOn and sellActive.active and not sellActiveCompletes
+    if recycleOn and sellActive.active
         sellSizeRatio := sizeRatio(sellActive, setupHigh, setupLow)
         sellInside := closesInside(sellActive, setupCloseHigh, setupCloseLow)
-        sellRestarts := not sellInside and sizeRecycles(sellSizeRatio)
-        sellRecycledBySize := sellRestarts
+        qualifies = not sellInside and sizeRecycles(sellSizeRatio)
+        if sellActiveCompletes
+            sellFollowsBySize := qualifies
+        else
+            sellRestarts := qualifies
+            sellRecycledBySize := qualifies
 
 // TDST lines. The latest setup's level is drawn from its bar 1 to the right. If the drawn countdown belongs to an
 // earlier setup, that setup's level is the one that cancels it, so its line keeps extending, drawn thicker, until the
@@ -557,7 +571,7 @@ keepLine(line ln) =>
 if buySetupDone
     tdstResistance := buyTdstLevel
     if showTdst
-        if not buyRestarts and buyActive.active and buyActiveOwnsLatest
+        if not buyRestarts and buyActive.active and not buyActiveCompletes and buyActiveOwnsLatest
             buyKeptLine := keepLine(buyLatestLine)
         else
             endLine(buyLatestLine)
@@ -570,7 +584,7 @@ if buySetupDone
 if sellSetupDone
     tdstSupport := sellTdstLevel
     if showTdst
-        if not sellRestarts and sellActive.active and sellActiveOwnsLatest
+        if not sellRestarts and sellActive.active and not sellActiveCompletes and sellActiveOwnsLatest
             sellKeptLine := keepLine(sellLatestLine)
         else
             endLine(sellLatestLine)
@@ -608,6 +622,8 @@ if buySetupDone
         buyActive := nc
         buyDropped := dropAllUnlessCompleting(buyBackground, true)
     else
+        if buyFollowsBySize
+            buyDropped := dropAllUnlessCompleting(buyBackground, true)
         array.push(buyBackground, nc)
 if sellSetupDone
     array.clear(sellRetro)
@@ -629,6 +645,8 @@ if sellSetupDone
         sellActive := nc
         sellDropped := dropAllUnlessCompleting(sellBackground, false)
     else
+        if sellFollowsBySize
+            sellDropped := dropAllUnlessCompleting(sellBackground, false)
         array.push(sellBackground, nc)
 
 // Cancel when a bar moves beyond the TDST level of the countdown's own setup.
@@ -682,9 +700,9 @@ if buyTakesOver
     buyActive := array.remove(buyBackground, closestToThirteen(buyBackground))
 if sellTakesOver
     sellActive := array.remove(sellBackground, closestToThirteen(sellBackground))
-// Data window: 13 on its bar, otherwise the drawn countdown after any takeover.
-buyDataCount = buyCountdownDone ? 13 : buyActive.active ? buyActive.count : na
-sellDataCount = sellCountdownDone ? 13 : sellActive.active ? sellActive.count : na
+// Data window: 13 on a bar with a 13, otherwise the drawn countdown after any takeover.
+buyDataCount = buyThirteen ? 13 : buyActive.active ? buyActive.count : na
+sellDataCount = sellThirteen ? 13 : sellActive.active ? sellActive.count : na
 string buyContinueNote = ''
 string sellContinueNote = ''
 if (buyTakesOver or buyRecycledLater) and buyActive.active
@@ -752,11 +770,13 @@ recycleNote(bool had, bool completes, bool follows, bool restarts, float ratio, 
     string note = ''
     if had
         if completes
-            note := '\nThe running countdown completes 13 on this bar' + (follows ? ', and the countdown of this setup follows it' : '; this setup counts in the background')
+            note := '\nThe running countdown completes 13 on this bar' + (na(ratio) ? '' : ' (this setup: ' + ratioText(ratio) + ')') + (follows ? ', and the countdown of this setup follows it' : '; this setup counts in the background')
         else if restarts
-            note := '\nThe countdown restarts from this setup' + (na(ratio) ? '' : ' (' + ratioText(ratio) + ')') + (dropped > 0 ? '; ' + str.tostring(dropped) + ' background countdown(s) of earlier setups are dropped' : '')
+            note := '\nThe countdown restarts from this setup' + (na(ratio) ? '' : ' (' + ratioText(ratio) + ')')
         else
             note := '\nThe running countdown continues (' + (inside ? 'the closes of this setup stay inside its true range, ' : '') + ratioText(ratio) + (inside ? '' : ', outside ' + sizeWindowText) + '); this setup counts in the background' + cancelText(level)
+        if dropped > 0
+            note += '\n' + str.tostring(dropped) + ' background countdown(s) of earlier setups are dropped'
     note
 buyRecycleNote = recycleNote(buyHadCountdown, buyActiveCompletes, buyActive.start == bar_index - 8, buyRestarts, buySizeRatio, buyInside, buyActive.tdst, buyDropped)
 sellRecycleNote = recycleNote(sellHadCountdown, sellActiveCompletes, sellActive.start == bar_index - 8, sellRestarts, sellSizeRatio, sellInside, sellActive.tdst, sellDropped)
@@ -881,15 +901,15 @@ if showCountdown and sellRecycledLater
 
 // A background countdown that takes over after the drawn one completes 13 shows its count past the 13 if it counted on
 // this bar. One that takes over after the drawn one is cancelled at TDST gets an 'x' carrying the explanation.
-buyTakeoverMark = showCountdown and buyTakesOver and (buyThirteen ? buyActive.countedBar == bar_index : buyCountdownCancelled)
-sellTakeoverMark = showCountdown and sellTakesOver and (sellThirteen ? sellActive.countedBar == bar_index : sellCountdownCancelled)
-takeoverText(bool thirteen, bool deferred, int count) => thirteen ? (deferred ? '+' : str.tostring(count)) : 'x'
+buyTakeoverMark = showCountdown and buyTakesOver and (buyCountdownCancelled or buyActive.countedBar == bar_index)
+sellTakeoverMark = showCountdown and sellTakesOver and (sellCountdownCancelled or sellActive.countedBar == bar_index)
+takeoverText(bool cancelled, bool deferred, int count) => cancelled ? 'x' : deferred ? '+' : str.tostring(count)
 takeoverPad(bool thirteen, bool nine) => thirteen ? (nine ? linesPastThirteenOnNine : linesPastThirteen) : nine ? linesPastBigNine : linesSetupBar
-takeoverTip(string side, bool thirteen, float level) => thirteen ? side + ' countdown (taking over after the 13)' : side + ' countdown cancelled at TDST ' + str.tostring(level, format.mintick)
+takeoverTip(string side, bool cancelled, float level) => cancelled ? side + ' countdown cancelled at TDST ' + str.tostring(level, format.mintick) : side + ' countdown (taking over after the 13)'
 if buyTakeoverMark
-    countLabel(true, paddedText(true, takeoverText(buyThirteen, buyActive.deferredNow, buyActive.count), takeoverPad(buyThirteen, buyNineShown)), buyCountdownTextColor, 12, takeoverTip('Buy', buyThirteen, buyCancelLevel) + buyContinueNote)
+    countLabel(true, paddedText(true, takeoverText(buyCountdownCancelled, buyActive.deferredNow, buyActive.count), takeoverPad(buyThirteen, buyNineShown)), buyCountdownTextColor, 12, takeoverTip('Buy', buyCountdownCancelled, buyCancelLevel) + buyContinueNote)
 if sellTakeoverMark
-    countLabel(false, paddedText(false, takeoverText(sellThirteen, sellActive.deferredNow, sellActive.count), takeoverPad(sellThirteen, sellNineShown)), sellCountdownTextColor, 12, takeoverTip('Sell', sellThirteen, sellCancelLevel) + sellContinueNote)
+    countLabel(false, paddedText(false, takeoverText(sellCountdownCancelled, sellActive.deferredNow, sellActive.count), takeoverPad(sellThirteen, sellNineShown)), sellCountdownTextColor, 12, takeoverTip('Sell', sellCountdownCancelled, sellCancelLevel) + sellContinueNote)
 
 // 9-13-9 bookkeeping: the latest 13 that has not turned into 'R'.
 if buyNineThirteenNine or sellSetupDone
