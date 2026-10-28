@@ -53,20 +53,24 @@ showSetupRisk = input.bool(false, 'Show the risk level line after 9 (4 bars)', g
 nineSize = input.int(15, 'Size of 9', minval=8, maxval=60, group='Display')
 thirteenSize = input.int(18, 'Size of 13', minval=8, maxval=60, group='Display')
 
-buyNineColor = input.color(#089981, 'Buy setup 9', group='Colors')
-sellNineColor = input.color(#F23645, 'Sell setup 9', group='Colors')
-buyThirteenColor = input.color(#2962FF, 'Buy countdown 13 and risk level', group='Colors')
-sellThirteenColor = input.color(#FF9800, 'Sell countdown 13 and risk level', group='Colors')
-tdstResistanceColor = input.color(#F23645, 'TDST resistance (buy setup)', group='Colors')
-tdstSupportColor = input.color(#089981, 'TDST support (sell setup)', group='Colors')
+// Default colors are dark so that they read on a mid-grey chart background (#B8B8B8): each has a contrast ratio of
+// about 4.7 there (TradingView's default #089981 / #F23645 / #2962FF / #FF9800 had 1.1-2.5). Buy setup dark green, sell
+// setup dark red, buy countdown blue, sell countdown violet; the two marks on one side of the bar differ most in hue.
+buyNineColor = input.color(#00521B, 'Buy setup 9', group='Colors')
+sellNineColor = input.color(#940200, 'Sell setup 9', group='Colors')
+buyThirteenColor = input.color(#0035BD, 'Buy countdown 13, R and risk level', group='Colors')
+sellThirteenColor = input.color(#6100C2, 'Sell countdown 13, R and risk level', group='Colors')
+tdstResistanceColor = input.color(#940200, 'TDST resistance (buy setup)', group='Colors')
+tdstSupportColor = input.color(#00521B, 'TDST support (sell setup)', group='Colors')
 
 // The other numbers are plotshape() text, and their colors must be constants: TradingView counts an input or series
 // color as one more plot, and 42 plotshape() calls with input colors went over the 64-plot limit (runtime error RE10140).
-// Plot counts in use: 44 plotshape() + 4 plot() + 14 alertcondition() = 62 of 64.
-buySetupTextColor = #089981
-sellSetupTextColor = #F23645
-buyCountdownTextColor = #2962FF
-sellCountdownTextColor = #FF9800
+// Plot counts in use: 44 plotshape() + 4 plot() + 14 alertcondition() = 62 of 64. For another background, change these
+// four constants.
+buySetupTextColor = #00521B
+sellSetupTextColor = #940200
+buyCountdownTextColor = #0035BD
+sellCountdownTextColor = #6100C2
 
 isCombo = countdownMode == 'Combo'
 isAggressive = countdownMode == 'Aggressive Sequential'
@@ -782,15 +786,15 @@ buyRecycleNote = recycleNote(buyHadCountdown, buyActiveCompletes, buyActive.star
 sellRecycleNote = recycleNote(sellHadCountdown, sellActiveCompletes, sellActive.start == bar_index - 8, sellRestarts, sellSizeRatio, sellInside, sellActive.tdst, sellDropped)
 
 if buyNineShown
-    // A setup that is not perfected is drawn faded.
+    // A setup that is not perfected is drawn faded (25% transparent, which still reads on the grey background).
     notes = '\nRisk level ' + str.tostring(buySetupRisk, format.mintick) + buyTdstNote + buyRecycleNote + (buyNineThirteenNine ? '\n9-13-9 after a buy countdown 13' : '')
-    buyNine = countLabel(true, '9', buyPerfected ? buyNineColor : color.new(buyNineColor, 50), nineSize, (buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)') + notes)
+    buyNine = countLabel(true, '9', buyPerfected ? buyNineColor : color.new(buyNineColor, 25), nineSize, (buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)') + notes)
     label.set_text_formatting(buyNine, text.format_bold)
     lastBuyNine := buyNine
     lastBuyNineNotes := notes
 if sellNineShown
     notes = '\nRisk level ' + str.tostring(sellSetupRisk, format.mintick) + sellTdstNote + sellRecycleNote + (sellNineThirteenNine ? '\n9-13-9 after a sell countdown 13' : '')
-    sellNine = countLabel(false, '9', sellPerfected ? sellNineColor : color.new(sellNineColor, 50), nineSize, (sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)') + notes)
+    sellNine = countLabel(false, '9', sellPerfected ? sellNineColor : color.new(sellNineColor, 25), nineSize, (sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)') + notes)
     label.set_text_formatting(sellNine, text.format_bold)
     lastSellNine := sellNine
     lastSellNineNotes := notes
