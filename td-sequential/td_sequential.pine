@@ -6,29 +6,34 @@ indicator('TD Sequential (setup 9, countdown 13, TDST)', 'TD Seq', overlay=true,
 //   (the previous bar closed on the other side of its own close 4 bars earlier). A close equal to the close
 //   4 bars earlier ends the setup.
 // - Perfection: the low of bar 8 or 9 is at or below the lows of bars 6 and 7 (mirrored for sell). If bars 8 and 9
-//   miss, the first later bar whose low reaches that level perfects the setup.
+//   miss, a later bar of the same run (before the opposite price flip) whose low reaches that level perfects the setup.
 // - TDST: highest true high of a buy setup (resistance) / lowest true low of a sell setup (support).
 // - Countdown: starts when a setup completes.
 //   Sequential: 13 closes, not necessarily consecutive, at or below the low (buy) / at or above the high (sell)
 //   2 bars earlier, counted from setup bar 9. Bar 13 must also trade at or below (buy) / at or above (sell)
-//   the close of countdown bar 8. Until it does, the bar is marked '+'.
+//   the close of countdown bar 8. Until it does, the bar is marked '+'. Optionally bar 8 must likewise reach the
+//   close of bar 5, and bar 13 can be judged by its open instead of its close (termination count).
 //   Aggressive Sequential: the low (buy) / high (sell) is compared with the low / high 2 bars earlier instead of the close.
 //   Combo: counted from setup bar 1. A buy countdown bar closes at or below the low 2 bars earlier, has a lower low
 //   and a lower close than the previous bar, and closes below the previous countdown bar (mirrored for sell).
 //   Optionally bars 11-13 only need to close below (buy) / above (sell) the previous countdown bar.
-// - Cancellation: a completed setup in the opposite direction, a bar beyond the TDST level of the active setup,
-//   or a same-direction setup that reaches 18 bars.
-// - Recycle: a new same-direction setup during a countdown restarts it only if its true range is at least the
-//   active setup's and less than 1.618 times it, and its closes are not all inside the active setup's true range.
-//   Otherwise the countdown of the active setup continues.
-// - Risk level: the lowest low of a buy countdown minus the true range of that bar (highest high of a sell countdown
-//   plus its true range), drawn after the 13 for the bars in which a reversal is expected.
+// - Cancellation: a completed setup in the opposite direction, or a bar beyond the TDST level of the countdown's setup.
+// - Recycle (Perl 2008 or DeMARK current), when a later same-direction setup completes during a countdown:
+//   if its closes all lie inside the true range of the countdown's setup, the countdown continues; otherwise, if its
+//   true range is 100% to 161.8% (Perl) / 100% to 200% (DeMARK) of that setup's, it takes over and the countdown
+//   restarts from it; otherwise the countdown continues and the later setup's countdown counts in the background.
+//   A later setup that reaches 18 (Perl) / 22 (DeMARK) bars before an opposite price flip recycles the countdown:
+//   an 'R' marks it, a 13 already printed turns into 'R', and the later setup's background countdown takes over.
+//   A background countdown also takes over when the drawn one ends.
+// - Risk level: the lowest true low of the setup (9) or of the countdown from bar 1 to 13 minus the true range of that
+//   bar (highest true high plus its true range, for sell).
 
 // ---- Inputs
 countdownMode = input.string('Sequential', 'Countdown', options=['Sequential', 'Aggressive Sequential', 'Combo'], group='Rules')
 comboRelaxed = input.bool(true, 'Combo: bars 11-13 only need to close beyond the previous countdown bar', group='Rules')
-recycleMode = input.string('DeMark recycle rules', 'Same-direction setup during a countdown', options=['DeMark recycle rules', 'Always restart'], group='Rules')
-cancelAt18 = input.bool(true, 'Cancel the countdown when a same-direction setup reaches 18 bars', group='Rules')
+recycleVersion = input.string('DeMARK current: 22 bars, 100-200%', 'Recycle rules', options=['DeMARK current: 22 bars, 100-200%', 'Perl 2008: 18 bars, 100-161.8%', 'Always restart'], group='Rules', tooltip='What a later same-direction setup does to a running countdown. The bar count recycles the countdown when a later setup reaches it; the percentage is the size range in which a later setup takes over. Always restart: every new setup restarts the countdown.')
+terminationPrice = input.string('Close', 'Sequential: price of bar 13 compared 2 bars back', options=['Close', 'Open'], group='Rules', tooltip='Termination count. DeMark recommends Open, which can complete the 13 earlier.')
+use8vs5 = input.bool(false, 'Sequential: bar 8 must reach the close of bar 5', group='Rules')
 tdstBasis = input.string('Whole setup', 'TDST level from', options=['Whole setup', 'Setup bar 1'], group='Rules')
 tdstCancelMode = input.string('Whole bar beyond TDST', 'Cancel the countdown at TDST', options=['Whole bar beyond TDST', 'Close beyond TDST', 'Off'], group='Rules')
 useIntersection = input.bool(false, 'Sequential: count only after intersection', group='Rules')
@@ -41,6 +46,7 @@ showTdst = input.bool(true, 'Show TDST lines', group='Display')
 showLatePerfection = input.bool(true, 'Mark a setup perfected after bar 9', group='Display')
 showRisk = input.bool(true, 'Show the risk level after 13', group='Display')
 riskBars = input.int(12, 'Risk level line length (bars)', minval=1, maxval=100, group='Display')
+showSetupRisk = input.bool(false, 'Show the risk level after 9 (4 bars)', group='Display')
 nineSize = input.int(15, 'Size of 9', minval=8, maxval=60, group='Display')
 thirteenSize = input.int(18, 'Size of 13', minval=8, maxval=60, group='Display')
 
@@ -53,6 +59,7 @@ tdstSupportColor = input.color(#089981, 'TDST support (sell setup)', group='Colo
 
 // The other numbers are plotshape() text, and their colors must be constants: TradingView counts an input or series
 // color as one more plot, and 42 plotshape() calls with input colors went over the 64-plot limit (runtime error RE10140).
+// Plot counts in use: 44 plotshape() + 4 plot() + 12 alertcondition() = 60 of 64.
 buySetupTextColor = #089981
 sellSetupTextColor = #F23645
 buyCountdownTextColor = #2962FF
@@ -60,13 +67,18 @@ sellCountdownTextColor = #FF9800
 
 isCombo = countdownMode == 'Combo'
 isAggressive = countdownMode == 'Aggressive Sequential'
-recycleRules = recycleMode == 'DeMark recycle rules'
+recycleOn = recycleVersion != 'Always restart'
+isPerl = recycleVersion == 'Perl 2008: 18 bars, 100-161.8%'
+recycleCount = isPerl ? 18 : 22
+openTermination = terminationPrice == 'Open' and countdownMode == 'Sequential'
+qualify8vs5 = use8vs5 and not isCombo
 tdstFromBar1 = tdstBasis == 'Setup bar 1'
 
 // ---- Label helpers
-// 9 and 13 are labels so they can be drawn large and bold. TradingView keeps only the last 500 labels,
-// which still covers about 10,000 bars because 9s and 13s are rare. Combo counts on setup bars 1-8 are labels too,
-// because they are known only when bar 9 completes the setup.
+// 9, 13, 'R' and any countdown mark on a 9 bar are labels so they can be sized, bold and carry tooltips. TradingView
+// keeps only the last 500 labels, which still covers about 10,000 bars because these are rare. Combo counts on setup
+// bars 1-8 are labels too, because they are known only when bar 9 completes the setup; only the newest 150 of them are
+// kept so they do not push older 9s and 13s out of the 500.
 // The other numbers are plotshape() text, which covers the whole history but has a fixed text size.
 countLabelAt(x, below, txt, col, sz, tip) =>
     label.new(x, below ? low : high, txt, yloc=below ? yloc.belowbar : yloc.abovebar, style=label.style_none, textcolor=col, size=sz, tooltip=tip)
@@ -79,9 +91,12 @@ paddedText(below, txt, lines) =>
     pad = str.repeat('\n', lines)
     below ? pad + txt : txt + pad
 
+dateText(t) => str.format_time(t, 'yyyy-MM-dd', syminfo.timezone)
+
 // TradingView's chart renderer puts style_none label text pt / 0.48 px from the bar (past an invisible shape half as
 // tall as the label size, pt / 0.24), adds floor(pt / 6) px of padding, and gives each line pt + round(pt / 6) px.
-// plotshape() text has a fixed 12 px font, and the setup count next to the bar ends about 32.5 px out.
+// plotshape() text has a fixed 12 px font: the setup count next to the bar ends about 32.5 px out and a countdown
+// count one line further ends about 46.5 px out.
 labelTextStart(pt) => pt / 0.48 + math.floor(pt / 6.0)
 labelLineHeight(pt) => pt + math.round(pt / 6.0)
 // Blank lines a label of size pt needs so its text starts at least px pixels from the bar.
@@ -93,6 +108,12 @@ linesSetupBar = labelLinesTo(12, 34)
 pastBigNine = labelTextStart(nineSize) + labelLineHeight(nineSize) + 2
 linesPastBigNine = labelLinesTo(12, pastBigNine)
 lines13PastBigNine = labelLinesTo(thirteenSize, pastBigNine)
+// Past a countdown count, or past a 13, already drawn on the same bar. A 13 from a background countdown goes past the
+// drawn countdown's count when both fall on one bar.
+linesPastCountdownRow = labelLinesTo(12, 48.5)
+lines13PastCountdownRow = labelLinesTo(thirteenSize, 48.5)
+linesPastThirteen = labelLinesTo(12, labelTextStart(thirteenSize) + (lines13 + 1) * labelLineHeight(thirteenSize) + 2)
+linesPastFarThirteen = labelLinesTo(12, labelTextStart(thirteenSize) + (lines13PastCountdownRow + 1) * labelLineHeight(thirteenSize) + 2)
 
 // ---- Setup
 trueHigh = math.max(high, nz(close[1], high))
@@ -102,9 +123,6 @@ setupHigh = ta.highest(trueHigh, 9)
 setupLow = ta.lowest(trueLow, 9)
 setupCloseHigh = ta.highest(close, 9)
 setupCloseLow = ta.lowest(close, 9)
-// Intersection reference: the lowest low / highest high of the 6 bars that end 3 bars before the bar being checked.
-intersectLow = ta.lowest(low, 6)
-intersectHigh = ta.highest(high, 6)
 
 bearishFlip = close < close[4] and close[1] > close[5]
 bullishFlip = close > close[4] and close[1] < close[5]
@@ -122,17 +140,18 @@ sellSetupDone = sellSetup == 9
 buyPerfected = math.min(low, low[1]) <= math.min(low[2], low[3])
 sellPerfected = math.max(high, high[1]) >= math.max(high[2], high[3])
 
-// A setup that is not perfected on bar 9 is perfected by the first later bar whose low reaches the lows of
-// bars 6 and 7 (whose high reaches the highs, for sell). The wait ends when the next setup in either direction completes.
+// A setup that is not perfected on bar 9 is perfected by the first later bar whose low reaches the lows of bars 6 and 7
+// (whose high reaches the highs, for sell). Perl expects that retest before the reaction to the setup, so the wait ends
+// at the opposite price flip, or when the next setup in either direction completes.
 var bool buyPerfectionPending = false
 var bool sellPerfectionPending = false
 var float buyPerfectionLevel = na
 var float sellPerfectionLevel = na
 buyLatePerfection = buyPerfectionPending and low <= buyPerfectionLevel
 sellLatePerfection = sellPerfectionPending and high >= sellPerfectionLevel
-if buyLatePerfection or buySetupDone or sellSetupDone
+if buyLatePerfection or bullishFlip or buySetupDone or sellSetupDone
     buyPerfectionPending := false
-if sellLatePerfection or buySetupDone or sellSetupDone
+if sellLatePerfection or bearishFlip or buySetupDone or sellSetupDone
     sellPerfectionPending := false
 if buySetupDone and not buyPerfected
     buyPerfectionPending := true
@@ -141,6 +160,40 @@ if sellSetupDone and not sellPerfected
     sellPerfectionPending := true
     sellPerfectionLevel := math.max(high[2], high[3])
 
+// Setup risk level (Perl): the lowest true low of the 9 setup bars minus the true range of that bar
+// (highest true high plus its true range, for sell).
+float buySetupRisk = na
+float sellSetupRisk = na
+if buySetupDone
+    float extreme = na
+    for k = 0 to 8
+        if na(extreme) or trueLow[k] < extreme
+            extreme := trueLow[k]
+            buySetupRisk := trueLow[k] - trueRange[k]
+if sellSetupDone
+    float extreme = na
+    for k = 0 to 8
+        if na(extreme) or trueHigh[k] > extreme
+            extreme := trueHigh[k]
+            sellSetupRisk := trueHigh[k] + trueRange[k]
+
+// ---- Countdown conditions
+// Computed on every bar so that their history stays consistent; the countdown functions below only read them.
+buySeqBar = close <= low[2]
+sellSeqBar = close >= high[2]
+buyAggBar = low <= low[2]
+sellAggBar = high >= high[2]
+buyOpenBar = open <= low[2]
+sellOpenBar = open >= high[2]
+buyComboBar = close <= low[2] and low < low[1] and close < close[1]
+sellComboBar = close >= high[2] and high > high[1] and close > close[1]
+// Intersection (DeMark 1997): the high of a buy setup bar 8, bar 9 or a later bar reaches the low of a bar 3 or more
+// bars earlier, back to setup bar 1 (mirrored for sell). The reference grows by one bar (the bar 3 back) each bar.
+lowest5 = ta.lowest(low, 5)
+highest5 = ta.highest(high, 5)
+low3 = low[3]
+high3 = high[3]
+
 // ---- TDST
 // Whole setup: the highest true high (buy) / lowest true low (sell) of bars 1-9. Setup bar 1: that bar only.
 buyTdstLevel = tdstFromBar1 ? trueHigh[8] : setupHigh
@@ -148,8 +201,6 @@ sellTdstLevel = tdstFromBar1 ? trueLow[8] : setupLow
 
 var float tdstResistance = na
 var float tdstSupport = na
-var line tdstResistanceLine = na
-var line tdstSupportLine = na
 
 // Whether the setup closed beyond the TDST level of the latest setup in the opposite direction. A setup that closes
 // beyond it shows enough momentum to break that level. One that stays inside it looks like a correction.
@@ -158,22 +209,101 @@ sellClosedAboveResistance = not na(tdstResistance) and setupCloseHigh > tdstResi
 buyTdstNote = na(tdstSupport) ? '' : buyClosedBelowSupport ? '\nClosed below TDST support ' + str.tostring(tdstSupport, format.mintick) + ': the decline may continue' : '\nStayed above TDST support ' + str.tostring(tdstSupport, format.mintick) + ': a correction that may reverse'
 sellTdstNote = na(tdstResistance) ? '' : sellClosedAboveResistance ? '\nClosed above TDST resistance ' + str.tostring(tdstResistance, format.mintick) + ': the advance may continue' : '\nStayed below TDST resistance ' + str.tostring(tdstResistance, format.mintick) + ': a correction that may reverse'
 
-if buySetupDone
-    tdstResistance := buyTdstLevel
-    if showTdst
-        // End the previous level here and draw the new one from bar 1 of this setup.
-        if not na(tdstResistanceLine)
-            line.set_x2(tdstResistanceLine, bar_index)
-            line.set_extend(tdstResistanceLine, extend.none)
-        tdstResistanceLine := line.new(bar_index - 8, tdstResistance, bar_index, tdstResistance, extend=extend.right, color=tdstResistanceColor, style=line.style_dashed)
+// ---- Countdown state
+// One countdown. Each side keeps the active countdown, whose numbers are drawn, and a background countdown for a
+// later setup that did not take over. Perl: the second countdown keeps counting and is shown once the first ends.
+type Countdown
+    bool active = false
+    int count = 0
+    int start = na
+    int startTime = na
+    bool runLive = false
+    float tdst = na
+    float hi = na
+    float lo = na
+    float bar5Close = na
+    float bar8Close = na
+    float lastClose = na
+    float riskExtreme = na
+    float riskRange = na
+    bool intersected = false
+    float intersectRef = na
 
-if sellSetupDone
-    tdstSupport := sellTdstLevel
-    if showTdst
-        if not na(tdstSupportLine)
-            line.set_x2(tdstSupportLine, bar_index)
-            line.set_extend(tdstSupportLine, extend.none)
-        tdstSupportLine := line.new(bar_index - 8, tdstSupport, bar_index, tdstSupport, extend=extend.right, color=tdstSupportColor, style=line.style_dashed)
+// start / startTime: bar 1 of the setup that owns the countdown. runLive: that setup is still extending past bar 9,
+// so its true range (hi - lo) keeps growing. tdst: the level that cancels the countdown. lastClose: Combo, the close of
+// the previous countdown bar. riskExtreme / riskRange: lowest true low (buy) / highest true high (sell) since countdown
+// bar 1 and the true range of that bar. intersectRef: lowest low (buy) / highest high (sell) from setup bar 1 to 3 bars ago.
+
+var Countdown buyActive = Countdown.new()
+var Countdown sellActive = Countdown.new()
+var Countdown buyBackground = Countdown.new()
+var Countdown sellBackground = Countdown.new()
+
+// Widen the setup's true range while the setup keeps extending; Perl compares setups including their bars beyond 9.
+extendSetup(Countdown cd, int setupCount) =>
+    if cd.runLive
+        if setupCount == 0
+            cd.runLive := false
+        else if setupCount > 9
+            cd.hi := math.max(cd.hi, trueHigh)
+            cd.lo := math.min(cd.lo, trueLow)
+    cd.runLive
+
+// Qualifier I: the later setup's true range is at least the countdown setup's and below 1.618 times it (Perl 2008),
+// or at most 2 times it (DeMARK current, 'between 100% and 200%').
+sizeRecycles(ratio) => ratio >= 1.0 and (isPerl ? ratio < 1.618 : ratio <= 2.0)
+
+tdstBreak(Countdown cd, bool buy) =>
+    cd.active and (tdstCancelMode == 'Whole bar beyond TDST' ? (buy ? trueLow > cd.tdst : trueHigh < cd.tdst) : tdstCancelMode == 'Close beyond TDST' ? (buy ? close > cd.tdst : close < cd.tdst) : false)
+
+// One bar of a countdown: whether the bar counts, whether it completes 13, and whether the count waits ('+').
+stepCountdown(Countdown cd, bool buy) =>
+    bool counted = false
+    bool done = false
+    bool deferred = false
+    if cd.active
+        if useIntersection and not isCombo and not cd.intersected
+            cd.intersectRef := buy ? math.min(cd.intersectRef, low3) : math.max(cd.intersectRef, high3)
+            cd.intersected := buy ? high >= cd.intersectRef : low <= cd.intersectRef
+        if isCombo
+            beyondLast = na(cd.lastClose) or (buy ? close < cd.lastClose : close > cd.lastClose)
+            if comboRelaxed and cd.count >= 10 ? beyondLast : ((buy ? buyComboBar : sellComboBar) and beyondLast)
+                counted := true
+                cd.count := cd.count + 1
+                cd.lastClose := close
+                if cd.count == 13
+                    done := true
+                    cd.active := false
+        else
+            gate = not useIntersection or cd.intersected
+            countBar = gate and (isAggressive ? (buy ? buyAggBar : sellAggBar) : (buy ? buySeqBar : sellSeqBar))
+            if cd.count == 12
+                lastBar = openTermination ? gate and (buy ? buyOpenBar : sellOpenBar) : countBar
+                if lastBar
+                    counted := true
+                    // Bar 13 has to trade at or below the close of countdown bar 8. Until it does, the bar is marked '+'.
+                    if buy ? low <= cd.bar8Close : high >= cd.bar8Close
+                        cd.count := 13
+                        done := true
+                        cd.active := false
+                    else
+                        deferred := true
+            else if countBar
+                counted := true
+                // Optional 8 vs 5: bar 8 has to trade at or below the close of countdown bar 5, or it waits as '+'.
+                if cd.count == 7 and qualify8vs5 and not (buy ? low <= cd.bar5Close : high >= cd.bar5Close)
+                    deferred := true
+                else
+                    cd.count := cd.count + 1
+                    if cd.count == 5
+                        cd.bar5Close := close
+                    else if cd.count == 8
+                        cd.bar8Close := close
+        // Risk level: the extreme bar of the whole countdown period, from countdown bar 1 to bar 13, counted or not.
+        if cd.count > 0 and (na(cd.riskExtreme) or (buy ? trueLow < cd.riskExtreme : trueHigh > cd.riskExtreme))
+            cd.riskExtreme := buy ? trueLow : trueHigh
+            cd.riskRange := trueRange
+    [counted, done, deferred]
 
 // ---- 9-13-9
 // A setup whose bar 1 comes after a completed countdown 13 in the same direction, preceded by a price flip
@@ -191,207 +321,229 @@ buyNineThirteenNine = buySetupDone and not na(lastBuyThirteenBar) and bar_index 
 sellNineThirteenNine = sellSetupDone and not na(lastSellThirteenBar) and bar_index - 8 > lastSellThirteenBar and sellFlipAfterThirteen
 
 // ---- Countdown
-var bool buyCountdownActive = false
-var bool sellCountdownActive = false
-var int buyCountdown = 0
-var int sellCountdown = 0
-var float buyBar8Close = na
-var float sellBar8Close = na
-var float buyLastCountdownClose = na
-var float sellLastCountdownClose = na
-var bool buyIntersected = false
-var bool sellIntersected = false
-// The active setup is the one the running countdown belongs to. Cancellation uses its TDST level,
-// and the recycle rule compares a new setup with its true range.
-var float buyActiveTdst = na
-var float sellActiveTdst = na
-var float buyActiveHigh = na
-var float buyActiveLow = na
-var float sellActiveHigh = na
-var float sellActiveLow = na
-// Lowest low (buy) / highest high (sell) of the countdown so far, and the true range of that bar.
-var float buyRiskExtreme = na
-var float sellRiskExtreme = na
-var float buyRiskRange = na
-var float sellRiskRange = na
+// What the countdown row of each side showed at the end of each bar (0 nothing, 1 a count or '+', 2 a 13, 3 a 13 past a
+// count). The Combo
+// labels drawn back on setup bars read it so they do not cover what an earlier countdown left there.
+var int buyRowMark = 0
+var int sellRowMark = 0
 
-buyHadCountdown = buyCountdownActive
-sellHadCountdown = sellCountdownActive
+buyHadCountdown = buyActive.active
+sellHadCountdown = sellActive.active
 buyCountdownCancelled = false
 sellCountdownCancelled = false
 
-// A completed setup cancels the countdown in the opposite direction.
-if buySetupDone and sellCountdownActive
-    sellCountdownActive := false
-    sellCountdownCancelled := true
-if sellSetupDone and buyCountdownActive
-    buyCountdownActive := false
-    buyCountdownCancelled := true
+extendSetup(buyActive, buySetup)
+extendSetup(buyBackground, buySetup)
+extendSetup(sellActive, sellSetup)
+extendSetup(sellBackground, sellSetup)
 
-// A completed setup starts a countdown in its direction. If one is already running, the recycle rule decides:
-// the new setup takes over only if its true range is at least the active setup's and less than 1.618 times it,
-// and its closes are not all inside the active setup's true range. Otherwise the running countdown continues.
-// 'Always restart' replaces the running countdown with every new setup.
-buyStartsCountdown = false
-sellStartsCountdown = false
+// A completed setup cancels the countdowns in the opposite direction.
 if buySetupDone
-    if buyCountdownActive and recycleRules
-        activeRange = buyActiveHigh - buyActiveLow
-        newRange = setupHigh - setupLow
-        closesInside = setupCloseHigh <= buyActiveHigh and setupCloseLow >= buyActiveLow
-        buyStartsCountdown := not closesInside and newRange >= activeRange and newRange < 1.618 * activeRange
-    else
-        buyStartsCountdown := true
+    sellCountdownCancelled := sellActive.active
+    sellActive.active := false
+    sellBackground.active := false
 if sellSetupDone
-    if sellCountdownActive and recycleRules
-        activeRange = sellActiveHigh - sellActiveLow
-        newRange = setupHigh - setupLow
-        closesInside = setupCloseHigh <= sellActiveHigh and setupCloseLow >= sellActiveLow
-        sellStartsCountdown := not closesInside and newRange >= activeRange and newRange < 1.618 * activeRange
-    else
-        sellStartsCountdown := true
+    buyCountdownCancelled := buyActive.active
+    buyActive.active := false
+    buyBackground.active := false
 
-if buyStartsCountdown
-    buyCountdownActive := true
-    buyCountdown := 0
-    buyBar8Close := na
-    buyLastCountdownClose := na
-    buyRiskExtreme := na
-    buyRiskRange := na
-    buyActiveTdst := buyTdstLevel
-    buyActiveHigh := setupHigh
-    buyActiveLow := setupLow
-    // Intersection: the high of setup bar 8 or 9 reaches the lowest low of the 6 bars that end 3 bars earlier.
-    buyIntersected := high[1] >= intersectLow[4] or high >= intersectLow[3]
-    // Combo counts from setup bar 1, so bars 1-8 are counted now that bar 9 has completed the setup.
+// Recycle by length: a later setup that overlaps the countdown reaches 18 / 22 bars before an opposite price flip.
+// Its bar 1 is recycleCount - 1 bars back, after bar 1 of the countdown's own setup. Its background countdown takes over.
+laterRunStart = bar_index - recycleCount + 1
+buyRecycledByCount = recycleOn and buyActive.active and buySetup == recycleCount and laterRunStart > buyActive.start
+sellRecycledByCount = recycleOn and sellActive.active and sellSetup == recycleCount and laterRunStart > sellActive.start
+if buyRecycledByCount
+    buyActive := buyBackground.active and buyBackground.start == laterRunStart ? buyBackground : Countdown.new()
+    buyBackground := Countdown.new()
+if sellRecycledByCount
+    sellActive := sellBackground.active and sellBackground.start == laterRunStart ? sellBackground : Countdown.new()
+    sellBackground := Countdown.new()
+
+// A completed setup starts a countdown in its direction. If one is already running, the recycle rules decide:
+// closes all inside the running setup's true range keep the running countdown (Perl's 'setup within a setup'),
+// a true range in the size window takes over and restarts the countdown, and anything else keeps the running
+// countdown while this setup's own countdown counts in the background.
+buyRestarts = false
+sellRestarts = false
+buyRecycledBySize = false
+sellRecycledBySize = false
+float buySizeRatio = na
+float sellSizeRatio = na
+if buySetupDone
+    buyRestarts := true
+    if recycleOn and buyActive.active
+        buySizeRatio := (buyActive.hi - buyActive.lo) > 0 ? (setupHigh - setupLow) / (buyActive.hi - buyActive.lo) : na
+        closesInside = setupCloseHigh <= buyActive.hi and setupCloseLow >= buyActive.lo
+        buyRestarts := not closesInside and sizeRecycles(buySizeRatio)
+        buyRecycledBySize := buyRestarts
+if sellSetupDone
+    sellRestarts := true
+    if recycleOn and sellActive.active
+        sellSizeRatio := (sellActive.hi - sellActive.lo) > 0 ? (setupHigh - setupLow) / (sellActive.hi - sellActive.lo) : na
+        closesInside = setupCloseHigh <= sellActive.hi and setupCloseLow >= sellActive.lo
+        sellRestarts := not closesInside and sizeRecycles(sellSizeRatio)
+        sellRecycledBySize := sellRestarts
+
+// TDST lines. The latest setup's level is drawn from its bar 1 to the right. If the running countdown belongs to an
+// earlier setup, that setup's level is the one that cancels it, so its line keeps extending until the countdown ends.
+var line buyLatestLine = na
+var line sellLatestLine = na
+var line buyKeptLine = na
+var line sellKeptLine = na
+var bool buyActiveOwnsLatest = false
+var bool sellActiveOwnsLatest = false
+
+endLine(line ln) =>
+    if not na(ln)
+        line.set_x2(ln, bar_index)
+        line.set_extend(ln, extend.none)
+    na(ln)
+
+if buySetupDone
+    tdstResistance := buyTdstLevel
+    if showTdst
+        if not buyRestarts and buyActive.active and buyActiveOwnsLatest
+            buyKeptLine := buyLatestLine
+        else
+            endLine(buyLatestLine)
+        if buyRestarts
+            endLine(buyKeptLine)
+            buyKeptLine := na
+        buyLatestLine := line.new(bar_index - 8, buyTdstLevel, bar_index, buyTdstLevel, extend=extend.right, color=tdstResistanceColor, style=line.style_dashed)
+    buyActiveOwnsLatest := buyRestarts
+if sellSetupDone
+    tdstSupport := sellTdstLevel
+    if showTdst
+        if not sellRestarts and sellActive.active and sellActiveOwnsLatest
+            sellKeptLine := sellLatestLine
+        else
+            endLine(sellLatestLine)
+        if sellRestarts
+            endLine(sellKeptLine)
+            sellKeptLine := na
+        sellLatestLine := line.new(bar_index - 8, sellTdstLevel, bar_index, sellTdstLevel, extend=extend.right, color=tdstSupportColor, style=line.style_dashed)
+    sellActiveOwnsLatest := sellRestarts
+
+// Start the countdown of the setup that completed on this bar, as the active one or in the background.
+// Combo counts from setup bar 1, so bars 1-8 are counted now that bar 9 has completed the setup.
+var array<label> comboLabels = array.new<label>()
+if buySetupDone
+    nc = Countdown.new(active=true, start=bar_index - 8, startTime=time[8], runLive=true, tdst=buyTdstLevel, hi=setupHigh, lo=setupLow)
+    if useIntersection and not isCombo
+        nc.intersectRef := lowest5[4]
+        nc.intersected := high[1] >= nc.intersectRef
     if isCombo
         for i = 0 to 7
             k = 8 - i
-            if close[k] <= low[k + 2] and low[k] < low[k + 1] and close[k] < close[k + 1] and (na(buyLastCountdownClose) or close[k] < buyLastCountdownClose)
-                buyCountdown += 1
-                buyLastCountdownClose := close[k]
-                if showCountdown and showComboSetupBars
-                    countLabelAt(bar_index - k, true, paddedText(true, str.tostring(buyCountdown), linesSetupBar), buyCountdownTextColor, 12, 'Buy countdown ' + str.tostring(buyCountdown))
-            if buyCountdown > 0 and (na(buyRiskExtreme) or low[k] < buyRiskExtreme)
-                buyRiskExtreme := low[k]
-                buyRiskRange := trueRange[k]
-
-if sellStartsCountdown
-    sellCountdownActive := true
-    sellCountdown := 0
-    sellBar8Close := na
-    sellLastCountdownClose := na
-    sellRiskExtreme := na
-    sellRiskRange := na
-    sellActiveTdst := sellTdstLevel
-    sellActiveHigh := setupHigh
-    sellActiveLow := setupLow
-    sellIntersected := low[1] <= intersectHigh[4] or low <= intersectHigh[3]
+            if buyComboBar[k] and (na(nc.lastClose) or close[k] < nc.lastClose)
+                nc.count := nc.count + 1
+                nc.lastClose := close[k]
+                if buyRestarts and showCountdown and showComboSetupBars
+                    padLines = buyRowMark[k] == 3 ? linesPastFarThirteen : buyRowMark[k] == 2 ? linesPastThirteen : buyRowMark[k] == 1 ? linesPastCountdownRow : linesSetupBar
+                    comboLabel = countLabelAt(bar_index - k, true, paddedText(true, str.tostring(nc.count), padLines), buyCountdownTextColor, 12, 'Buy countdown ' + str.tostring(nc.count))
+                    array.push(comboLabels, comboLabel)
+                    if array.size(comboLabels) > 150
+                        label.delete(array.shift(comboLabels))
+            if nc.count > 0 and (na(nc.riskExtreme) or trueLow[k] < nc.riskExtreme)
+                nc.riskExtreme := trueLow[k]
+                nc.riskRange := trueRange[k]
+    if buyRestarts
+        buyActive := nc
+        buyBackground := Countdown.new()
+    else
+        buyBackground := nc
+if sellSetupDone
+    nc = Countdown.new(active=true, start=bar_index - 8, startTime=time[8], runLive=true, tdst=sellTdstLevel, hi=setupHigh, lo=setupLow)
+    if useIntersection and not isCombo
+        nc.intersectRef := highest5[4]
+        nc.intersected := low[1] <= nc.intersectRef
     if isCombo
         for i = 0 to 7
             k = 8 - i
-            if close[k] >= high[k + 2] and high[k] > high[k + 1] and close[k] > close[k + 1] and (na(sellLastCountdownClose) or close[k] > sellLastCountdownClose)
-                sellCountdown += 1
-                sellLastCountdownClose := close[k]
-                if showCountdown and showComboSetupBars
-                    countLabelAt(bar_index - k, false, paddedText(false, str.tostring(sellCountdown), linesSetupBar), sellCountdownTextColor, 12, 'Sell countdown ' + str.tostring(sellCountdown))
-            if sellCountdown > 0 and (na(sellRiskExtreme) or high[k] > sellRiskExtreme)
-                sellRiskExtreme := high[k]
-                sellRiskRange := trueRange[k]
-
-// Cancel when a bar moves beyond the TDST level of the active setup, or a same-direction setup reaches 18 bars.
-if buyCountdownActive
-    buyTdstBreak = tdstCancelMode == 'Whole bar beyond TDST' ? trueLow > buyActiveTdst : tdstCancelMode == 'Close beyond TDST' ? close > buyActiveTdst : false
-    if buyTdstBreak or (cancelAt18 and buySetup == 18)
-        buyCountdownActive := false
-        buyCountdownCancelled := true
-if sellCountdownActive
-    sellTdstBreak = tdstCancelMode == 'Whole bar beyond TDST' ? trueHigh < sellActiveTdst : tdstCancelMode == 'Close beyond TDST' ? close < sellActiveTdst : false
-    if sellTdstBreak or (cancelAt18 and sellSetup == 18)
-        sellCountdownActive := false
-        sellCountdownCancelled := true
-
-// Intersection after bar 9: a later bar whose high (low, for sell) reaches the same reference.
-if buyCountdownActive and not buyIntersected and high >= intersectLow[3]
-    buyIntersected := true
-if sellCountdownActive and not sellIntersected and low <= intersectHigh[3]
-    sellIntersected := true
-
-buyCountdownBar = false
-sellCountdownBar = false
-if buyCountdownActive
-    if isCombo
-        buyCountdownBar := comboRelaxed and buyCountdown >= 10 ? close < buyLastCountdownClose : (close <= low[2] and low < low[1] and close < close[1] and (na(buyLastCountdownClose) or close < buyLastCountdownClose))
+            if sellComboBar[k] and (na(nc.lastClose) or close[k] > nc.lastClose)
+                nc.count := nc.count + 1
+                nc.lastClose := close[k]
+                if sellRestarts and showCountdown and showComboSetupBars
+                    padLines = sellRowMark[k] == 3 ? linesPastFarThirteen : sellRowMark[k] == 2 ? linesPastThirteen : sellRowMark[k] == 1 ? linesPastCountdownRow : linesSetupBar
+                    comboLabel = countLabelAt(bar_index - k, false, paddedText(false, str.tostring(nc.count), padLines), sellCountdownTextColor, 12, 'Sell countdown ' + str.tostring(nc.count))
+                    array.push(comboLabels, comboLabel)
+                    if array.size(comboLabels) > 150
+                        label.delete(array.shift(comboLabels))
+            if nc.count > 0 and (na(nc.riskExtreme) or trueHigh[k] > nc.riskExtreme)
+                nc.riskExtreme := trueHigh[k]
+                nc.riskRange := trueRange[k]
+    if sellRestarts
+        sellActive := nc
+        sellBackground := Countdown.new()
     else
-        buyCountdownBar := (not useIntersection or buyIntersected) and (isAggressive ? low <= low[2] : close <= low[2])
-if sellCountdownActive
-    if isCombo
-        sellCountdownBar := comboRelaxed and sellCountdown >= 10 ? close > sellLastCountdownClose : (close >= high[2] and high > high[1] and close > close[1] and (na(sellLastCountdownClose) or close > sellLastCountdownClose))
-    else
-        sellCountdownBar := (not useIntersection or sellIntersected) and (isAggressive ? high >= high[2] : close >= high[2])
+        sellBackground := nc
 
-buyCountdownDone = false
-sellCountdownDone = false
-buyCountdownDeferred = false
-sellCountdownDeferred = false
+// Cancel when a bar moves beyond the TDST level of the countdown's own setup.
+if tdstBreak(buyActive, true)
+    buyActive.active := false
+    buyCountdownCancelled := true
+if tdstBreak(buyBackground, true)
+    buyBackground.active := false
+if tdstBreak(sellActive, false)
+    sellActive.active := false
+    sellCountdownCancelled := true
+if tdstBreak(sellBackground, false)
+    sellBackground.active := false
 
-if buyCountdownBar
-    if isCombo
-        buyCountdown += 1
-        buyLastCountdownClose := close
-        if buyCountdown == 13
-            buyCountdownDone := true
-            buyCountdownActive := false
-    else if buyCountdown < 12
-        buyCountdown += 1
-        if buyCountdown == 8
-            buyBar8Close := close
-    else if low <= buyBar8Close
-        buyCountdown := 13
-        buyCountdownDone := true
-        buyCountdownActive := false
-    else
-        // Bar 13 has to trade at or below the close of countdown bar 8. Until it does, the bar is marked '+'.
-        buyCountdownDeferred := true
+[buyCountdownBar, buyCountdownDone, buyCountdownDeferred] = stepCountdown(buyActive, true)
+[sellCountdownBar, sellCountdownDone, sellCountdownDeferred] = stepCountdown(sellActive, false)
+[buyBackgroundBar, buyBackgroundDone, buyBackgroundDeferred] = stepCountdown(buyBackground, true)
+[sellBackgroundBar, sellBackgroundDone, sellBackgroundDeferred] = stepCountdown(sellBackground, false)
 
-if sellCountdownBar
-    if isCombo
-        sellCountdown += 1
-        sellLastCountdownClose := close
-        if sellCountdown == 13
-            sellCountdownDone := true
-            sellCountdownActive := false
-    else if sellCountdown < 12
-        sellCountdown += 1
-        if sellCountdown == 8
-            sellBar8Close := close
-    else if high >= sellBar8Close
-        sellCountdown := 13
-        sellCountdownDone := true
-        sellCountdownActive := false
-    else
-        sellCountdownDeferred := true
+// The drawn countdown as it stands on this bar, before a background countdown can take over below.
+buyCount = buyActive.count
+sellCount = sellActive.count
+buyRunning = buyActive.active or buyCountdownDone
+sellRunning = sellActive.active or sellCountdownDone
 
-// Risk level: the extreme bar of the whole countdown period, from countdown bar 1 to bar 13, counted bars or not.
-if (buyCountdownActive or buyCountdownDone) and buyCountdown > 0 and (na(buyRiskExtreme) or low < buyRiskExtreme)
-    buyRiskExtreme := low
-    buyRiskRange := trueRange
-if (sellCountdownActive or sellCountdownDone) and sellCountdown > 0 and (na(sellRiskExtreme) or high > sellRiskExtreme)
-    sellRiskExtreme := high
-    sellRiskRange := trueRange
-buyRiskLevel = buyCountdownDone ? buyRiskExtreme - buyRiskRange : na
-sellRiskLevel = sellCountdownDone ? sellRiskExtreme + sellRiskRange : na
+// A 13 comes from the drawn countdown, or from a background countdown that completes first.
+buyThirteen = buyCountdownDone or buyBackgroundDone
+sellThirteen = sellCountdownDone or sellBackgroundDone
+buyThirteenFrom = buyCountdownDone ? buyActive : buyBackground
+sellThirteenFrom = sellCountdownDone ? sellActive : sellBackground
+buyRiskLevel = buyThirteen ? buyThirteenFrom.riskExtreme - buyThirteenFrom.riskRange : na
+sellRiskLevel = sellThirteen ? sellThirteenFrom.riskExtreme + sellThirteenFrom.riskRange : na
+buyThirteenStart = buyThirteenFrom.start
+sellThirteenStart = sellThirteenFrom.start
+string buyThirteenNote = ''
+string sellThirteenNote = ''
+if buyBackgroundDone and not buyCountdownDone
+    buyThirteenNote := '\nCounted in the background for the buy setup from ' + dateText(buyThirteenFrom.startTime)
+if sellBackgroundDone and not sellCountdownDone
+    sellThirteenNote := '\nCounted in the background for the sell setup from ' + dateText(sellThirteenFrom.startTime)
 
-if buyNineThirteenNine or sellSetupDone
-    lastBuyThirteenBar := na
-if sellNineThirteenNine or buySetupDone
-    lastSellThirteenBar := na
-if buyCountdownDone
-    lastBuyThirteenBar := bar_index
-    buyFlipAfterThirteen := false
-if sellCountdownDone
-    lastSellThirteenBar := bar_index
-    sellFlipAfterThirteen := false
+// When the drawn countdown ends, a background countdown that is still running takes its place.
+buyTakesOver = not buyActive.active and buyBackground.active
+sellTakesOver = not sellActive.active and sellBackground.active
+if buyTakesOver
+    buyActive := buyBackground
+    buyBackground := Countdown.new()
+if sellTakesOver
+    sellActive := sellBackground
+    sellBackground := Countdown.new()
+string buyContinueNote = ''
+string sellContinueNote = ''
+if (buyTakesOver or buyRecycledByCount) and buyActive.active
+    buyContinueNote := '\nThe countdown of the buy setup from ' + dateText(buyActive.startTime) + ' continues at ' + str.tostring(buyActive.count)
+if (sellTakesOver or sellRecycledByCount) and sellActive.active
+    sellContinueNote := '\nThe countdown of the sell setup from ' + dateText(sellActive.startTime) + ' continues at ' + str.tostring(sellActive.count)
+
+// The kept TDST line ends with the countdown it belongs to.
+if not na(buyKeptLine) and (not buyActive.active or buyTakesOver or buyRecycledByCount)
+    endLine(buyKeptLine)
+    buyKeptLine := na
+if not na(sellKeptLine) and (not sellActive.active or sellTakesOver or sellRecycledByCount)
+    endLine(sellKeptLine)
+    sellKeptLine := na
+if buyTakesOver or buyRecycledByCount
+    buyActiveOwnsLatest := true
+if sellTakesOver or sellRecycledByCount
+    sellActiveOwnsLatest := true
 
 // ---- Numbers
 buyNineShown = showSetup and buySetupDone
@@ -410,51 +562,101 @@ if sellLatePerfection and not na(lastSellNine)
     label.set_textcolor(lastSellNine, sellNineColor)
     label.set_tooltip(lastSellNine, 'Sell setup 9 (perfected later)' + lastSellNineNotes)
 
+ratioText(r) => na(r) ? '' : ' (size ' + str.tostring(r, '#.##') + 'x the running setup)'
+buyRecycleNote = not buyHadCountdown ? '' : buyRestarts ? '\nThe countdown restarts from this setup' + ratioText(buySizeRatio) : '\nThe running countdown continues' + ratioText(buySizeRatio) + '; this setup counts in the background'
+sellRecycleNote = not sellHadCountdown ? '' : sellRestarts ? '\nThe countdown restarts from this setup' + ratioText(sellSizeRatio) : '\nThe running countdown continues' + ratioText(sellSizeRatio) + '; this setup counts in the background'
+
 if buyNineShown
     // A setup that is not perfected is drawn faded.
-    notes = buyTdstNote + (buyHadCountdown ? (buyStartsCountdown ? '\nThe countdown restarts from this setup' : '\nThe running countdown continues') : '') + (buyNineThirteenNine ? '\n9-13-9 after a buy countdown 13' : '')
+    notes = '\nRisk level ' + str.tostring(buySetupRisk, format.mintick) + buyTdstNote + buyRecycleNote + (buyNineThirteenNine ? '\n9-13-9 after a buy countdown 13' : '')
     buyNine = countLabel(true, '9', buyPerfected ? buyNineColor : color.new(buyNineColor, 50), nineSize, (buyPerfected ? 'Buy setup 9 (perfected)' : 'Buy setup 9 (not perfected)') + notes)
     label.set_text_formatting(buyNine, text.format_bold)
     lastBuyNine := buyNine
     lastBuyNineNotes := notes
 if sellNineShown
-    notes = sellTdstNote + (sellHadCountdown ? (sellStartsCountdown ? '\nThe countdown restarts from this setup' : '\nThe running countdown continues') : '') + (sellNineThirteenNine ? '\n9-13-9 after a sell countdown 13' : '')
+    notes = '\nRisk level ' + str.tostring(sellSetupRisk, format.mintick) + sellTdstNote + sellRecycleNote + (sellNineThirteenNine ? '\n9-13-9 after a sell countdown 13' : '')
     sellNine = countLabel(false, '9', sellPerfected ? sellNineColor : color.new(sellNineColor, 50), nineSize, (sellPerfected ? 'Sell setup 9 (perfected)' : 'Sell setup 9 (not perfected)') + notes)
     label.set_text_formatting(sellNine, text.format_bold)
     lastSellNine := sellNine
     lastSellNineNotes := notes
 
-buyThirteenTip = 'Buy countdown 13' + (showRisk ? '\nRisk level ' + str.tostring(buyRiskLevel, format.mintick) : '')
-sellThirteenTip = 'Sell countdown 13' + (showRisk ? '\nRisk level ' + str.tostring(sellRiskLevel, format.mintick) : '')
+// 13s. A 13 on a 9 bar is drawn past the 9, and a background 13 past the drawn countdown's count on the same bar.
+buyThirteenPastCount = buyCountdownBar and not buyCountdownDone
+sellThirteenPastCount = sellCountdownBar and not sellCountdownDone
+label buyThirteenLabel = na
+label sellThirteenLabel = na
+if showCountdown and buyThirteen
+    buyThirteenLabel := countLabel(true, paddedText(true, '13', buyNineShown ? lines13PastBigNine : buyThirteenPastCount ? lines13PastCountdownRow : lines13), buyThirteenColor, thirteenSize, 'Buy countdown 13' + buyThirteenNote + (showRisk ? '\nRisk level ' + str.tostring(buyRiskLevel, format.mintick) : '') + buyContinueNote)
+    label.set_text_formatting(buyThirteenLabel, text.format_bold)
+if showCountdown and sellThirteen
+    sellThirteenLabel := countLabel(false, paddedText(false, '13', sellNineShown ? lines13PastBigNine : sellThirteenPastCount ? lines13PastCountdownRow : lines13), sellThirteenColor, thirteenSize, 'Sell countdown 13' + sellThirteenNote + (showRisk ? '\nRisk level ' + str.tostring(sellRiskLevel, format.mintick) : '') + sellContinueNote)
+    label.set_text_formatting(sellThirteenLabel, text.format_bold)
 
-if showCountdown and buyCountdownDone and not buyNineShown
-    buyThirteen = countLabel(true, paddedText(true, '13', lines13), buyThirteenColor, thirteenSize, buyThirteenTip)
-    label.set_text_formatting(buyThirteen, text.format_bold)
-if showCountdown and sellCountdownDone and not sellNineShown
-    sellThirteen = countLabel(false, paddedText(false, '13', lines13), sellThirteenColor, thirteenSize, sellThirteenTip)
-    label.set_text_formatting(sellThirteen, text.format_bold)
+// The risk level is drawn for the bars after the 13 in which a reversal is expected (4 bars after a 9).
+if showRisk and buyThirteen
+    line.new(bar_index, buyRiskLevel, bar_index + riskBars, buyRiskLevel, color=buyThirteenColor, style=line.style_dotted)
+if showRisk and sellThirteen
+    line.new(bar_index, sellRiskLevel, bar_index + riskBars, sellRiskLevel, color=sellThirteenColor, style=line.style_dotted)
+if showSetupRisk and buyNineShown
+    line.new(bar_index, buySetupRisk, bar_index + 4, buySetupRisk, color=buyNineColor, style=line.style_dotted)
+if showSetupRisk and sellNineShown
+    line.new(bar_index, sellSetupRisk, bar_index + 4, sellSetupRisk, color=sellNineColor, style=line.style_dotted)
+
+// A 13 stays exposed to the length recycle until the opposite price flip (Perl). If a later setup reaches 18 / 22
+// bars first, the 13 turns into 'R' and no longer counts for 9-13-9.
+var int buyWatchStart = na
+var int sellWatchStart = na
+var label buyWatchLabel = na
+var label sellWatchLabel = na
+if bullishFlip
+    buyWatchStart := na
+if bearishFlip
+    sellWatchStart := na
+if buyThirteen
+    buyWatchStart := buyThirteenStart
+    buyWatchLabel := buyThirteenLabel
+if sellThirteen
+    sellWatchStart := sellThirteenStart
+    sellWatchLabel := sellThirteenLabel
+buyThirteenRecycled = recycleOn and not na(buyWatchStart) and buySetup == recycleCount and laterRunStart > buyWatchStart
+sellThirteenRecycled = recycleOn and not na(sellWatchStart) and sellSetup == recycleCount and laterRunStart > sellWatchStart
+recycledTip(side, flip) => side + ' countdown 13 recycled (R): a later ' + str.lower(side) + ' setup reached ' + str.tostring(recycleCount) + ' bars before a ' + flip + ' price flip'
+if buyThirteenRecycled
+    buyWatchStart := na
+    if not na(buyWatchLabel)
+        label.set_text(buyWatchLabel, str.replace(label.get_text(buyWatchLabel), '13', 'R'))
+        label.set_tooltip(buyWatchLabel, recycledTip('Buy', 'bullish'))
+if sellThirteenRecycled
+    sellWatchStart := na
+    if not na(sellWatchLabel)
+        label.set_text(sellWatchLabel, str.replace(label.get_text(sellWatchLabel), '13', 'R'))
+        label.set_tooltip(sellWatchLabel, recycledTip('Sell', 'bearish'))
+
+// An 'R' marks a running countdown recycled by a later setup's length, past what this bar already shows.
+if showCountdown and buyRecycledByCount
+    countLabel(true, paddedText(true, 'R', buyThirteen ? linesPastThirteen : linesPastCountdownRow), buyCountdownTextColor, 12, 'Buy countdown recycled (R): a later buy setup reached ' + str.tostring(recycleCount) + ' bars' + buyContinueNote)
+if showCountdown and sellRecycledByCount
+    countLabel(false, paddedText(false, 'R', sellThirteen ? linesPastThirteen : linesPastCountdownRow), sellCountdownTextColor, 12, 'Sell countdown recycled (R): a later sell setup reached ' + str.tostring(recycleCount) + ' bars' + sellContinueNote)
+
+// 9-13-9 bookkeeping: a recycled 13 no longer counts.
+if buyNineThirteenNine or sellSetupDone or buyThirteenRecycled
+    lastBuyThirteenBar := na
+if sellNineThirteenNine or buySetupDone or sellThirteenRecycled
+    lastSellThirteenBar := na
+if buyThirteen and not buyThirteenRecycled
+    lastBuyThirteenBar := bar_index
+    buyFlipAfterThirteen := false
+if sellThirteen and not sellThirteenRecycled
+    lastSellThirteenBar := bar_index
+    sellFlipAfterThirteen := false
 
 // On a 9 bar the countdown mark is a label drawn past the 9.
-if showCountdown and buyNineShown and buyCountdownBar
-    if buyCountdownDone
-        buyThirteenOnNine = countLabel(true, paddedText(true, '13', lines13PastBigNine), buyThirteenColor, thirteenSize, buyThirteenTip)
-        label.set_text_formatting(buyThirteenOnNine, text.format_bold)
-    else
-        buyMarkText = buyCountdownDeferred ? '+' : str.tostring(buyCountdown)
-        buyMarkOnNine = countLabel(true, paddedText(true, buyMarkText, linesPastBigNine), buyCountdownTextColor, 12, 'Buy countdown ' + buyMarkText)
-if showCountdown and sellNineShown and sellCountdownBar
-    if sellCountdownDone
-        sellThirteenOnNine = countLabel(false, paddedText(false, '13', lines13PastBigNine), sellThirteenColor, thirteenSize, sellThirteenTip)
-        label.set_text_formatting(sellThirteenOnNine, text.format_bold)
-    else
-        sellMarkText = sellCountdownDeferred ? '+' : str.tostring(sellCountdown)
-        sellMarkOnNine = countLabel(false, paddedText(false, sellMarkText, linesPastBigNine), sellCountdownTextColor, 12, 'Sell countdown ' + sellMarkText)
-
-// The risk level is drawn for the bars after the 13 in which a reversal is expected.
-if showRisk and buyCountdownDone
-    line.new(bar_index, buyRiskLevel, bar_index + riskBars, buyRiskLevel, color=buyThirteenColor, style=line.style_dotted)
-if showRisk and sellCountdownDone
-    line.new(bar_index, sellRiskLevel, bar_index + riskBars, sellRiskLevel, color=sellThirteenColor, style=line.style_dotted)
+if showCountdown and buyNineShown and buyCountdownBar and not buyCountdownDone
+    buyMarkText = buyCountdownDeferred ? '+' : str.tostring(buyCount)
+    countLabel(true, paddedText(true, buyMarkText, linesPastBigNine), buyCountdownTextColor, 12, 'Buy countdown ' + buyMarkText)
+if showCountdown and sellNineShown and sellCountdownBar and not sellCountdownDone
+    sellMarkText = sellCountdownDeferred ? '+' : str.tostring(sellCount)
+    countLabel(false, paddedText(false, sellMarkText, linesPastBigNine), sellCountdownTextColor, 12, 'Sell countdown ' + sellMarkText)
 
 // Setup counts 1-8 sit next to the bar and countdown counts 1-12 and '+' one line further out.
 // Below the bar a leading newline is trimmed unless a zero-width space comes first (Pine manual, plotshape() text),
@@ -462,8 +664,11 @@ if showRisk and sellCountdownDone
 buySetupMark = showSetup and buySetup >= setupFrom and buySetup < 9 ? buySetup : 0
 sellSetupMark = showSetup and sellSetup >= setupFrom and sellSetup < 9 ? sellSetup : 0
 // Countdown number drawn on this bar: 1-12, 14 for '+', 0 for none (13 and any mark on a 9 bar are labels).
-buyCountdownMark = showCountdown and buyCountdownBar and not buyCountdownDone and not buyNineShown ? (buyCountdownDeferred ? 14 : buyCountdown) : 0
-sellCountdownMark = showCountdown and sellCountdownBar and not sellCountdownDone and not sellNineShown ? (sellCountdownDeferred ? 14 : sellCountdown) : 0
+buyCountdownMark = showCountdown and buyCountdownBar and not buyCountdownDone and not buyNineShown ? (buyCountdownDeferred ? 14 : buyCount) : 0
+sellCountdownMark = showCountdown and sellCountdownBar and not sellCountdownDone and not sellNineShown ? (sellCountdownDeferred ? 14 : sellCount) : 0
+
+buyRowMark := showCountdown and buyThirteen ? (buyThirteenPastCount ? 3 : 2) : showCountdown and buyCountdownBar ? 1 : 0
+sellRowMark := showCountdown and sellThirteen ? (sellThirteenPastCount ? 3 : 2) : showCountdown and sellCountdownBar ? 1 : 0
 
 plotshape(buySetupMark == 1, 'Buy setup 1', location=location.belowbar, color=na, text='1', textcolor=buySetupTextColor, size=size.tiny, editable=false, display=display.pane)
 plotshape(buySetupMark == 2, 'Buy setup 2', location=location.belowbar, color=na, text='2', textcolor=buySetupTextColor, size=size.tiny, editable=false, display=display.pane)
@@ -514,17 +719,21 @@ plotshape(showLatePerfection and sellLatePerfection, 'Sell setup perfected later
 // ---- Data window and alerts
 plot(buySetup > 0 ? buySetup : na, 'Buy setup count', buySetupTextColor, display=display.data_window, precision=0)
 plot(sellSetup > 0 ? sellSetup : na, 'Sell setup count', sellSetupTextColor, display=display.data_window, precision=0)
-plot(buyCountdownActive or buyCountdownDone ? buyCountdown : na, 'Buy countdown count', buyCountdownTextColor, display=display.data_window, precision=0)
-plot(sellCountdownActive or sellCountdownDone ? sellCountdown : na, 'Sell countdown count', sellCountdownTextColor, display=display.data_window, precision=0)
+plot(buyRunning ? buyCount : na, 'Buy countdown count', buyCountdownTextColor, display=display.data_window, precision=0)
+plot(sellRunning ? sellCount : na, 'Sell countdown count', sellCountdownTextColor, display=display.data_window, precision=0)
 
 // Alerts fire only on closed bars. On an open bar the close is still moving, so a 9 or a 13 can appear and vanish.
+buyRecycled = buyRecycledByCount or buyRecycledBySize or buyThirteenRecycled
+sellRecycled = sellRecycledByCount or sellRecycledBySize or sellThirteenRecycled
 alertcondition(buySetupDone and barstate.isconfirmed, 'Buy setup 9', 'TD Sequential: buy setup 9 on {{ticker}} ({{interval}})')
 alertcondition(sellSetupDone and barstate.isconfirmed, 'Sell setup 9', 'TD Sequential: sell setup 9 on {{ticker}} ({{interval}})')
-alertcondition(buyCountdownDone and barstate.isconfirmed, 'Buy countdown 13', 'TD Sequential: buy countdown 13 on {{ticker}} ({{interval}})')
-alertcondition(sellCountdownDone and barstate.isconfirmed, 'Sell countdown 13', 'TD Sequential: sell countdown 13 on {{ticker}} ({{interval}})')
+alertcondition(buyThirteen and barstate.isconfirmed, 'Buy countdown 13', 'TD Sequential: buy countdown 13 on {{ticker}} ({{interval}})')
+alertcondition(sellThirteen and barstate.isconfirmed, 'Sell countdown 13', 'TD Sequential: sell countdown 13 on {{ticker}} ({{interval}})')
 alertcondition(buyNineThirteenNine and barstate.isconfirmed, 'Buy 9-13-9', 'TD Sequential: buy 9-13-9 on {{ticker}} ({{interval}})')
 alertcondition(sellNineThirteenNine and barstate.isconfirmed, 'Sell 9-13-9', 'TD Sequential: sell 9-13-9 on {{ticker}} ({{interval}})')
 alertcondition(buyLatePerfection and barstate.isconfirmed, 'Buy setup perfected later', 'TD Sequential: buy setup perfected after bar 9 on {{ticker}} ({{interval}})')
 alertcondition(sellLatePerfection and barstate.isconfirmed, 'Sell setup perfected later', 'TD Sequential: sell setup perfected after bar 9 on {{ticker}} ({{interval}})')
 alertcondition(buyCountdownCancelled and barstate.isconfirmed, 'Buy countdown cancelled', 'TD Sequential: buy countdown cancelled on {{ticker}} ({{interval}})')
 alertcondition(sellCountdownCancelled and barstate.isconfirmed, 'Sell countdown cancelled', 'TD Sequential: sell countdown cancelled on {{ticker}} ({{interval}})')
+alertcondition(buyRecycled and barstate.isconfirmed, 'Buy countdown recycled', 'TD Sequential: buy countdown recycled on {{ticker}} ({{interval}})')
+alertcondition(sellRecycled and barstate.isconfirmed, 'Sell countdown recycled', 'TD Sequential: sell countdown recycled on {{ticker}} ({{interval}})')
