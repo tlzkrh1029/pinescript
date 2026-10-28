@@ -338,7 +338,7 @@ stepCountdown(Countdown cd, bool buy) =>
     [counted, done, deferred]
 
 // Whether a countdown completes its 13 on this bar, tried on a copy. A completed 13 is never undone (DeMARK: 'Once
-// completed, a 9-13 confirmation is permanent'), so such a countdown is not cancelled or recycled on its last bar.
+// completed, a 9-13 confirmation is permanent'), so such a countdown is not cancelled or size-recycled on its last bar.
 completesNow(Countdown cd, bool buy) =>
     bool result = false
     if cd.active and not tdstBreak(cd, buy)
