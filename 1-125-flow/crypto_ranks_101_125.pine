@@ -14,7 +14,9 @@ momBars = input.int(4, "가속: 최근 몇 봉으로 계산", minval=1, maxval=1
 sortBy = input.string("호스트 대비", "순위표 정렬", options=["호스트 대비", "가속"], display=display.none)
 fixAnchor = input.bool(false, "기준 시각 고정", inline="anchor")
 anchorInput = input.time(timestamp("2026-10-29T00:00:00+09:00"), "", inline="anchor", tooltip="체크했을 때만 쓰입니다. 끄면 화면 왼쪽 끝 봉이 기준입니다. 차트의 세로선을 끌어서 시각을 바꿀 수 있습니다.", display=display.none)
-boardTextSize = input.int(14, "순위표 글자 크기 (pt)", minval=8, maxval=36, display=display.none)
+boardTextSize = input.int(11, "순위표 글자 크기 (pt)", minval=8, maxval=36, display=display.none)
+stackRight = input.bool(true, "네 순위표를 오른쪽에 쌓기", tooltip="1-10위부터 101-125위까지 네 지표의 순위표를 오른쪽 위부터 차례로 쌓습니다. 위치가 맞으려면 네 지표를 모두 차트에 올리고, 글자 크기와 한 묶음 최대 줄 수를 네 지표에서 같게 두어야 합니다. 끄면 '순위표 위치'를 따릅니다. 순위표를 아래 패널로 옮길 때(Move tables to bottom)는 꺼 두세요.", display=display.none)
+rowsPerGroup = input.int(14, "순위표 한 묶음 최대 줄 수", minval=4, maxval=40, tooltip="코인이 이 수보다 많으면 옆으로 묶음을 늘립니다. 줄이면 표가 낮고 넓어집니다.", display=display.none)
 
 // The base is taken on the anchor bar. A fixed time is the moment the base price is read, so the anchor bar is the first bar
 // that closes at or after it: the same time then gives the same base on 15m and 1h charts.
@@ -234,10 +236,38 @@ p125 = request.security("CRYPTO:GRTUSD", timeframe.period, close, gaps=barmerge.
 v125 = f_compare(p125, "GRT", "CRYPTO:GRTUSD", #7622d3)
 plot(v125, title="CRYPTO:GRTUSD", color=#7622d3, linewidth=lineWidth, display=display.pane)
 
-// Up to 20 rows per column group (coin, change vs host since the anchor, last momBars bars vs host); larger groups wrap into a second group.
-var table board = table.new(boardPos, 6, 23, bgcolor=color.new(chart.bg_color, 10))
+// Coin counts of the four tables from top to bottom when they are stacked on the right, so each table can leave room
+// for the tables above it. Every table keeps the full height of its coin count, even when some coins have no data.
+stackCounts = array.from(8, 32, 40, 22)
+stackIndex = 3
+
+f_groups(int count) =>
+    int(math.ceil(count * 1.0 / rowsPerGroup))
+
+f_perCol(int count) =>
+    int(math.ceil(count * 1.0 / f_groups(count)))
+
+int myCount = stackCounts.get(stackIndex)
+int myGroups = f_groups(myCount)
+int myPerCol = f_perCol(myCount)
+// On its own a table shrinks to the coins that have data, so it needs at most this many coin rows.
+int maxPerCol = stackRight ? myPerCol : math.min(myCount, rowsPerGroup)
+// Rows held for the tables above: each has a title row and a column-header row (Korean text) and its coin rows (Latin text).
+int leadHeaderRows = 0
+int leadCoinRows = 0
+if stackRight and stackIndex > 0
+    for j = 0 to stackIndex - 1
+        leadHeaderRows += 2
+        leadCoinRows += f_perCol(stackCounts.get(j))
+// The chart legend is drawn over the top of the pane, so a table at the top starts with a blank row. When stacked, every
+// table reserves that row, so the stack stays aligned.
+bool legendSpacer = stackRight or boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right
+int firstRow = (legendSpacer ? 1 : 0) + leadHeaderRows + leadCoinRows
+var table board = table.new(stackRight ? position.top_right : boardPos, 3 * myGroups, firstRow + 2 + maxPerCol)
+color cellBg = color.new(chart.bg_color, 10)
+color clear = color.new(chart.bg_color, 100)
 if barstate.islast
-    board.clear(0, 0, 5, 22)
+    board.clear(0, 0, 3 * myGroups - 1, firstRow + 1 + maxPerCol)
     int n = rets.size()
     if n > 0
         array<float> keys = array.new<float>()
@@ -252,28 +282,47 @@ if barstate.islast
                     // When scrolled back, the rightmost visible bar touches the price scale, so point the label inward.
                     tags.push(label.new(chart.right_visible_bar_time, ys.get(i), tickers.get(i) + " " + str.tostring(rets.get(i), "#.##") + "%" + sinces.get(i), xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=ink, textcolor=f_textColor(ink), size=size.small, tooltip=tips.get(i)))
         if showBoard
+            int useGroups = stackRight ? myGroups : f_groups(n)
+            int usePerCol = stackRight ? myPerCol : f_perCol(n)
             int beat = 0
             int peers = 0
             for [i, v] in vsHost
                 if not selfs.get(i)
                     peers += 1
                     beat += v > 0 ? 1 : 0
-            // The chart legend is drawn over the top of the pane, so a table placed there starts with a blank row.
-            int top = boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right ? 1 : 0
-            if top == 1
+            if legendSpacer
                 board.cell(0, 0, " ", text_size=size.normal)
-            int perCol = n > 20 ? int(math.ceil(n / 2.0)) : n
-            board.cell(0, top, "101-125위", text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_left)
-            board.cell(1, top, "강함 " + str.tostring(beat) + "/" + str.tostring(peers), text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip="기준 시각 이후 호스트보다 많이 오른 코인 수입니다. 호스트와 같은 코인은 세지 않습니다.")
-            board.cell(2, top, "호스트 " + f_pct(na(hostBase) ? na : (hostLast / hostBase - 1) * 100), text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip="호스트 차트의 기준 시각 이후 등락률입니다.")
-            for g = 0 to (n > 20 ? 1 : 0)
-                board.cell(g * 3, top + 1, "코인", text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_left)
-                board.cell(g * 3 + 1, top + 1, "호스트 대비", text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right)
-                board.cell(g * 3 + 2, top + 1, str.tostring(momBars) + "봉", text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right)
+            // Invisible rows in place of the tables above. They carry the same kind of text as the rows they stand for, in a
+            // transparent colour, so their heights match those rows exactly.
+            int leadRows = leadHeaderRows + leadCoinRows
+            if leadRows > 0
+                for j = 0 to leadRows - 1
+                    board.cell(0, firstRow - leadRows + j, j < leadHeaderRows ? "코인" : "+0.00%", text_color=clear, text_size=boardTextSize)
+            board.cell(0, firstRow, "101-125위", bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_left)
+            board.cell(1, firstRow, "강함 " + str.tostring(beat) + "/" + str.tostring(peers), bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip="기준 시각 이후 호스트보다 많이 오른 코인 수입니다. 호스트와 같은 코인은 세지 않습니다.")
+            board.cell(2, firstRow, "호스트 " + f_pct(na(hostBase) ? na : (hostLast / hostBase - 1) * 100), bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip="호스트 차트의 기준 시각 이후 등락률입니다.")
+            // Paint the rest of the title row too, so no see-through strip is left above the other column groups.
+            if useGroups > 1
+                for c = 3 to 3 * useGroups - 1
+                    board.cell(c, firstRow, "", bgcolor=cellBg, text_size=boardTextSize)
+            for g = 0 to useGroups - 1
+                board.cell(g * 3, firstRow + 1, "코인", bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_left)
+                board.cell(g * 3 + 1, firstRow + 1, "호스트 대비", bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right)
+                board.cell(g * 3 + 2, firstRow + 1, str.tostring(momBars) + "봉", bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right)
             for [k, i] in idx
-                int c = k < perCol ? 0 : 3
-                int r = top + 2 + k % perCol
-                color ink = inks.get(i)
-                board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=boardTextSize, text_halign=text.align_left, tooltip=tips.get(i))
-                board.cell(c + 1, r, f_pct(vsHost.get(i)), text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip=tips.get(i))
-                board.cell(c + 2, r, f_pct(moms.get(i)), text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip=tips.get(i))
+                if k < useGroups * usePerCol
+                    int c = int(math.floor(k / usePerCol)) * 3
+                    int r = firstRow + 2 + k % usePerCol
+                    color ink = inks.get(i)
+                    board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=boardTextSize, text_halign=text.align_left, tooltip=tips.get(i))
+                    board.cell(c + 1, r, f_pct(vsHost.get(i)), bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip=tips.get(i))
+                    board.cell(c + 2, r, f_pct(moms.get(i)), bgcolor=cellBg, text_color=chart.fg_color, text_size=boardTextSize, text_halign=text.align_right, tooltip=tips.get(i))
+            // Fill the empty coin slots with the table background. When stacked they also keep the table at its full height
+            // when some coins have no data, so the table below does not overlap this one.
+            if n < useGroups * usePerCol
+                for k = n to useGroups * usePerCol - 1
+                    int c = int(math.floor(k / usePerCol)) * 3
+                    int r = firstRow + 2 + k % usePerCol
+                    board.cell(c, r, "+0.00%", bgcolor=cellBg, text_color=clear, text_size=boardTextSize)
+                    board.cell(c + 1, r, "", bgcolor=cellBg, text_size=boardTextSize)
+                    board.cell(c + 2, r, "", bgcolor=cellBg, text_size=boardTextSize)
