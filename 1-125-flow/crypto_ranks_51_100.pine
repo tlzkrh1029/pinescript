@@ -1,24 +1,68 @@
 //@version=6
 // Original TOP1000 rank snapshot, 2026-09-21. Membership does not rerank automatically.
 // Excludes stablecoins, gold-backed tokens, PI/JST/FLR/NEXO/GNO/FF/SUN/GT.
-// Shared chart scale: each line starts at the host close of the bar where its base price is taken (the leftmost visible bar).
-// A coin whose data starts inside the visible range is based at its first bar instead and marked with "*" and "since <date>".
+// Shared chart scale: each line starts at the host close of the bar where its base price is taken (the anchor: the leftmost visible bar, or a fixed time).
+// A coin whose data starts after the anchor is based at its first bar instead and marked with "*" and "since <date>".
+// "vs host" compares a coin with the host chart's own move over the same bars; on a BTC chart that is the move against BTC.
 indicator("Crypto Ranks 51-100 (40)", shorttitle="51-100위 · 40개", overlay=true, max_labels_count=100)
 showLabels = input.bool(false, "코인 이름과 등락률 표시")
 lineWidth = input.int(1, "선 두께", minval=1, maxval=4)
 showBoard = input.bool(true, "등락률 순위표 표시")
-boardPos = input.string(position.bottom_left, "순위표 위치", options=[position.top_left, position.top_center, position.top_right, position.middle_left, position.middle_right, position.bottom_left, position.bottom_center, position.bottom_right])
+boardPos = input.string(position.bottom_left, "순위표 위치", options=[position.top_left, position.top_center, position.top_right, position.middle_left, position.middle_right, position.bottom_left, position.bottom_center, position.bottom_right], display=display.none)
+labelCount = input.int(5, "라벨: 상위·하위 몇 개씩 (0 = 전체)", minval=0, maxval=20, display=display.none)
+momBars = input.int(4, "가속: 최근 몇 봉으로 계산", minval=1, maxval=100, display=display.none)
+sortBy = input.string("호스트 대비", "순위표 정렬", options=["호스트 대비", "가속"], display=display.none)
+fixAnchor = input.bool(false, "기준 시각 고정", inline="anchor")
+anchorInput = input.time(timestamp("2026-10-29T00:00:00+09:00"), "", inline="anchor", tooltip="체크했을 때만 쓰입니다. 끄면 화면 왼쪽 끝 봉이 기준입니다. 차트의 세로선을 끌어서 시각을 바꿀 수 있습니다.", display=display.none)
 
-// Per-coin readouts collected on the last bar and drawn as one table sorted by return.
+// The base is taken on the anchor bar. A fixed time is the moment the base price is read, so the anchor bar is the first bar
+// that closes at or after it: the same time then gives the same base on 15m and 1h charts.
+bool atAnchor = fixAnchor ? time_close >= anchorInput : time >= chart.left_visible_bar_time
+var int anchorBarTime = na
+var int anchorReadTime = na
+var float hostBase = na
+var float hostLast = na
+if na(anchorBarTime) and atAnchor
+    anchorBarTime := time
+    anchorReadTime := time_close
+    hostBase := close
+if time <= chart.right_visible_bar_time and not na(hostBase)
+    hostLast := close
+
+// The host's own coin (BTC on a BTC chart, PEPE on 1000PEPEUSDT.P) only differs from the host by feed noise, so it is left out of the count.
+// A crypto-quoted cross such as ETHBTC measures a real move, so nothing is left out there.
+bool hostQuotedInCoin = str.contains(",BTC,ETH,BNB,SOL,", "," + syminfo.currency + ",")
+f_isHost(string ticker) =>
+    string b = syminfo.basecurrency
+    not hostQuotedInCoin and (b == ticker or b == "1000" + ticker or b == "1000000" + ticker or b == "1M" + ticker or b == "K" + ticker)
+
+// Per-coin readouts collected on the last bar; labels and the table are drawn from them after every coin is known.
 var rets = array.new<float>()
+var vsHost = array.new<float>()
+var moms = array.new<float>()
 var names = array.new<string>()
+var tickers = array.new<string>()
+var sinces = array.new<string>()
 var inks = array.new<color>()
 var tips = array.new<string>()
+var ys = array.new<float>()
+var selfs = array.new<bool>()
+var tags = array.new<label>()
 if barstate.islast
+    // Replace the previous bar's labels so realtime bars do not leave copies behind.
+    for tag in tags
+        label.delete(tag)
+    tags.clear()
     rets.clear()
+    vsHost.clear()
+    moms.clear()
     names.clear()
+    tickers.clear()
+    sinces.clear()
     inks.clear()
     tips.clear()
+    ys.clear()
+    selfs.clear()
 
 // Black or white text, whichever has the higher WCAG contrast on the coin colour.
 f_linear(float channel) =>
@@ -28,42 +72,55 @@ f_linear(float channel) =>
 f_textColor(color ink) =>
     0.2126 * f_linear(color.r(ink)) + 0.7152 * f_linear(color.g(ink)) + 0.0722 * f_linear(color.b(ink)) > 0.179 ? color.black : color.white
 
+f_pct(float value) =>
+    na(value) ? "-" : (value >= 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
+
 f_compare(float price, string ticker, string sym, color ink) =>
     var float coinBase = na
     var float hostAnchor = na
     var int baseTime = na
     var int baseDay = na
+    var int baseRead = na
     var float lastValue = na
     var float lastReturn = na
     var float lastPrice = na
-    var label tag = na
-    if time >= chart.left_visible_bar_time and na(coinBase) and not na(price) and price > 0
+    var float lastHost = na
+    var float lastMom = na
+    if atAnchor and na(coinBase) and not na(price) and price > 0
         coinBase := price
         hostAnchor := close
         baseTime := time
         baseDay := time_tradingday
+        baseRead := time_close
     float change = not na(coinBase) ? (price / coinBase - 1) * 100 : na
     float rebased = not na(hostAnchor) ? hostAnchor * (1 + change / 100) : na
+    // The coin's move over the last momBars bars, relative to the host's own move over the same bars.
+    float mom = (price / price[momBars]) / (close / close[momBars]) * 100 - 100
     if time <= chart.right_visible_bar_time and not na(rebased)
         lastValue := rebased
         lastReturn := change
         lastPrice := price
-    if barstate.islast
-        // Replace the previous bar's label so realtime bars do not leave copies behind.
-        label.delete(tag)
-        if not na(lastValue)
-            bool late = baseTime > chart.left_visible_bar_time
-            // Daily bars of overnight sessions open the evening before the date on the axis, so use the trading day there.
-            string sinceText = timeframe.isintraday ? str.format_time(baseTime, "yyyy-MM-dd HH:mm z") : timeframe.isdaily and timeframe.multiplier == 1 ? str.format_time(baseDay, "yyyy-MM-dd", "UTC") : str.format_time(baseTime, "yyyy-MM-dd")
-            string since = late ? " (since " + sinceText + ")" : ""
-            string tip = sym + " | USD " + str.tostring(lastPrice, lastPrice < 0.001 ? "#.############" : "#.########") + " | " + (late ? "change" + since : "visible-range change") + " " + str.tostring(lastReturn, "#.##") + "%"
-            if showLabels
-                // When scrolled back, the rightmost visible bar touches the price scale, so point the label inward.
-                tag := label.new(chart.right_visible_bar_time, lastValue, ticker + " " + str.tostring(lastReturn, "#.##") + "%" + since, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=ink, textcolor=f_textColor(ink), size=size.small, tooltip=tip)
-            rets.push(lastReturn)
-            names.push(late ? ticker + "*" : ticker)
-            inks.push(ink)
-            tips.push(tip)
+        lastHost := close
+        lastMom := mom
+    if barstate.islast and not na(lastValue)
+        // Late only when the coin had no price on the anchor bar itself.
+        bool late = baseTime > anchorBarTime
+        // Daily bars of overnight sessions open the evening before the date on the axis, so use the trading day there.
+        string sinceText = timeframe.isintraday ? str.format_time(fixAnchor ? baseRead : baseTime, "yyyy-MM-dd HH:mm z") : timeframe.isdaily and timeframe.multiplier == 1 ? str.format_time(baseDay, "yyyy-MM-dd", "UTC") : str.format_time(baseTime, "yyyy-MM-dd")
+        string since = late ? " (since " + sinceText + ")" : ""
+        float vs = (1 + lastReturn / 100) / (lastHost / hostAnchor) * 100 - 100
+        string window = late ? "change" + since : fixAnchor ? "change since " + str.format_time(anchorReadTime, "yyyy-MM-dd HH:mm z") : "visible-range change"
+        string tip = sym + " | USD " + str.tostring(lastPrice, lastPrice < 0.001 ? "#.############" : "#.########") + " | " + window + " " + str.tostring(lastReturn, "#.##") + "% | vs host " + str.tostring(vs, "#.##") + "% | last " + str.tostring(momBars) + " bars vs host " + f_pct(lastMom)
+        rets.push(lastReturn)
+        vsHost.push(vs)
+        moms.push(lastMom)
+        names.push(late ? ticker + "*" : ticker)
+        tickers.push(ticker)
+        sinces.push(since)
+        inks.push(ink)
+        tips.push(tip)
+        ys.push(lastValue)
+        selfs.push(f_isHost(ticker))
     rebased
 
 // Original rank 51: VVV
@@ -266,22 +323,46 @@ p99 = request.security("CRYPTO:NIGHTMIUSD", timeframe.period, close, gaps=barmer
 v99 = f_compare(p99, "NIGHT", "CRYPTO:NIGHTMIUSD", #bf22d3)
 plot(v99, title="CRYPTO:NIGHTMIUSD", color=#bf22d3, linewidth=lineWidth, display=display.pane)
 
-// Up to 20 rows per column pair; larger groups wrap into a second pair.
-var table board = table.new(boardPos, 4, 22, bgcolor=color.new(chart.bg_color, 10))
+// Up to 20 rows per column group (coin, change vs host since the anchor, last momBars bars vs host); larger groups wrap into a second group.
+var table board = table.new(boardPos, 6, 23, bgcolor=color.new(chart.bg_color, 10))
 if barstate.islast
-    board.clear(0, 0, 3, 21)
+    board.clear(0, 0, 5, 22)
     int n = rets.size()
-    if showBoard and n > 0
-        // The chart legend is drawn over the top of the pane, so a table placed there starts with a blank row.
-        int top = boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right ? 1 : 0
-        if top == 1
-            board.cell(0, 0, " ", text_size=size.normal)
-        int perCol = n > 20 ? int(math.ceil(n / 2.0)) : n
-        board.cell(0, top, "51-100위", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_left)
-        for [k, i] in rets.sort_indices(order.descending)
-            int c = k < perCol ? 0 : 2
-            int r = top + 1 + k % perCol
-            float ret = rets.get(i)
-            color ink = inks.get(i)
-            board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=size.small, text_halign=text.align_left, tooltip=tips.get(i))
-            board.cell(c + 1, r, (ret >= 0 ? "+" : "") + str.tostring(ret, "0.00") + "%", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip=tips.get(i))
+    if n > 0
+        array<float> keys = array.new<float>()
+        for i = 0 to n - 1
+            float key = sortBy == "가속" ? moms.get(i) : vsHost.get(i)
+            keys.push(na(key) ? -1e10 : key)
+        idx = keys.sort_indices(order.descending)
+        if showLabels
+            for [k, i] in idx
+                if labelCount == 0 or k < labelCount or k >= n - labelCount
+                    color ink = inks.get(i)
+                    // When scrolled back, the rightmost visible bar touches the price scale, so point the label inward.
+                    tags.push(label.new(chart.right_visible_bar_time, ys.get(i), tickers.get(i) + " " + str.tostring(rets.get(i), "#.##") + "%" + sinces.get(i), xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=ink, textcolor=f_textColor(ink), size=size.small, tooltip=tips.get(i)))
+        if showBoard
+            int beat = 0
+            int peers = 0
+            for [i, v] in vsHost
+                if not selfs.get(i)
+                    peers += 1
+                    beat += v > 0 ? 1 : 0
+            // The chart legend is drawn over the top of the pane, so a table placed there starts with a blank row.
+            int top = boardPos == position.top_left or boardPos == position.top_center or boardPos == position.top_right ? 1 : 0
+            if top == 1
+                board.cell(0, 0, " ", text_size=size.normal)
+            int perCol = n > 20 ? int(math.ceil(n / 2.0)) : n
+            board.cell(0, top, "51-100위", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_left)
+            board.cell(1, top, "강함 " + str.tostring(beat) + "/" + str.tostring(peers), text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip="기준 시각 이후 호스트보다 많이 오른 코인 수입니다. 호스트와 같은 코인은 세지 않습니다.")
+            board.cell(2, top, "호스트 " + f_pct(na(hostBase) ? na : (hostLast / hostBase - 1) * 100), text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip="호스트 차트의 기준 시각 이후 등락률입니다.")
+            for g = 0 to (n > 20 ? 1 : 0)
+                board.cell(g * 3, top + 1, "코인", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_left)
+                board.cell(g * 3 + 1, top + 1, "호스트 대비", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right)
+                board.cell(g * 3 + 2, top + 1, str.tostring(momBars) + "봉", text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right)
+            for [k, i] in idx
+                int c = k < perCol ? 0 : 3
+                int r = top + 2 + k % perCol
+                color ink = inks.get(i)
+                board.cell(c, r, names.get(i), bgcolor=ink, text_color=f_textColor(ink), text_size=size.small, text_halign=text.align_left, tooltip=tips.get(i))
+                board.cell(c + 1, r, f_pct(vsHost.get(i)), text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip=tips.get(i))
+                board.cell(c + 2, r, f_pct(moms.get(i)), text_color=chart.fg_color, text_size=size.small, text_halign=text.align_right, tooltip=tips.get(i))
