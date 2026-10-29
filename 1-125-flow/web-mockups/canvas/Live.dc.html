@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>순위·선 비교</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0d0d0d; }
+    body { color: #f0efec; font-family: "IBM Plex Sans KR", system-ui, sans-serif; font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .small { font-size: 12px; line-height: 18px; }
+    .muted { color: #898781; }
+    .sec { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec; }
+    .card { background: #1a1a19; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 24px; box-sizing: border-box; }
+    .tab { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: #c3c2b7; text-decoration: none; border-bottom: 2px solid transparent; font-size: 14px; line-height: 22px; white-space: nowrap; }
+    .tab:hover { color: #f0efec; }
+    .tab[aria-current="page"] { color: #f0efec; font-weight: 600; border-bottom-color: #3987e5; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: transparent; color: #c3c2b7; font-family: inherit; font-size: 14px; line-height: 22px; cursor: pointer; box-sizing: border-box; white-space: nowrap; }
+    .chip:hover { background: #222220; color: #f0efec; }
+    .chip[aria-pressed="true"] { border-color: #3987e5; background: rgba(57,135,229,0.16); color: #f0efec; }
+    .chip[aria-expanded="true"] { border-color: rgba(240,239,236,0.32); background: #222220; color: #f0efec; }
+    .chip-static, .chip-static:hover { cursor: default; background: transparent; color: #c3c2b7; }
+    .chip-n { font-size: 12px; line-height: 18px; color: #898781; }
+    .chip[aria-pressed="true"] .chip-n, .chip:hover .chip-n { color: #c3c2b7; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #3987e5; outline-offset: 2px; }
+    a { color: #6da7ec; text-underline-offset: 2px; }
+    a:hover { color: #f0efec; }
+    .live { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid rgba(255,255,255,0.10); border-radius: 999px; font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; box-sizing: border-box; }
+    .live-dot { display: block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #3987e5; }
+    .dt { min-height: 44px; padding: 0 12px; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; background: #222220; color: #f0efec; font-size: 14px; line-height: 22px; color-scheme: dark; box-sizing: border-box; }
+    .yt { position: absolute; left: 0; width: 44px; text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; color: #c3c2b7; pointer-events: none; z-index: 1; }
+    .yt-zero { color: #f0efec; font-weight: 500; }
+    .xt { position: absolute; top: 502px; width: 60px; text-align: center; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; color: #c3c2b7; pointer-events: none; z-index: 1; }
+    .xt-start { text-align: left; color: #f0efec; }
+    .xt-end { text-align: right; color: #f0efec; }
+    .elab { position: absolute; left: 618px; height: 18px; display: flex; align-items: center; gap: 6px; padding: 0 5px; border: 1px solid transparent; border-radius: 4px; background: rgba(26,26,25,0.86); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; z-index: 4; box-sizing: border-box; }
+    .elab-pin { border-color: rgba(240,239,236,0.40); }
+    .et { color: #f0efec; font-weight: 500; }
+    .ev { color: #c3c2b7; }
+    .ovl { position: absolute; left: 0; top: 0; width: 768px; height: 532px; z-index: 6; }
+    .note { position: absolute; left: 151px; top: 28px; width: 340px; box-sizing: border-box; padding: 12px 14px; background: #222220; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; color: #f0efec; pointer-events: none; z-index: 3; }
+    .tip { position: absolute; width: 256px; box-sizing: border-box; padding: 12px 14px; background: #222220; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; pointer-events: none; z-index: 8; }
+    .tiprow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 22px; }
+    .tipk { font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .tipv { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; font-weight: 500; color: #f0efec; }
+    .tipv-s { font-size: 14px; font-weight: 600; }
+    .lg { display: inline-flex; align-items: center; gap: 8px; color: #c3c2b7; }
+    .lscroll { max-height: 720px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; }
+    .lgrid { display: grid; grid-template-columns: 26px minmax(0, 1fr) 56px 60px 48px; align-items: center; column-gap: 6px; padding: 0 8px; box-sizing: border-box; width: 100%; }
+    .lhead { position: sticky; top: 0; z-index: 2; min-height: 32px; background: #222220; font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .lh-on { color: #f0efec; font-weight: 600; }
+    .lref { position: sticky; top: 32px; z-index: 2; min-height: 48px; background: #1a1a19; border-bottom: 1px solid #383835; }
+    .lrow { min-height: 44px; margin: 0; border: 0; border-top: 1px solid #2c2c2a; background: transparent; color: #f0efec; font-family: inherit; font-size: 14px; line-height: 22px; text-align: left; cursor: pointer; }
+    .lrow:hover, .lrow-hov { background: #222220; }
+    .lrow[aria-pressed="true"] { background: rgba(57,135,229,0.16); }
+    .lrow[aria-pressed="true"]:hover, .lrow[aria-pressed="true"].lrow-hov { background: rgba(57,135,229,0.24); }
+    .lrow:focus-visible { outline: 2px solid #3987e5; outline-offset: -2px; }
+    .lpos { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; line-height: 18px; color: #c3c2b7; text-align: right; }
+    .lref .lpos { font-family: inherit; }
+    .lcoin { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+    .ltick { max-width: 100%; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; line-height: 18px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lrow[aria-pressed="true"] .ltick { color: #f0efec; font-weight: 600; }
+    .tag { display: block; padding: 0 4px; border: 1px solid rgba(255,255,255,0.10); border-radius: 4px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; line-height: 14px; color: #c3c2b7; white-space: nowrap; }
+    .lv { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; color: #f0efec; text-align: right; white-space: nowrap; }
+    .l1 { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; line-height: 18px; color: #c3c2b7; text-align: right; white-space: nowrap; }
+    .spark { display: block; }
+    .thead, .trow { display: grid; grid-template-columns: 44px 104px minmax(140px, 1fr) repeat(7, 64px) 76px 92px; align-items: center; column-gap: 8px; padding: 0 12px; min-width: 1016px; box-sizing: border-box; }
+    .thg { position: sticky; top: 0; z-index: 1; }
+    .thead { min-height: 40px; background: #222220; font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .trow { min-height: 40px; border-top: 1px solid #2c2c2a; font-size: 13px; line-height: 20px; color: #f0efec; }
+    .trow-on { background: rgba(57,135,229,0.16); }
+    .trow-ref { background: #222220; }
+    .tname { color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .num { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .ftitle { margin: 0 0 6px; font-size: 12px; line-height: 18px; font-weight: 600; color: #f0efec; }
+    .fblock p { margin: 0 0 6px; }
+  </style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 2.5vw, 32px) 48px; box-sizing: border-box; background: #0d0d0d; color: #f0efec;">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 64px; border-bottom: 1px solid rgba(255,255,255,0.10);">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#f0efec" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M 2 14 A 4 4 0 0 1 6 18"></path>
+        <path d="M 2 10 A 8 8 0 0 1 10 18"></path>
+        <path d="M 2 6 A 12 12 0 0 1 14 18"></path>
+        <path d="M 2 2 A 16 16 0 0 1 18 18"></path>
+      </svg>
+      <span style="font-size: 16px; line-height: 24px; font-weight: 600; white-space: nowrap;">1-125 Flow</span>
+    </div>
+    <nav aria-label="화면" style="display: flex; flex-wrap: wrap; align-self: stretch; gap: 4px;">
+      <a class="tab" href="Live.dc.html" aria-current="page">순위·선 비교</a>
+      <a class="tab" href="Accel.dc.html">가속</a>
+      <a class="tab" href="Mood.dc.html">시장 분위기</a>
+      <a class="tab" href="ShortHeat.dc.html">히트맵</a>
+    </nav>
+    <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+      <span class="chip chip-static">기준 BTC</span>
+      <span class="small" style="color: #c3c2b7; white-space: nowrap;">{{ui.asof}} KST 스냅숏</span>
+      <span class="live"><span class="live-dot" aria-hidden="true"></span>실제 화면은 1분마다 갱신</span>
+    </div>
+  </header>
+
+  <section style="padding: 32px 0 24px; display: flex; flex-direction: column; gap: 8px;">
+    <h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; text-wrap: balance;">{{ui.anchorName}}부터 BTC보다 강한 코인은 {{ui.n}}개 중 {{ui.beat}}개입니다</h1>
+    <p style="margin: 0; max-width: 820px; color: #c3c2b7; text-wrap: pretty;">모든 코인을 기준 시각 {{ui.startLbl}}에 0%로 맞춰 지금까지의 변화를 선으로 그렸으며, 선 끝이 흰 BTC 선보다 위에 있으면 BTC보다 강하고 BTC 선과 같은 모양으로 오르내리면 BTC를 따라 움직인 것입니다.</p>
+  </section>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div role="group" aria-label="기준 시각" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <span class="small muted" style="margin-right: 4px;">기준 시각</span>
+      <sc-for list="{{anchors}}" as="c" hint-placeholder-count="4">
+        <button type="button" class="chip" aria-pressed="{{c.on}}" onClick="{{c.pick}}">{{c.label}}<span class="mono chip-n">· {{c.sub}}</span></button>
+      </sc-for>
+      <button type="button" class="chip" aria-expanded="{{ui.custom}}" onClick="{{toggleCustom}}">직접 지정</button>
+    </div>
+    <sc-if value="{{ui.custom}}" hint-placeholder-val="{{ false }}">
+      <div class="card" style="padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;">
+        <label for="anchor-custom" style="font-weight: 500; color: #f0efec;">기준 시각 직접 지정</label>
+        <input id="anchor-custom" class="dt mono" type="datetime-local" value="{{ui.customVal}}" min="{{ui.customMin}}" max="{{ui.customMax}}" step="300" onChange="{{setCustom}}">
+        <p class="small" style="margin: 0; flex: 1 1 320px; color: #c3c2b7;">시안에서는 미리 계산한 기준 시각만 동작합니다. 실제 화면에서는 원하는 시각을 고를 수 있습니다.</p>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+
+    <section class="card" aria-labelledby="line-title" style="flex: 999 1 760px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 320px;">
+          <h2 id="line-title" class="sec">기준 시각 이후 변화율</h2>
+          <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.chartSub}}</p>
+        </div>
+        <button type="button" class="chip" onClick="{{toggleTable}}"><sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">표로 보기</sc-if><sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">그래프로 보기</sc-if></button>
+      </div>
+
+      <sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">
+        <div role="group" aria-label="강조" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <span class="small muted" style="margin-right: 4px;">강조</span>
+          <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+            <button type="button" class="chip" aria-pressed="{{m.on}}" onClick="{{m.pick}}">{{m.label}}<sc-if value="{{m.hasN}}" hint-placeholder-val="{{ false }}"><span class="mono chip-n">{{m.n}}</span></sc-if></button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ui.isTier}}" hint-placeholder-val="{{ false }}">
+          <div role="group" aria-label="순위 구간" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+            <span class="small muted" style="margin-right: 4px;">순위 구간</span>
+            <sc-for list="{{tiers}}" as="tc" hint-placeholder-count="4">
+              <button type="button" class="chip" aria-pressed="{{tc.on}}" onClick="{{tc.pick}}">{{tc.label}}<span class="mono chip-n">{{tc.n}}</span></button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div class="small" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px;">
+            <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#f0efec" stroke-width="2.5" stroke-linecap="round"></line></svg>BTC 기준선</span>
+            <sc-if value="{{ui.isExt}}" hint-placeholder-val="{{ true }}">
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#3987e5" stroke-width="2" stroke-linecap="round"></line></svg>BTC 대비 상위 5개</span>
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#e66767" stroke-width="2" stroke-linecap="round"></line></svg>BTC 대비 하위 5개</span>
+            </sc-if>
+            <sc-if value="{{ui.isTier}}" hint-placeholder-val="{{ false }}">
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#3987e5" stroke-width="2" stroke-linecap="round"></line></svg>{{ui.tierName}} 코인 {{ui.tierN}}개</span>
+            </sc-if>
+            <sc-if value="{{ui.isPin}}" hint-placeholder-val="{{ false }}">
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#3987e5" stroke-width="2" stroke-linecap="round"></line></svg>고정한 코인 중 BTC보다 강한 코인</span>
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#e66767" stroke-width="2" stroke-linecap="round"></line></svg>고정한 코인 중 BTC보다 약한 코인</span>
+            </sc-if>
+            <sc-if value="{{ui.showPinKey}}" hint-placeholder-val="{{ false }}">
+              <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="11" y2="5" stroke="#3987e5" stroke-width="2" stroke-linecap="round"></line><line x1="13" y1="5" x2="22" y2="5" stroke="#e66767" stroke-width="2" stroke-linecap="round"></line></svg>고정한 코인 (BTC보다 강하면 파랑, 약하면 빨강)</span>
+            </sc-if>
+            <span class="lg"><svg width="24" height="10" viewBox="0 0 24 10" aria-hidden="true"><line x1="2" y1="5" x2="22" y2="5" stroke="#6b6a65" stroke-width="1" stroke-linecap="round"></line></svg>나머지 코인 {{ui.ctxN}}개</span>
+          </div>
+          <p class="small" style="margin: 0; color: #c3c2b7;">오른쪽 끝 라벨의 숫자는 기준 시각 이후 BTC 대비 값입니다. 선 위를 가리키면 그 시각의 값이 보이고, 누르면 고정됩니다.</p>
+        </div>
+
+        <div style="overflow-x: auto; overflow-y: hidden;">
+          <div style="width: 768px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="small" style="position: relative; height: 18px; color: #c3c2b7;">
+              <span style="position: absolute; left: 4px; top: 0; white-space: nowrap;">↑ 기준 시각 이후 변화율 (%)</span>
+              <span style="position: absolute; left: 618px; top: 0; white-space: nowrap;">라벨 숫자: BTC 대비</span>
+            </div>
+            <div style="position: relative; width: 768px; height: 532px;" role="img" aria-label="{{ui.chartAria}}">
+              <svg width="768" height="532" viewBox="0 0 768 532" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block; pointer-events: none;">
+                <path d="{{g.grid}}" fill="none" stroke="#2c2c2a" stroke-width="1"></path>
+                <path d="{{g.zero}}" fill="none" stroke="#55544f" stroke-width="1.5"></path>
+                <path d="{{g.ctx}}" fill="none" stroke="#6b6a65" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.ctxOp}}"></path>
+                <path d="{{g.emAll}}" fill="none" stroke="#1a1a19" stroke-width="{{g.emHalo}}" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.emOp}}"></path>
+                <path d="{{g.emUp}}" fill="none" stroke="#3987e5" stroke-width="{{g.emW}}" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.emOp}}"></path>
+                <path d="{{g.emDown}}" fill="none" stroke="#e66767" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.emOp}}"></path>
+                <path d="{{g.pinAll}}" fill="none" stroke="#1a1a19" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.pinOp}}"></path>
+                <path d="{{g.pinUp}}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.pinOp}}"></path>
+                <path d="{{g.pinDown}}" fill="none" stroke="#e66767" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{g.pinOp}}"></path>
+                <path d="{{g.btc}}" fill="none" stroke="#1a1a19" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"></path>
+                <path d="{{g.btc}}" fill="none" stroke="#f0efec" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+                <path d="{{g.ldUp}}" fill="none" stroke="#3987e5" stroke-width="1" stroke-linejoin="round" opacity="{{g.ldOp}}"></path>
+                <path d="{{g.ldDown}}" fill="none" stroke="#e66767" stroke-width="1" stroke-linejoin="round" opacity="{{g.ldOp}}"></path>
+                <path d="{{g.ldInk}}" fill="none" stroke="#c3c2b7" stroke-width="1" stroke-linejoin="round" opacity="{{g.ldOp}}"></path>
+                <path d="{{g.ring}}" fill="none" stroke="#1a1a19" stroke-width="12" stroke-linecap="round"></path>
+                <path d="{{g.dotUp}}" fill="none" stroke="#3987e5" stroke-width="8" stroke-linecap="round" opacity="{{g.ldOp}}"></path>
+                <path d="{{g.dotDown}}" fill="none" stroke="#e66767" stroke-width="8" stroke-linecap="round" opacity="{{g.ldOp}}"></path>
+                <path d="{{g.dotInk}}" fill="none" stroke="#f0efec" stroke-width="8" stroke-linecap="round"></path>
+                <line x1="{{g.cx}}" y1="14" x2="{{g.cx}}" y2="494" stroke="#898781" stroke-width="1" opacity="{{g.cxOp}}"></line>
+                <path d="{{g.hovD}}" fill="none" stroke="#1a1a19" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"></path>
+                <path d="{{g.hovD}}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                <path d="{{g.hovRing}}" fill="none" stroke="#1a1a19" stroke-width="14" stroke-linecap="round"></path>
+                <path d="{{g.hovDotB}}" fill="none" stroke="#f0efec" stroke-width="10" stroke-linecap="round"></path>
+                <path d="{{g.hovDot}}" fill="none" stroke="{{g.hovC}}" stroke-width="10" stroke-linecap="round"></path>
+              </svg>
+
+              <sc-for list="{{yticks}}" as="yt" hint-placeholder-count="12">
+                <div class="{{yt.cls}}" style="top: {{yt.top}}px;" aria-hidden="true">{{yt.t}}</div>
+              </sc-for>
+              <sc-for list="{{xticks}}" as="xt" hint-placeholder-count="7">
+                <div class="{{xt.cls}}" style="left: {{xt.l}}px;" aria-hidden="true">{{xt.t}}</div>
+              </sc-for>
+              <sc-for list="{{labels}}" as="lb" hint-placeholder-count="11">
+                <div class="{{lb.cls}}" style="top: {{lb.top}}px; opacity: {{lb.o}};" aria-hidden="true"><span class="et">{{lb.t}}</span><sc-if value="{{lb.hasV}}" hint-placeholder-val="{{ true }}"><span class="ev">{{lb.v}}</span></sc-if></div>
+              </sc-for>
+
+              <sc-if value="{{ui.pinEmpty}}" hint-placeholder-val="{{ false }}">
+                <div class="note">아직 고정한 코인이 없습니다. 오른쪽 목록의 줄이나 그래프의 선을 누르면 최대 3개까지 고정됩니다.</div>
+              </sc-if>
+
+              <div class="ovl" style="cursor: {{ui.cursor}};" aria-hidden="true" onMouseMove="{{ovMove}}" onMouseLeave="{{ovLeave}}" onClick="{{ovTap}}"></div>
+
+              <sc-if value="{{ui.hasTip}}" hint-placeholder-val="{{ false }}">
+                <div class="tip" style="left: {{tip.l}}px; top: {{tip.t}}px;" aria-hidden="true">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                      <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" style="flex: none;"><line x1="1" y1="5" x2="15" y2="5" stroke="{{tip.c}}" stroke-width="2" stroke-linecap="round"></line></svg>
+                      <span class="mono" style="font-size: 14px; line-height: 22px; font-weight: 500; color: #f0efec;">{{tip.tick}}</span>
+                    </span>
+                    <span class="mono small" style="color: #c3c2b7;">{{tip.rank}}</span>
+                  </div>
+                  <div class="small" style="color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{tip.name}}</div>
+                  <div class="small" style="color: #c3c2b7;">{{tip.sub}}</div>
+                  <div style="margin-top: 8px; display: flex; flex-direction: column;">
+                    <sc-for list="{{tip.kv}}" as="kv" hint-placeholder-count="5">
+                      <div class="tiprow"><span class="tipk">{{kv.k}}</span><span class="tipv {{kv.cls}}">{{kv.v}}</span></div>
+                    </sc-for>
+                  </div>
+                  <div class="small" style="margin-top: 8px; color: #c3c2b7;">{{tip.hint}}</div>
+                </div>
+              </sc-if>
+            </div>
+            <div class="small" style="width: 538px; padding-left: 52px; text-align: right; color: #c3c2b7;">{{ui.xTitle}} →</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <span class="small" style="color: #c3c2b7; margin-right: 4px;">고정한 코인 {{ui.pinN}}/3</span>
+          <sc-for list="{{pinChips}}" as="pc" hint-placeholder-count="2">
+            <button type="button" class="chip" aria-label="{{pc.aria}}" onClick="{{pc.unpin}}"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><line x1="1" y1="5" x2="15" y2="5" stroke="{{pc.c}}" stroke-width="2" stroke-linecap="round"></line></svg><span class="mono" style="color: #f0efec;">{{pc.t}}</span><span class="chip-n">해제</span></button>
+          </sc-for>
+          <sc-if value="{{ui.hasPins}}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="chip" onClick="{{clearPins}}">모두 해제</button>
+          </sc-if>
+          <sc-if value="{{ui.noPins}}" hint-placeholder-val="{{ true }}">
+            <span class="small" style="flex: 1 1 360px; color: #c3c2b7;">목록의 줄이나 그래프의 선을 누르면 최대 3개까지 고정됩니다. 네 번째를 누르면 가장 먼저 고정한 코인이 풀립니다.</span>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">
+        <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.tableCap}}</p>
+        <div style="overflow: auto; max-height: 680px; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px;">
+          <div role="table" aria-label="{{ui.tableLabel}}">
+            <div role="rowgroup" class="thg">
+              <div role="row" class="thead">
+                <span role="columnheader" class="num">순위</span>
+                <span role="columnheader">티커</span>
+                <span role="columnheader">이름</span>
+                <sc-for list="{{tcols}}" as="tc" hint-placeholder-count="7">
+                  <span role="columnheader" class="num">{{tc.t}}</span>
+                </sc-for>
+                <span role="columnheader" class="num">BTC 대비</span>
+                <span role="columnheader" class="num">최근 1시간</span>
+              </div>
+            </div>
+            <div role="rowgroup">
+              <sc-for list="{{trows}}" as="tr" hint-placeholder-count="8">
+                <div role="row" class="trow {{tr.cls}}">
+                  <span role="cell" class="num" style="color: #c3c2b7;">{{tr.pos}}</span>
+                  <span role="cell" class="mono" style="font-weight: 500;">{{tr.t}}</span>
+                  <span role="cell" class="tname">{{tr.name}}</span>
+                  <sc-for list="{{tr.cells}}" as="cl" hint-placeholder-count="7">
+                    <span role="cell" class="num">{{cl.v}}</span>
+                  </sc-for>
+                  <span role="cell" class="num" style="font-weight: 500;">{{tr.vs}}</span>
+                  <span role="cell" class="num" style="color: #c3c2b7;">{{tr.l1}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <aside class="card" aria-labelledby="rank-title" style="flex: 1 1 372px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <h2 id="rank-title" class="sec">BTC 대비 순위</h2>
+        <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.listCap}}</p>
+      </div>
+      <div role="group" aria-label="정렬 기준" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <span class="small muted" style="margin-right: 4px;">정렬</span>
+        <sc-for list="{{sorts}}" as="so" hint-placeholder-count="2">
+          <button type="button" class="chip" aria-pressed="{{so.on}}" onClick="{{so.pick}}">{{so.label}}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ui.same}}" hint-placeholder-val="{{ false }}">
+        <p class="small" style="margin: 0; color: #c3c2b7;">기준 시각이 1시간 전이라 기준 이후 열과 1시간 열이 같은 기간을 잽니다.</p>
+      </sc-if>
+      <div class="lscroll">
+        <div class="lgrid lhead" aria-hidden="true">
+          <span class="lpos" style="font-family: inherit;">#</span>
+          <span>코인</span>
+          <span>흐름</span>
+          <span class="{{ui.sinceCls}}" style="text-align: right;">기준 이후</span>
+          <span class="{{ui.l1Cls}}" style="text-align: right;">1시간</span>
+        </div>
+        <div class="lgrid lref" aria-label="{{ui.btcAria}}" role="group">
+          <span class="lpos">기준</span>
+          <span class="lcoin"><span class="ltick">BTC</span><span class="tag">자체 변화</span></span>
+          <svg class="spark" width="56" height="26" viewBox="0 0 56 26" aria-hidden="true"><line x1="0" y1="{{ref.z}}" x2="56" y2="{{ref.z}}" stroke="#383835" stroke-width="1"></line><path d="{{ref.d}}" fill="none" stroke="#c3c2b7" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+          <span class="lv">{{ref.chg}}</span>
+          <span class="l1">{{ref.l1}}</span>
+        </div>
+        <sc-for list="{{list}}" as="lr" hint-placeholder-count="14">
+          <button type="button" class="lgrid lrow {{lr.cls}}" aria-pressed="{{lr.pressed}}" aria-label="{{lr.aria}}" onClick="{{lr.pick}}" onMouseEnter="{{lr.enter}}" onMouseLeave="{{lr.leave}}" onFocus="{{lr.enter}}" onBlur="{{lr.leave}}">
+            <span class="lpos">{{lr.pos}}</span>
+            <span class="lcoin"><span class="ltick">{{lr.t}}</span><span class="tag">{{lr.tier}}</span></span>
+            <svg class="spark" width="56" height="26" viewBox="0 0 56 26" aria-hidden="true"><line x1="0" y1="{{lr.sp.z}}" x2="56" y2="{{lr.sp.z}}" stroke="#383835" stroke-width="1"></line><path d="{{lr.sp.up}}" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path><path d="{{lr.sp.dn}}" fill="none" stroke="#e66767" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+            <span class="lv">{{lr.vs}}</span>
+            <span class="l1">{{lr.l1}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <p class="small" style="margin: 0; color: #c3c2b7;">줄을 누르면 왼쪽 그래프에 그 코인의 선이 고정되고, 다시 누르면 풀립니다. 작은 그래프는 기준 시각 이후 BTC 대비 값의 흐름이며, 0선 위는 파랑이고 아래는 빨강입니다.</p>
+    </aside>
+  </div>
+
+  <footer style="margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.10); color: #c3c2b7; font-size: 12px; line-height: 18px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 24px 32px;">
+      <div class="fblock">
+        <h2 class="ftitle">자료</h2>
+        <p>가격은 Binance 현물 USDT 마켓의 5분봉 종가이며, {{foot.asof}} KST에 끝난 봉까지 썼습니다. 이 화면은 그 시각에 멈춘 스냅숏입니다.</p>
+        <p>시가총액 순위와 순위 구간은 TradingView 코인 스크리너(CRYPTO: 지수)의 2026-10-29 값입니다. 스테이블코인, 금 토큰, 그리고 PI, JST, FLR, NEXO, GNO, FF, SUN, GT는 처음부터 대상에서 뺐습니다.</p>
+        <p>기준인 BTC를 뺀 {{foot.universe}}개 중 {{foot.covered}}개를 그렸습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">계산 방법</h2>
+        <p>기준 이후 변화는 각 시각의 종가를 기준 시각의 종가로 나눈 뒤 1을 뺀 값이라서, 기준 시각에는 모든 선이 0%에서 출발합니다.</p>
+        <p>BTC 대비 값은 (1 + 코인 변화) ÷ (1 + BTC 변화) − 1로 계산했습니다. 0%보다 크면 같은 기간에 BTC보다 더 올랐거나 덜 내렸다는 뜻입니다. 최근 1시간 BTC 대비는 기준 시각과 상관없이 마지막 60분(5분봉 12개)으로 계산했습니다.</p>
+        <p>왼쪽 그래프는 자료에 있는 점을 하나도 빼지 않고 그리며, 점 간격은 {{foot.steps}}입니다. 목록의 작은 그래프는 {{foot.anchorName}} 기준에서 {{foot.sparkStep}}분 간격 {{foot.sparkN}}개 점으로 그렸고, 줄마다 세로 폭을 따로 맞추되 최소 {{foot.minSpan}}%p 폭을 두어 작은 흔들림이 부풀어 보이지 않게 했습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">표시하지 않은 코인 {{foot.missN}}개</h2>
+        <p>Binance 현물 USDT 5분봉을 받지 못해 뺀 코인입니다: {{foot.missList}}.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">실제 화면과 다른 점</h2>
+        <p>실제 화면은 사용자의 Binance 커넥터로 1분마다 5분봉을 새로 받아 순위와 선을 다시 그리고, 5분봉을 빠짐없이 씁니다. 이 시안의 숫자는 {{foot.asof}} KST에서 멈춰 있습니다.</p>
+        <p>이 화면은 그래프를 읽는 법을 돕기 위한 것이며, 사고팔 시점을 알려 주지 않습니다.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1800},"startAnchor":{"editor":"enum","options":["1시간 전","4시간 전","12시간 전","24시간 전"],"default":"12시간 전","section":"보기"},"startMode":{"editor":"enum","options":["상위·하위 5개","구간별","선택만"],"default":"상위·하위 5개","section":"보기"},"contextOpacity":{"editor":"range","default":0.4,"min":0.2,"max":0.6,"step":0.05,"section":"보기"}}'>
+// line values below are % change since the anchor, in hundredths (e.g. -247 = -2.47%); vs BTC and last-hour values are plain %.
+const DATA = {"asof":"2026-10-29 21:45","missing":["XMR","LEO","CC","CRO","M","OKB","MNT","BGB","VVV","KCS","KAS","XDC","LIT","STABLE","SPX","BSV","BTT","PIEVERSE","MON","NFT"],
+"meta":{"HYPE":["Hyperliquid",10,"1-10",1.93],
+"ZRO":["LayerZero",74,"51-100",5.61],
+"BIANRENSHENG":["Bi An Ren Sheng",81,"51-100",0.22],
+"XPL":["Plasma",98,"51-100",-0.08],
+"TRX":["TRON",8,"1-10",0.07],
+"POL":["Polygon (prev. MATIC)",63,"51-100",0.9],
+"SKY":["Sky",51,"51-100",0.24],
+"STRK":["Starknet",101,"101-125",1.62],
+"ASTER":["Aster",44,"11-50",0.39],
+"FIL":["Filecoin",70,"51-100",0.67],
+"ENS":["Ethereum Name Service",124,"101-125",0.84],
+"CFX":["Conflux",116,"101-125",0.58],
+"XLM":["Stellar",16,"11-50",0.72],
+"ARB":["Arbitrum",59,"51-100",1.81],
+"AAVE":["Aave",41,"11-50",-0.03],
+"DOGE":["Dogecoin",11,"11-50",0.52],
+"ENA":["Ethena",35,"11-50",1.85],
+"LUNC":["Terra Classic",115,"101-125",0.12],
+"TIA":["Celestia",87,"51-100",1.86],
+"UNI":["Uniswap",22,"11-50",0.31],
+"ATOM":["Cosmos",66,"51-100",0.26],
+"ONDO":["Ondo",42,"11-50",0.66],
+"ETC":["Ethereum Classic",55,"51-100",0.75],
+"FET":["Artificial Superintelligence Alliance",94,"51-100",0.35],
+"LINK":["Chainlink",14,"11-50",0.32],
+"SHIB":["Shiba Inu",33,"11-50",0.28],
+"SOL":["Solana",7,"1-10",0.23],
+"XTZ":["Tezos",106,"101-125",0.4],
+"ETH":["Ethereum",2,"1-10",-0.06],
+"GRAM":["Gram (prev. Toncoin)",27,"11-50",0.24],
+"AERO":["Aerodrome Finance",78,"51-100",0.22],
+"WLFI":["World Liberty Financial",47,"11-50",-0.12],
+"KITE":["Kite",110,"101-125",-0.1],
+"HBAR":["Hedera",28,"11-50",0.79],
+"DCR":["Decred",113,"101-125",-0.07],
+"TRUMP":["OFFICIAL TRUMP",91,"51-100",-0.04],
+"LTC":["Litecoin",21,"11-50",0.51],
+"SUI":["Sui",26,"11-50",0.45],
+"DOT":["Polkadot",46,"11-50",0.58],
+"GRT":["The Graph",118,"101-125",0.67],
+"MORPHO":["Morpho",56,"51-100",0.81],
+"VIRTUAL":["Virtuals Protocol",95,"51-100",0.52],
+"AVAX":["Avalanche",24,"11-50",0.49],
+"INJ":["Injective",69,"51-100",-0.15],
+"LDO":["Lido DAO",105,"101-125",0.81],
+"TAO":["Bittensor",32,"11-50",0.15],
+"AR":["Arweave",121,"101-125",0.48],
+"ADA":["Cardano",15,"11-50",0.32],
+"BNB":["BNB",4,"1-10",0.27],
+"ICP":["Internet Computer",53,"51-100",0.31],
+"RENDER":["Render",68,"51-100",0.5],
+"PENGU":["Pudgy Penguins",90,"51-100",0.68],
+"STX":["Stacks",83,"51-100",1.11],
+"XRP":["XRP",5,"1-10",0],
+"OP":["Optimism",114,"101-125",0.26],
+"ZEC":["Zcash",9,"1-10",0.31],
+"CRV":["Curve DAO Token",85,"51-100",0.17],
+"IMX":["Immutable",111,"101-125",0.29],
+"VET":["VeChain",84,"51-100",0.57],
+"CAKE":["PancakeSwap",73,"51-100",0.61],
+"APT":["Aptos",79,"51-100",0.88],
+"PENDLE":["Pendle",102,"101-125",-0.39],
+"FLOKI":["FLOKI",122,"101-125",0.03],
+"PEPE":["Pepe",40,"11-50",-0.33],
+"BONK":["Bonk",112,"101-125",0.4],
+"QNT":["Quant",39,"11-50",0.18],
+"ETHFI":["ether.fi",77,"51-100",1.03],
+"SEI":["Sei",96,"51-100",0.77],
+"PUMP":["Pump.fun",43,"11-50",0.21],
+"ALGO":["Algorand",64,"51-100",0.57],
+"JUP":["Jupiter",65,"51-100",0.59],
+"BCH":["Bitcoin Cash",18,"11-50",-0.35],
+"KMNO":["Kamino",120,"101-125",-0.17],
+"WLD":["Worldcoin",50,"11-50",0.19],
+"NIGHT":["Midnight",76,"51-100",0.83],
+"PYTH":["Pyth Network",80,"51-100",0.57],
+"JTO":["Jito",125,"101-125",0.81],
+"NEAR":["NEAR Protocol",17,"11-50",0.73],
+"DASH":["Dash",75,"51-100",-0.48],
+"RAY":["Raydium",93,"51-100",0.94],
+"CVX":["Convex Finance",123,"101-125",-0.67]},
+"A":{
+"1h":{"start":"20:45","times":["20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45"],"btc":-0.07,"beat":66,"n":81,
+"bl":[0,8,0,-2,-10,-4,-10,-9,-13,-8,-14,-3,-7],"rows":[
+["ZRO",5.61,[0,-72,-48,-30,-54,-72,-126,120,181,223,511,560,554]],
+["HYPE",1.93,[0,52,72,110,49,77,147,165,193,108,142,205,185]],
+["TIA",1.86,[0,-4,13,4,-4,-6,11,60,58,107,118,186,178]],
+["ENA",1.85,[0,5,5,10,-40,5,-49,-25,-40,-35,10,158,178]],
+["ARB",1.81,[0,42,54,36,24,60,42,78,48,72,96,179,173]],
+["STRK",1.62,[0,7,4,-4,-17,-28,-28,-11,-37,-4,39,132,154]],
+["STX",1.11,[0,-17,-21,-35,-41,-35,-41,-21,-41,-10,55,97,104]],
+["ETHFI",1.03,[0,0,-5,-12,-36,-49,-36,-14,-17,12,30,87,96]],
+["RAY",0.94,[0,-11,-3,-7,-33,-50,-62,-47,-58,-33,-1,60,86]],
+["POL",0.9,[0,8,13,14,-3,-5,4,35,45,53,39,68,83]],
+["APT",0.88,[0,-19,-24,-36,-61,-65,-74,-59,-65,-24,-3,64,80]],
+["ENS",0.84,[0,0,0,0,0,-19,-19,0,0,19,19,95,76]],
+["NIGHT",0.83,[0,16,5,18,113,120,81,52,24,131,81,115,76]],
+["MORPHO",0.81,[0,9,-5,-5,-23,-23,-23,-18,0,37,23,69,74]],
+["LDO",0.81,[0,11,30,35,16,24,16,30,14,35,24,81,73]],
+["JTO",0.81,[0,-2,-10,-12,-47,-52,-64,-44,-44,-25,-5,71,74]],
+["HBAR",0.79,[0,3,-4,-14,-26,-35,-26,-1,5,24,23,69,72]],
+["SEI",0.77,[0,0,-4,-10,-29,-33,-52,-31,-39,-8,-6,68,69]],
+["ETC",0.75,[0,-13,-13,-13,-27,-13,-27,0,0,13,27,54,67]],
+["NEAR",0.73,[0,16,9,5,-54,-41,-57,-34,-45,-29,-18,63,66]],
+["XLM",0.72,[0,12,12,0,-18,-12,-12,0,6,35,24,65,65]],
+["PENGU",0.68,[0,10,-4,-10,-53,-43,-40,-31,-27,-3,-6,54,61]],
+["FIL",0.67,[0,-15,-8,2,-17,-18,-29,9,-4,30,41,96,60]],
+["GRT",0.67,[0,-5,-5,5,-23,-32,-41,-9,-5,14,-9,50,60]],
+["ONDO",0.66,[0,7,0,-12,-44,-34,-46,-24,-27,5,12,68,58]],
+["CAKE",0.61,[0,20,29,15,0,10,15,34,29,34,39,54,54]],
+["JUP",0.59,[0,7,-4,-11,-41,-37,-48,-26,-22,-4,-7,66,52]],
+["DOT",0.58,[0,-20,-20,-20,-51,-51,-51,-41,-41,-10,-10,51,51]],
+["CFX",0.58,[0,2,-10,-6,-40,-40,-29,-34,-31,-10,13,78,50]],
+["ALGO",0.57,[0,-10,-30,-30,-50,-50,-60,-30,-30,-10,-10,40,50]],
+["PYTH",0.57,[0,-4,-11,-17,-66,-61,-93,-98,-111,-90,-63,19,50]],
+["VET",0.57,[0,-13,-13,-13,-42,-55,-58,-55,-53,-21,-26,40,50]],
+["DOGE",0.52,[0,9,1,-5,-23,-20,-17,-5,-1,23,5,37,44]],
+["VIRTUAL",0.52,[0,11,8,8,-11,-23,-31,-10,-20,0,0,29,44]],
+["LTC",0.51,[0,19,2,-2,-22,-5,3,12,2,17,9,52,43]],
+["RENDER",0.5,[0,18,-6,-12,-42,-48,-48,-30,-54,-30,-42,18,42]],
+["AVAX",0.49,[0,25,22,13,-21,-33,-52,-29,-22,2,7,51,41]],
+["AR",0.48,[0,12,3,-6,-26,-43,-52,-32,-32,-9,-12,35,40]],
+["SUI",0.45,[0,8,-2,-5,-43,-44,-51,-30,-34,-13,-12,44,38]],
+["XTZ",0.4,[0,7,11,-7,-25,-25,-25,-7,-14,-4,-7,40,32]],
+["BONK",0.4,[0,0,0,0,-33,-65,-33,-33,-33,0,0,33,33]],
+["ASTER",0.39,[0,11,13,7,3,10,6,13,7,24,13,26,31]],
+["FET",0.35,[0,11,11,-6,-39,-44,-50,-28,-39,-22,-55,28,28]],
+["LINK",0.32,[0,15,9,12,-13,-28,-24,-3,-15,12,-4,34,24]],
+["ADA",0.32,[0,10,10,5,-25,-25,-50,-45,-45,-20,-30,20,25]],
+["ZEC",0.31,[0,15,30,47,-1,12,-15,8,-31,-41,-26,27,23]],
+["UNI",0.31,[0,42,21,-14,-51,-38,-39,1,-11,4,-1,67,24]],
+["ICP",0.31,[0,0,0,-12,-31,-31,-31,0,-12,0,-8,35,23]],
+["IMX",0.29,[0,-7,-29,-44,-66,-73,-66,-58,-44,-22,-29,-15,22]],
+["SHIB",0.28,[0,0,0,0,-41,-41,-20,0,0,0,0,41,20]],
+["BNB",0.27,[0,14,17,2,-8,7,8,21,12,19,13,32,19]],
+["ATOM",0.26,[0,0,0,-6,-12,-31,-37,-12,-31,-25,-37,0,18]],
+["OP",0.26,[0,-9,-18,-36,-54,-63,-63,-45,-54,-36,-27,36,18]],
+["GRAM",0.24,[0,16,8,8,-25,-8,-8,8,8,8,0,8,16]],
+["SKY",0.24,[0,-2,-12,-12,-50,-38,-40,-34,-26,-26,-38,-6,17]],
+["SOL",0.23,[0,8,-2,-8,-27,-19,-17,-13,-7,0,0,13,16]],
+["AERO",0.22,[0,-3,-18,-12,-28,-29,-53,-22,-23,-18,-9,12,15]],
+["BIANRENSHENG",0.22,[0,7,-22,-30,-9,19,15,30,26,34,4,15,15]],
+["PUMP",0.21,[0,-25,-62,-48,-96,-98,-91,-73,-87,-75,-69,-7,14]],
+["WLD",0.19,[0,5,2,-2,-48,-40,-40,-29,-57,-38,-21,38,12]],
+["QNT",0.18,[0,23,24,27,-14,-4,-21,-12,-22,1,23,41,11]],
+["CRV",0.17,[0,6,0,-18,-40,-46,-61,-67,-67,-43,-24,9,9]],
+["TAO",0.15,[0,12,20,8,-24,-28,-36,-20,-36,-32,-20,24,8]],
+["LUNC",0.12,[0,0,-13,-11,-38,-47,-42,-24,-18,-16,-7,11,4]],
+["TRX",0.07,[0,3,6,3,0,3,0,-3,0,3,0,3,0]],
+["FLOKI",0.03,[0,-9,-34,-26,-51,-47,-64,-55,-51,-30,-30,0,-4]],
+["XRP",-0.0,[0,3,-5,-12,-26,-18,-29,-24,-23,-17,-36,-12,-8]],
+["AAVE",-0.03,[0,10,11,-14,-51,-41,-50,-20,-41,-26,-44,32,-11]],
+["TRUMP",-0.04,[0,6,-6,-12,-41,-53,-65,-53,-65,-59,-71,-18,-12]],
+["ETH",-0.06,[0,7,2,-4,-16,-9,-14,-6,-10,-9,-23,-8,-13]],
+["DCR",-0.07,[0,-49,-49,-42,-49,-42,-49,-35,-42,-42,-42,-28,-14]],
+["XPL",-0.08,[0,-21,-38,-38,-60,-82,-76,-96,-89,-78,-83,-16,-16]],
+["KITE",-0.1,[0,-9,-18,-53,-9,-26,-26,-18,-18,-35,-44,-18,-18]],
+["WLFI",-0.12,[0,0,0,0,-19,-19,-19,-19,-19,-19,-19,-19,-19]],
+["INJ",-0.15,[0,18,14,19,-16,-22,-20,27,3,19,19,4,-23]],
+["KMNO",-0.17,[0,0,-11,-37,-72,-56,-56,-75,-93,-72,-69,-32,-24]],
+["PEPE",-0.33,[0,-20,-41,-20,-101,-101,-101,-81,-41,-41,-61,-41,-41]],
+["BCH",-0.35,[0,0,-7,-18,-39,-39,-46,-32,-36,-36,-50,-36,-43]],
+["PENDLE",-0.39,[0,-10,-5,-77,-108,-113,-124,-103,-108,-72,-88,-46,-46]],
+["DASH",-0.48,[0,-4,-40,-16,-79,-77,-99,-93,-111,-105,-105,-49,-55]],
+["CVX",-0.67,[0,-14,9,-19,-32,-46,-56,-46,-102,-97,-144,-102,-74]]]},
+"4h":{"start":"17:45","times":["17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45"],"btc":0.16,"beat":68,"n":81,
+"bl":[0,-4,-9,9,8,24,25,26,32,18,17,17,27,26,27,26,23,23,19,15,21,17,38,31,33,41,44,36,28,31,28,26,27,19,20,19,23,31,23,21,14,19,13,14,10,16,9,20,16],"rows":[
+["HYPE",11.91,[0,-4,-19,14,8,43,34,29,32,11,5,19,25,33,42,39,40,34,37,28,48,44,479,460,611,864,842,813,883,918,1004,960,922,911,897,942,1005,1062,1085,1127,1060,1090,1167,1188,1218,1124,1162,1231,1209]],
+["ZRO",7.97,[0,-6,-18,68,55,117,74,68,68,49,43,55,80,74,80,86,86,86,49,55,80,49,191,216,216,333,351,314,284,314,314,296,271,240,247,228,247,173,197,216,191,173,117,370,432,475,771,820,814]],
+["ENA",4.24,[0,-20,-66,-10,-30,25,25,5,20,-20,-35,-10,-5,0,20,15,35,20,15,41,76,41,193,193,218,289,335,299,314,390,416,350,345,314,299,248,259,264,264,269,218,264,208,233,218,223,269,421,441]],
+["TIA",4.12,[0,17,50,83,98,185,165,175,131,113,102,137,146,165,212,192,221,190,175,169,165,146,246,269,264,281,310,277,267,304,298,279,269,254,260,252,246,242,260,250,242,240,258,308,306,356,367,437,429]],
+["ARB",3.55,[0,0,-18,6,12,91,49,49,79,30,30,49,55,55,67,67,85,85,73,73,122,85,177,195,195,225,298,274,250,280,274,225,195,183,195,183,195,238,250,231,219,256,238,274,244,268,292,378,371]],
+["PUMP",3.53,[0,-2,-5,78,80,159,123,118,151,99,83,88,88,95,111,97,125,97,71,73,97,62,204,225,258,312,364,346,329,369,388,360,338,310,331,322,355,329,291,305,256,253,260,279,265,277,284,348,369]],
+["FIL",2.97,[0,15,-21,34,52,175,111,101,94,55,33,41,52,58,86,86,113,95,90,62,99,92,182,192,213,244,280,250,251,254,234,218,229,218,235,244,252,236,244,254,235,234,223,261,248,283,294,350,313]],
+["APT",2.93,[0,9,-15,36,49,120,88,85,100,70,49,64,76,77,105,102,123,106,97,94,117,83,175,190,196,246,276,253,234,249,252,229,217,220,216,205,228,208,203,191,165,161,152,167,161,203,225,293,310]],
+["JTO",2.87,[0,3,0,68,80,153,141,128,126,106,70,75,88,108,146,136,141,136,108,116,126,106,236,193,216,256,301,276,259,279,276,241,239,219,226,216,229,226,219,216,181,176,163,183,183,203,224,301,304]],
+["STX",2.86,[0,-11,-39,25,130,172,162,141,148,109,99,116,172,169,169,176,158,141,130,137,165,130,211,211,201,243,274,239,190,222,208,194,186,169,148,162,197,179,176,162,155,162,155,176,155,186,253,296,303]],
+["UNI",2.72,[0,7,-19,13,37,97,77,51,57,29,16,26,39,39,53,61,73,51,43,24,37,17,120,130,153,208,245,210,185,225,217,208,204,175,204,221,264,307,285,250,211,225,224,265,253,268,263,332,288]],
+["NEAR",2.42,[0,-18,-28,28,42,115,69,60,53,44,39,46,62,81,78,81,97,65,55,48,83,58,134,164,173,205,224,189,185,205,205,180,178,161,201,185,191,208,201,196,136,150,134,157,145,161,173,256,258]],
+["VET",2.42,[0,13,-5,46,46,122,120,119,102,94,77,91,104,107,110,91,97,91,96,91,100,86,158,163,171,213,222,211,193,206,193,198,201,188,188,196,208,194,194,194,165,152,148,152,153,186,181,249,259]],
+["STRK",2.38,[0,18,2,39,31,110,105,99,101,57,37,55,75,116,143,134,162,156,154,158,158,114,175,167,140,206,237,184,180,213,204,184,160,149,129,105,99,105,103,94,81,70,70,88,61,94,138,232,254]],
+["XPL",2.34,[0,-11,-27,16,29,86,80,77,117,166,149,166,193,182,211,209,213,191,171,177,209,211,261,242,267,335,339,279,246,308,279,263,250,230,246,259,266,245,227,227,205,182,187,168,174,186,181,250,250]],
+["CFX",2.25,[0,15,-2,36,43,98,90,105,101,86,71,75,90,98,113,122,126,115,111,124,137,122,143,143,120,165,171,152,141,133,154,135,150,152,154,163,190,192,180,184,150,150,160,156,158,180,203,269,242]],
+["AR",2.2,[0,21,-6,41,59,121,83,97,100,68,59,53,80,86,103,91,115,103,88,91,106,86,156,156,171,224,245,209,183,206,212,183,192,195,186,183,195,206,198,189,168,150,142,162,162,186,183,230,236]],
+["ENS",2.16,[0,0,0,39,78,97,116,116,78,78,39,39,78,78,97,116,116,116,97,97,116,97,155,174,174,213,252,213,213,213,194,194,194,194,136,116,155,155,155,155,155,136,136,155,155,174,174,252,233]],
+["ZEC",2.14,[0,9,-11,38,35,91,53,65,71,63,42,52,57,54,77,87,102,96,90,76,117,85,192,195,200,190,222,190,185,224,186,169,179,150,176,167,206,222,237,254,206,218,191,214,175,164,180,234,230]],
+["FET",2.14,[0,6,-11,51,68,129,101,107,101,90,56,68,73,79,101,107,118,96,79,56,79,51,152,186,186,236,248,242,203,214,197,191,191,169,174,180,203,214,214,197,163,158,152,174,163,180,146,231,231]],
+["IMX",2.14,[0,-7,-22,30,37,74,67,60,60,60,30,15,37,30,30,52,37,37,37,30,37,30,97,112,127,201,261,231,201,223,246,223,253,216,194,186,208,201,179,164,141,134,141,149,164,186,179,194,231]],
+["ONDO",2.03,[0,15,-15,17,42,101,106,93,93,54,42,52,64,71,81,81,101,84,52,39,64,30,93,96,108,160,162,160,138,182,170,145,148,125,140,150,160,167,160,148,116,125,113,135,133,165,172,229,219]],
+["GRT",2.02,[0,19,-5,51,51,116,93,102,107,88,60,56,74,84,93,107,107,102,88,88,116,98,158,163,177,209,223,209,158,163,172,163,177,158,149,144,158,153,153,163,135,126,116,149,153,172,149,209,219]],
+["LTC",2.01,[0,9,-12,25,37,72,68,63,74,54,33,33,54,65,70,86,88,67,53,53,67,54,117,144,149,158,174,158,137,147,146,131,138,131,151,144,174,193,175,172,151,168,177,186,175,191,182,226,217]],
+["PENGU",2.01,[0,12,-7,68,68,134,112,139,158,108,86,103,113,103,109,89,83,66,53,57,70,26,114,128,124,171,187,167,155,175,182,142,145,125,124,120,155,166,151,145,101,112,114,124,128,153,149,211,217]],
+["AAVE",1.98,[0,5,-15,15,28,78,52,59,58,38,16,24,43,49,68,60,82,50,25,15,44,11,115,124,162,208,239,186,188,216,226,216,229,218,223,213,225,235,236,210,173,183,174,204,183,198,180,258,214]],
+["ETHFI",1.83,[0,9,-37,6,12,63,66,40,43,17,-25,-8,-8,-21,5,-5,2,2,-17,-23,-20,-25,77,71,72,149,160,127,120,137,160,132,124,126,131,114,103,103,98,91,66,54,66,89,86,115,134,190,200]],
+["LDO",1.82,[0,0,-22,27,5,66,33,49,41,16,-3,-19,-11,-14,3,27,41,33,22,14,27,16,77,52,69,102,146,135,104,132,129,129,121,104,110,118,124,135,154,159,140,148,140,154,137,159,148,206,198]],
+["BONK",1.82,[0,33,33,99,99,166,132,132,132,132,99,132,132,99,132,132,132,132,99,99,99,33,132,132,132,166,232,199,166,166,166,132,166,132,132,132,166,166,166,166,132,99,132,132,132,166,166,199,199]],
+["RENDER",1.8,[0,6,-18,12,18,98,68,80,86,68,68,74,86,92,104,104,98,68,43,55,74,61,147,147,160,203,203,203,160,184,184,153,147,135,135,129,153,172,147,141,110,104,104,123,98,123,110,172,196]],
+["OP",1.77,[0,18,-18,46,65,138,111,111,120,92,65,65,74,74,92,111,120,111,101,92,120,101,185,194,185,221,240,231,221,231,221,175,175,157,138,166,175,166,157,138,120,111,111,129,120,138,148,212,194]],
+["ETC",1.74,[0,14,0,27,27,82,68,54,54,41,41,27,54,41,54,68,82,68,54,68,95,68,122,109,122,149,136,122,109,122,122,122,122,109,109,109,122,109,109,109,95,109,95,122,122,136,149,177,190]],
+["XLM",1.68,[0,6,-12,18,24,66,54,54,60,42,30,30,48,54,60,66,66,60,48,42,60,36,77,83,83,113,137,125,113,131,131,125,137,119,107,113,119,131,131,119,101,107,107,119,125,155,143,185,185]],
+["INJ",1.67,[0,22,17,56,41,110,107,102,78,32,-3,19,22,32,50,94,105,82,100,105,163,127,250,256,255,317,367,370,329,362,353,299,263,217,194,219,207,225,221,226,190,185,186,234,210,226,226,211,184]],
+["SEI",1.67,[0,6,-16,29,27,74,68,68,72,41,23,27,41,51,68,68,70,45,27,14,25,12,88,80,90,141,185,164,131,156,146,133,125,98,107,90,113,113,109,103,84,80,60,82,74,105,107,181,183]],
+["XTZ",1.67,[0,0,-18,7,15,51,29,33,26,18,-11,11,37,66,26,48,29,15,15,-15,-4,-11,7,40,44,172,172,143,128,139,161,150,161,161,150,154,150,157,161,143,124,124,124,143,135,146,143,190,183]],
+["VIRTUAL",1.66,[0,18,-5,27,28,70,53,58,66,40,23,27,48,51,60,65,58,53,32,37,53,46,128,116,124,169,154,151,128,154,158,131,138,121,115,123,138,149,146,146,126,115,106,128,118,138,138,168,183]],
+["SUI",1.65,[0,8,-13,21,37,84,64,64,68,34,20,36,53,58,71,68,78,65,55,44,58,43,123,132,115,169,197,177,154,177,163,152,154,132,136,132,143,151,141,137,99,98,91,112,109,130,131,188,181]],
+["SKY",1.62,[0,5,-9,30,33,67,64,68,71,47,43,20,36,42,61,70,76,56,50,50,67,54,109,96,106,123,130,126,129,137,151,141,146,134,144,174,161,160,149,149,110,123,121,127,135,135,123,155,179]],
+["TRUMP",1.58,[0,12,0,42,60,108,78,84,90,66,60,66,54,36,60,72,60,54,42,48,66,54,102,102,108,144,156,162,144,162,156,144,150,144,156,162,186,192,180,174,144,132,120,132,120,126,114,168,174]],
+["TAO",1.57,[0,16,-12,36,40,81,73,69,77,57,48,40,73,73,81,85,81,65,44,36,65,40,133,129,133,174,202,182,158,178,178,153,149,145,158,153,166,178,186,174,141,137,129,145,129,133,145,190,174]],
+["LINK",1.56,[0,7,-10,30,34,72,55,59,73,52,25,32,47,46,57,63,65,52,42,36,52,31,94,93,101,133,142,130,123,145,150,137,140,122,130,126,148,163,156,160,135,119,123,144,133,160,143,183,172]],
+["ICP",1.53,[0,16,-8,39,47,94,71,75,71,24,28,35,55,47,51,71,75,63,35,39,59,51,122,130,130,149,193,169,134,153,157,157,130,114,126,122,146,146,146,134,114,114,114,146,134,146,138,181,169]],
+["JUP",1.52,[0,7,-30,49,45,108,63,67,60,41,37,37,45,45,63,63,71,63,45,41,49,7,97,97,112,168,194,153,127,138,142,127,112,105,108,105,116,123,112,105,75,78,67,90,93,112,108,183,168]],
+["ADA",1.5,[0,10,-15,20,35,76,66,81,91,66,66,71,81,81,81,86,86,76,61,55,81,71,126,126,136,187,197,161,141,146,146,131,146,126,131,126,141,151,151,146,116,116,91,96,96,121,111,161,166]],
+["AERO",1.44,[0,-12,-31,10,36,76,58,59,73,59,65,74,89,100,109,110,79,88,71,62,82,62,128,144,161,198,204,196,192,201,224,201,156,150,144,132,146,143,128,134,117,116,92,123,122,128,137,158,161]],
+["KITE",1.36,[0,0,-18,9,27,54,36,36,36,18,18,27,36,18,27,27,0,0,-18,-9,9,-9,27,36,54,80,80,71,116,152,143,152,170,152,143,161,170,161,152,116,161,143,143,152,152,134,125,152,152]],
+["ATOM",1.33,[0,0,-12,25,37,93,75,81,87,56,56,50,69,62,50,56,75,62,50,31,62,31,100,93,93,118,156,150,118,131,131,100,106,106,112,118,131,131,131,125,118,100,93,118,100,106,93,131,150]],
+["DOGE",1.29,[0,4,-6,19,23,53,41,41,46,32,26,27,37,37,42,44,37,33,22,13,26,5,42,39,46,77,94,89,77,96,100,86,92,86,92,87,100,109,101,95,77,80,83,95,99,123,105,137,145]],
+["POL",1.29,[0,-1,-27,10,4,34,30,25,21,14,0,10,21,27,32,32,26,18,1,-9,-1,-12,34,34,47,75,94,91,69,90,87,78,70,58,56,49,62,69,75,76,58,56,66,97,107,115,101,130,145]],
+["SHIB",1.28,[0,0,0,41,41,62,62,62,83,41,62,62,62,62,83,83,83,62,62,41,41,0,41,62,41,83,103,124,83,103,103,103,103,83,103,83,124,124,124,124,83,83,103,124,124,124,124,165,145]],
+["ALGO",1.25,[0,0,-30,0,0,30,10,10,10,-10,-30,-20,-30,-20,0,10,-10,-10,-20,-20,0,10,81,91,91,101,121,81,70,60,81,60,70,70,50,60,91,81,60,60,40,40,30,60,60,81,81,131,141]],
+["RAY",1.25,[0,-2,-40,-19,-20,50,7,5,-5,-31,-19,13,27,32,30,18,41,32,18,15,42,3,56,60,83,109,126,93,66,83,71,70,62,34,27,42,54,42,51,47,21,4,-8,7,-4,21,53,114,141]],
+["AVAX",1.24,[0,12,-18,12,27,73,62,68,70,41,27,32,59,56,68,66,68,50,35,32,56,40,109,91,105,153,165,142,119,134,126,115,113,94,100,98,99,124,121,112,78,66,46,70,77,101,106,151,141]],
+["DOT",1.17,[0,10,-20,0,0,72,51,61,72,61,51,51,61,82,112,102,123,92,82,82,102,92,143,102,102,153,184,153,123,133,123,82,72,51,61,72,82,61,61,61,31,31,31,41,41,72,72,133,133]],
+["WLD",1.09,[0,7,-7,34,55,130,94,77,96,67,41,48,41,43,67,70,89,63,41,53,87,51,147,116,132,154,226,207,190,202,205,156,140,125,120,108,113,118,116,111,65,72,72,84,55,75,91,152,125]],
+["PENDLE",1.04,[0,16,-16,26,37,99,99,110,110,84,63,37,68,63,68,84,89,79,47,58,73,58,157,162,178,209,204,162,131,168,183,168,152,141,136,141,168,157,162,89,58,52,42,63,58,94,79,120,120]],
+["LUNC",0.91,[0,9,-7,27,31,54,47,58,58,38,16,13,22,31,38,38,40,43,29,22,34,22,65,70,87,90,90,72,90,94,96,101,108,105,92,87,103,103,90,92,65,56,61,78,85,87,96,114,108]],
+["FLOKI",0.74,[0,17,-9,52,52,112,86,82,99,86,73,56,69,65,60,69,60,56,47,30,39,4,69,60,52,86,108,103,86,90,95,86,82,69,90,73,95,86,60,69,43,47,30,39,43,65,65,95,90]],
+["GRAM",0.67,[0,8,-8,25,25,58,50,41,50,33,33,25,41,41,25,33,33,33,17,0,25,25,50,50,58,58,74,66,58,74,66,66,74,74,66,58,66,83,74,74,41,58,58,74,74,74,66,74,83]],
+["HBAR",0.57,[0,11,-7,19,19,48,20,23,37,20,18,24,34,31,45,45,57,46,34,31,42,31,72,58,34,56,72,68,50,42,30,30,34,8,3,3,1,4,-3,-12,-24,-34,-24,0,7,26,24,71,73]],
+["ASTER",0.54,[0,-4,-24,3,6,21,11,13,21,20,10,6,0,3,0,-3,6,0,-10,-6,0,-6,31,13,19,39,41,26,29,41,36,36,31,29,16,23,39,50,51,46,41,49,44,51,46,63,51,64,70]],
+["SOL",0.45,[0,4,-2,22,28,51,31,28,37,17,13,16,22,19,30,29,30,33,17,11,17,6,52,47,52,70,74,63,50,62,62,55,52,42,42,44,45,53,43,37,18,26,28,32,38,45,45,58,61]],
+["PYTH",0.21,[0,-10,-34,-6,-11,48,56,11,19,-16,-37,-37,-41,-37,-24,-33,-26,-48,-74,-56,-61,-87,20,48,73,101,103,77,41,40,36,11,20,-9,17,-26,-13,-17,-24,-30,-78,-74,-105,-111,-124,-103,-76,6,37]],
+["ETH",0.15,[0,0,-9,15,12,39,24,24,35,17,8,15,24,27,28,24,23,19,13,8,19,9,41,36,36,51,60,56,41,49,43,38,39,31,39,42,45,52,47,41,28,35,31,39,34,35,21,36,31]],
+["QNT",0.15,[0,-13,-29,-29,-26,6,-39,-61,-42,-74,-65,-60,-31,-29,1,-2,-8,-10,-19,-40,-11,-6,47,65,55,72,91,59,42,59,42,38,12,-1,32,33,20,43,44,47,5,16,-2,7,-3,20,42,61,31]],
+["CAKE",0.13,[0,0,-29,10,15,34,20,29,24,5,-5,-15,-10,-5,5,0,-15,-5,-44,-83,-88,-88,-39,-39,-34,-10,0,0,-5,0,0,-10,-5,-24,-24,-39,-24,-5,5,-10,-24,-15,-10,10,5,10,15,29,29]],
+["KMNO",0.13,[0,3,-8,-21,-8,16,-5,-21,8,-13,-11,-11,-5,0,11,11,11,27,24,46,72,43,80,62,51,64,59,46,35,62,80,48,56,54,40,48,54,54,43,16,-19,-3,-3,-21,-40,-19,-16,21,29]],
+["XRP",-0.07,[0,-3,-13,4,9,32,19,19,27,12,-2,-4,5,2,15,16,11,-1,-12,-21,-6,-25,9,4,9,27,40,29,15,16,11,-1,8,-6,10,15,17,20,12,5,-9,-1,-12,-7,-6,0,-19,5,9]],
+["TRX",-0.13,[0,3,3,3,3,6,-3,3,3,6,3,6,3,6,0,0,0,3,3,0,6,-3,3,3,3,3,3,6,6,0,9,6,9,9,9,9,3,6,9,6,3,6,3,0,3,6,3,6,3]],
+["BCH",-0.27,[0,14,4,25,39,64,39,39,47,32,4,7,18,11,18,18,18,18,7,14,39,18,61,64,79,86,100,68,57,75,68,47,39,36,14,25,32,32,25,14,-7,-7,-14,0,-4,-4,-18,-4,-11]],
+["WLFI",-0.35,[0,0,0,19,19,39,19,19,19,19,19,19,19,0,0,0,39,19,0,0,19,0,19,19,0,19,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-19,-19,-19,-19,-19,-19,-19,-19,-19]],
+["MORPHO",-0.48,[0,0,-18,-14,-18,-9,0,-18,0,-32,-137,-114,-105,-105,-100,-91,-82,-77,-123,-123,-109,-132,-55,-64,-68,-50,-55,-82,-82,-59,-68,-77,-109,-100,-118,-132,-105,-96,-109,-109,-127,-127,-127,-123,-105,-68,-82,-36,-32]],
+["BIANRENSHENG",-0.64,[0,-22,-26,11,24,26,30,2,9,15,-6,-22,-30,11,6,15,4,-7,-35,-54,-56,-61,-20,-22,-33,-19,-22,-57,-43,-24,-43,-37,-33,-52,-59,-50,-63,-56,-85,-93,-72,-45,-48,-33,-37,-30,-59,-48,-48]],
+["DCR",-0.65,[0,7,-14,-7,-42,-70,-42,-84,-56,-70,-84,-98,-98,-84,-98,-77,-84,-84,-70,-56,-56,-70,-70,-84,-63,-56,-70,-56,-49,-63,-70,-77,-56,-77,-84,-70,-35,-84,-84,-77,-84,-77,-84,-70,-77,-77,-77,-63,-49]],
+["PEPE",-0.77,[0,61,20,121,101,223,182,162,202,162,182,121,121,101,61,40,61,20,-20,0,-61,-223,-121,-142,-243,-223,-162,-162,-142,-142,-162,-162,-121,-81,-81,-121,-20,-40,-61,-40,-121,-121,-121,-101,-61,-61,-81,-61,-61]],
+["CRV",-0.83,[0,-12,-36,0,15,39,-27,-15,-24,-76,-88,-85,-70,-70,-70,-76,-73,-73,-115,-103,-128,-137,-82,-106,-76,-43,-21,-33,-64,-55,-49,-85,-97,-88,-85,-79,-76,-70,-76,-94,-115,-121,-137,-143,-143,-118,-100,-67,-67]],
+["DASH",-1.12,[0,10,-12,2,-6,24,0,6,2,-30,-61,-79,-87,-71,-73,-71,-69,-77,-73,-77,-53,-51,10,0,-18,-10,2,-33,-28,-2,-4,-30,-12,-51,-63,-53,-41,-45,-81,-57,-120,-118,-140,-134,-152,-146,-146,-91,-96]],
+["NIGHT",-1.49,[0,5,-18,28,87,126,126,133,167,113,131,133,172,195,195,138,156,102,59,20,-10,-41,-5,-31,-59,-51,-23,-61,18,-31,-64,-108,-146,-151,-167,-197,-208,-192,-202,-190,-97,-90,-128,-156,-184,-79,-128,-95,-133]],
+["BNB",-1.74,[0,-10,-35,-6,1,3,-16,-14,-9,-18,-46,-62,-53,-47,-39,-47,-68,-73,-113,-161,-147,-169,-138,-149,-147,-144,-143,-143,-155,-154,-160,-169,-172,-186,-189,-193,-177,-164,-160,-175,-185,-170,-170,-157,-165,-158,-164,-146,-158]],
+["CVX",-2.97,[0,9,-36,18,9,36,23,-5,-18,-50,-54,-73,-45,-50,-45,-45,-36,-50,-82,-91,-109,-118,-68,-91,-91,-113,-104,-118,-150,-154,-186,-209,-240,-213,-222,-209,-209,-222,-199,-227,-240,-254,-263,-254,-308,-304,-349,-308,-281]]]},
+"12h":{"start":"09:45","times":["09:45","10:00","10:15","10:30","10:45","11:00","11:15","11:30","11:45","12:00","12:15","12:30","12:45","13:00","13:15","13:30","13:45","14:00","14:15","14:30","14:45","15:00","15:15","15:30","15:45","16:00","16:15","16:30","16:45","17:00","17:15","17:30","17:45","18:00","18:15","18:30","18:45","19:00","19:15","19:30","19:45","20:00","20:15","20:30","20:45","21:00","21:15","21:30","21:45"],"btc":-1.28,"beat":24,"n":81,
+"bl":[0,-8,-23,-33,-76,-142,-154,-151,-179,-149,-153,-165,-157,-162,-159,-155,-137,-113,-89,-97,-104,-115,-125,-128,-143,-148,-157,-160,-160,-161,-141,-137,-144,-136,-120,-126,-118,-119,-126,-127,-112,-109,-117,-126,-121,-123,-131,-129,-128],"rows":[
+["HYPE",11.5,[0,-45,-36,-78,-99,-209,-246,-247,-278,-227,-248,-284,-263,-261,-235,-220,-197,-164,-124,-135,-137,-149,-165,-158,-190,-178,-215,-231,-221,-204,-184,-170,-180,-166,-147,-169,-155,-142,-144,-137,420,618,806,714,807,926,966,924,1007]],
+["ZRO",5.14,[0,-53,-83,-112,-201,-367,-355,-391,-396,-320,-379,-479,-408,-402,-420,-402,-343,-314,-166,-178,-195,-284,-320,-349,-402,-391,-462,-491,-479,-450,-396,-385,-402,-337,-331,-355,-325,-320,-355,-355,-195,-101,-101,-172,-166,-195,-290,53,379]],
+["BIANRENSHENG",2.95,[0,9,9,21,-47,-87,-100,-97,-102,-153,-151,-148,-21,-44,8,15,72,68,133,83,40,6,-30,-9,9,-2,0,91,203,191,201,258,212,223,242,227,182,227,176,150,178,153,169,159,148,117,163,182,163]],
+["XPL",2.04,[0,-10,-29,-47,-108,-250,-302,-284,-324,-199,-253,-331,-285,-260,-225,-204,-145,-125,-17,-12,-81,-127,-150,-184,-218,-259,-287,-295,-290,-223,-191,-144,-172,-157,-94,-9,17,33,-4,35,90,102,102,54,89,51,12,10,73]],
+["TRX",1.98,[0,3,12,18,15,9,9,27,27,36,43,46,49,46,46,55,58,61,73,61,58,67,61,58,55,70,67,55,64,58,64,64,64,67,61,70,67,64,67,61,67,70,73,73,67,70,67,70,67]],
+["POL",1.71,[0,-21,-26,-42,-115,-213,-236,-225,-258,-190,-232,-267,-249,-221,-217,-193,-173,-161,-72,-67,-88,-105,-120,-124,-136,-140,-157,-180,-168,-175,-139,-109,-103,-93,-74,-89,-83,-72,-102,-115,-57,-13,-17,-46,-42,-28,-38,11,40]],
+["SKY",1.38,[0,-15,-9,-53,-75,-145,-232,-250,-256,-214,-255,-273,-266,-235,-212,-208,-128,-173,-101,-98,-108,-142,-122,-144,-140,-157,-176,-212,-180,-154,-128,-166,-168,-139,-105,-122,-133,-99,-119,-115,-64,-44,-20,-37,-9,-21,-49,-35,8]],
+["STRK",1.3,[0,-4,-15,-26,-128,-212,-317,-287,-325,-287,-344,-376,-302,-237,-240,-244,-184,-148,13,-49,13,-4,-75,-62,-79,-186,-201,-259,-299,-308,-295,-254,-248,-210,-145,-192,-175,-118,-98,-137,-111,-68,-49,-103,-152,-156,-180,-156,0]],
+["ASTER",1.06,[0,-4,-17,-64,-83,-132,-144,-146,-202,-154,-154,-160,-142,-129,-150,-137,-117,-99,-45,-67,-61,-88,-91,-98,-86,-96,-98,-110,-116,-99,-75,-74,-93,-91,-82,-74,-93,-96,-103,-99,-75,-68,-58,-65,-55,-48,-50,-31,-24]],
+["FIL",1.0,[0,-38,-47,-64,-190,-325,-419,-419,-483,-389,-421,-499,-480,-452,-467,-475,-431,-427,-275,-263,-279,-328,-366,-393,-424,-441,-497,-513,-475,-472,-451,-392,-332,-299,-225,-279,-282,-249,-245,-244,-127,-91,-106,-121,-89,-86,-117,-59,-30]],
+["ENS",0.92,[0,-19,-19,-38,-151,-245,-321,-321,-377,-302,-321,-358,-321,-302,-302,-283,-264,-245,-170,-151,-170,-189,-208,-226,-264,-264,-302,-302,-302,-283,-264,-245,-264,-226,-151,-189,-189,-151,-170,-170,-94,-57,-75,-75,-113,-113,-132,-94,-38]],
+["CFX",0.86,[0,-33,-40,-54,-112,-220,-266,-241,-306,-245,-277,-299,-293,-268,-291,-293,-237,-258,-206,-204,-212,-277,-281,-308,-320,-312,-349,-345,-308,-326,-320,-310,-279,-243,-191,-195,-191,-160,-170,-160,-162,-131,-129,-131,-94,-100,-123,-104,-44]],
+["XLM",0.71,[0,-29,-23,-52,-110,-227,-273,-244,-279,-221,-250,-279,-256,-244,-250,-233,-209,-192,-128,-134,-134,-169,-209,-209,-227,-233,-273,-273,-262,-262,-250,-238,-238,-221,-186,-198,-192,-174,-192,-203,-157,-116,-110,-122,-122,-122,-134,-87,-58]],
+["ARB",0.47,[0,-35,-58,-52,-146,-326,-408,-373,-431,-373,-425,-460,-414,-367,-384,-384,-361,-344,-192,-239,-245,-303,-326,-332,-384,-419,-472,-518,-489,-495,-448,-419,-437,-431,-390,-408,-384,-373,-367,-355,-250,-175,-175,-262,-250,-215,-210,-181,-82]],
+["AAVE",0.45,[0,-36,-45,-65,-156,-349,-350,-342,-387,-297,-344,-396,-363,-334,-348,-357,-308,-302,-161,-196,-188,-229,-233,-232,-251,-289,-339,-344,-335,-320,-276,-254,-292,-277,-241,-255,-250,-234,-268,-282,-135,-112,-73,-80,-74,-88,-123,-100,-84]],
+["DOGE",0.37,[0,-38,-38,-58,-109,-214,-251,-247,-273,-223,-239,-269,-249,-246,-249,-234,-206,-182,-99,-110,-124,-144,-172,-170,-202,-219,-247,-258,-256,-261,-241,-229,-233,-214,-193,-202,-197,-191,-212,-228,-188,-147,-135,-149,-135,-140,-152,-113,-92]],
+["ENA",0.37,[0,-29,-19,-63,-231,-419,-510,-558,-597,-525,-592,-674,-616,-577,-582,-529,-491,-433,-327,-332,-399,-457,-505,-525,-553,-539,-597,-606,-573,-568,-505,-496,-510,-520,-486,-529,-515,-496,-496,-472,-303,-226,-115,-212,-265,-255,-313,-298,-91]],
+["LUNC",0.37,[0,-31,-37,-33,-97,-160,-202,-193,-231,-191,-215,-215,-196,-185,-207,-180,-149,-154,-114,-103,-97,-130,-143,-167,-176,-185,-226,-229,-218,-224,-207,-202,-198,-171,-152,-160,-176,-160,-169,-176,-112,-128,-103,-95,-97,-108,-138,-112,-92]],
+["TIA",0.27,[0,-51,-80,-62,-183,-310,-400,-380,-456,-398,-433,-465,-407,-347,-319,-409,-343,-334,-184,-208,-252,-382,-424,-511,-506,-557,-590,-579,-566,-542,-529,-497,-509,-431,-352,-402,-371,-327,-343,-371,-259,-246,-226,-268,-276,-272,-265,-172,-102]],
+["UNI",0.26,[0,-77,-67,-93,-192,-334,-391,-404,-483,-388,-428,-464,-417,-410,-425,-406,-366,-336,-225,-240,-226,-301,-325,-314,-346,-379,-413,-425,-402,-397,-346,-342,-380,-368,-306,-353,-343,-321,-339,-364,-233,-178,-172,-211,-126,-140,-165,-122,-103]],
+["ATOM",0.19,[0,-36,-73,-97,-170,-334,-328,-304,-370,-316,-310,-346,-322,-298,-340,-316,-279,-267,-182,-164,-170,-213,-237,-273,-279,-298,-316,-346,-304,-304,-285,-267,-255,-231,-182,-200,-188,-200,-206,-225,-164,-109,-128,-152,-128,-134,-164,-152,-109]],
+["ONDO",0.12,[0,-38,-40,-64,-162,-328,-383,-376,-404,-335,-338,-390,-374,-352,-345,-333,-295,-283,-186,-183,-195,-240,-271,-281,-300,-331,-355,-378,-362,-359,-331,-321,-328,-312,-226,-276,-266,-250,-278,-300,-224,-174,-164,-207,-174,-186,-219,-169,-117]],
+["ETC",0.1,[0,-26,-40,-40,-105,-224,-316,-277,-316,-250,-290,-316,-316,-277,-290,-264,-250,-237,-171,-158,-171,-198,-211,-237,-250,-264,-290,-316,-316,-329,-303,-290,-303,-277,-237,-264,-250,-237,-250,-237,-184,-184,-184,-198,-184,-198,-211,-171,-119]],
+["FET",0.09,[0,-33,-49,-76,-163,-353,-413,-391,-440,-348,-397,-446,-413,-386,-380,-375,-321,-293,-152,-168,-168,-223,-272,-304,-326,-342,-397,-418,-386,-386,-375,-337,-342,-293,-245,-255,-272,-239,-266,-293,-163,-109,-152,-179,-147,-152,-196,-168,-120]],
+["LINK",-0.01,[0,-27,-43,-59,-150,-275,-335,-352,-405,-324,-359,-399,-344,-331,-338,-325,-288,-274,-161,-180,-200,-226,-263,-262,-291,-301,-348,-355,-347,-359,-310,-294,-296,-267,-243,-245,-250,-235,-255,-265,-198,-170,-150,-177,-153,-141,-176,-141,-129]],
+["SHIB",-0.12,[0,-40,-40,-60,-120,-241,-261,-301,-341,-261,-261,-281,-281,-261,-281,-261,-221,-201,-100,-120,-161,-181,-181,-201,-241,-261,-281,-301,-301,-301,-281,-261,-281,-241,-221,-241,-221,-201,-221,-281,-241,-161,-181,-201,-161,-161,-181,-161,-141]],
+["SOL",-0.13,[0,-21,-42,-59,-128,-215,-246,-235,-244,-193,-219,-242,-230,-232,-228,-230,-194,-186,-136,-140,-147,-172,-186,-184,-197,-193,-219,-226,-218,-224,-202,-193,-201,-179,-170,-184,-179,-172,-184,-195,-150,-139,-140,-160,-157,-165,-173,-157,-141]],
+["XTZ",-0.14,[0,-53,-78,-85,-156,-266,-298,-259,-294,-238,-259,-312,-273,-230,-266,-259,-202,-234,-167,-199,-184,-191,-220,-266,-269,-284,-298,-351,-330,-337,-326,-305,-319,-312,-291,-301,-284,-273,-305,-330,-276,-181,-163,-163,-174,-181,-199,-177,-142]],
+["ETH",-0.16,[0,-11,-41,-47,-105,-182,-225,-221,-242,-190,-207,-222,-205,-204,-203,-193,-163,-150,-102,-122,-125,-144,-167,-168,-182,-185,-204,-215,-204,-198,-174,-176,-175,-160,-151,-159,-151,-151,-162,-166,-139,-120,-132,-144,-131,-135,-145,-140,-144]],
+["GRAM",-0.17,[0,8,8,-57,-81,-154,-186,-218,-226,-186,-186,-194,-170,-162,-162,-154,-146,-137,-105,-105,-97,-113,-146,-146,-137,-154,-194,-210,-194,-210,-202,-202,-226,-202,-178,-194,-186,-194,-210,-202,-170,-162,-162,-154,-162,-154,-170,-154,-146]],
+["AERO",-0.2,[0,-53,-79,-137,-208,-298,-310,-350,-367,-346,-388,-389,-385,-378,-382,-383,-326,-307,-245,-223,-208,-228,-252,-233,-262,-248,-267,-320,-285,-271,-303,-288,-304,-294,-248,-246,-218,-197,-235,-244,-148,-114,-86,-159,-163,-174,-215,-180,-148]],
+["WLFI",-0.26,[0,0,-19,-19,0,-38,-77,-58,-96,-115,-135,-77,-96,-96,-135,-135,-135,-115,-38,-38,-58,-77,-96,-115,-77,-96,-96,-115,-135,-135,-115,-115,-135,-115,-115,-115,-115,-135,-135,-135,-135,-135,-135,-135,-135,-135,-154,-154,-154]],
+["KITE",-0.28,[0,-17,-35,-52,-87,-182,-269,-277,-295,-243,-269,-277,-277,-269,-321,-312,-269,-269,-225,-208,-225,-260,-277,-277,-312,-321,-347,-338,-303,-312,-277,-277,-303,-295,-269,-286,-269,-277,-321,-312,-251,-234,-165,-156,-139,-191,-165,-173,-156]],
+["HBAR",-0.33,[0,-45,-54,-85,-139,-240,-254,-246,-279,-218,-268,-311,-271,-279,-272,-264,-238,-216,-138,-135,-129,-155,-185,-198,-200,-227,-255,-256,-259,-255,-226,-210,-232,-214,-212,-212,-199,-189,-199,-202,-199,-166,-203,-224,-231,-244,-256,-207,-161]],
+["DCR",-0.37,[0,-7,-21,-21,-62,-83,-117,-90,-110,-110,-110,-117,-131,-117,-124,-131,-138,-145,-90,-103,-90,-83,-117,-138,-138,-152,-138,-152,-165,-145,-138,-124,-117,-124,-158,-186,-213,-193,-186,-186,-179,-172,-186,-193,-152,-193,-200,-193,-165]],
+["TRUMP",-0.4,[0,-35,-29,-41,-139,-255,-313,-302,-348,-261,-278,-307,-273,-255,-261,-267,-238,-220,-128,-133,-168,-191,-220,-249,-273,-296,-331,-336,-319,-319,-302,-302,-336,-296,-261,-273,-284,-267,-296,-284,-232,-180,-186,-197,-157,-168,-220,-215,-168]],
+["LTC",-0.46,[0,22,5,8,-29,-120,-197,-197,-263,-216,-248,-342,-314,-347,-359,-346,-329,-297,-180,-199,-229,-266,-302,-310,-342,-356,-373,-371,-376,-376,-371,-373,-383,-359,-317,-330,-330,-300,-332,-330,-239,-231,-243,-256,-216,-218,-212,-199,-174]],
+["SUI",-0.47,[0,-43,-64,-75,-183,-315,-386,-384,-443,-346,-389,-452,-435,-404,-401,-391,-355,-334,-228,-234,-246,-284,-303,-307,-345,-363,-407,-431,-385,-382,-363,-343,-350,-330,-288,-317,-299,-284,-297,-309,-239,-179,-193,-223,-212,-217,-262,-225,-175]],
+["DOT",-0.6,[0,-30,-50,-40,-139,-327,-366,-366,-426,-347,-406,-455,-416,-376,-376,-366,-337,-317,-238,-228,-228,-257,-297,-307,-337,-337,-376,-366,-347,-356,-347,-307,-317,-317,-267,-257,-257,-218,-238,-228,-218,-168,-198,-267,-238,-257,-287,-248,-188]],
+["GRT",-0.64,[0,-31,-45,-67,-156,-308,-371,-379,-402,-326,-371,-415,-393,-375,-384,-388,-357,-348,-277,-263,-277,-321,-344,-371,-397,-411,-464,-491,-455,-442,-420,-379,-402,-353,-312,-317,-330,-299,-317,-308,-232,-201,-237,-250,-250,-246,-290,-237,-192]],
+["MORPHO",-0.65,[0,-22,-36,-58,-125,-161,-197,-219,-273,-233,-264,-273,-197,-184,-219,-255,-210,-202,-157,-130,-116,-143,-161,-188,-175,-233,-215,-291,-264,-255,-193,-152,-161,-175,-161,-193,-264,-251,-282,-291,-228,-242,-228,-260,-264,-269,-287,-228,-193]],
+["VIRTUAL",-0.71,[0,-40,-46,-75,-161,-286,-385,-364,-399,-315,-347,-390,-363,-342,-351,-351,-304,-288,-212,-217,-238,-273,-294,-313,-344,-350,-385,-403,-388,-379,-358,-363,-374,-348,-323,-336,-328,-312,-344,-329,-254,-228,-222,-257,-241,-233,-272,-241,-198]],
+["AVAX",-0.77,[0,-43,-55,-75,-164,-324,-401,-391,-431,-342,-390,-450,-442,-431,-423,-410,-365,-342,-224,-225,-228,-259,-279,-286,-296,-317,-366,-390,-378,-396,-371,-332,-341,-329,-280,-301,-284,-277,-307,-302,-239,-204,-219,-249,-245,-233,-296,-243,-205]],
+["INJ",-0.77,[0,-15,-1,-66,-212,-350,-446,-484,-629,-560,-583,-616,-600,-535,-525,-555,-566,-541,-412,-421,-433,-459,-443,-443,-449,-458,-510,-494,-488,-495,-498,-414,-381,-327,-278,-350,-360,-290,-285,-259,-136,-25,-41,-172,-182,-163,-202,-163,-204]],
+["LDO",-0.81,[0,-26,-45,-29,-166,-330,-375,-383,-428,-338,-362,-393,-385,-356,-396,-383,-372,-338,-230,-219,-238,-296,-340,-362,-393,-412,-467,-459,-420,-430,-406,-383,-399,-372,-367,-383,-409,-372,-377,-383,-333,-269,-274,-298,-280,-245,-264,-245,-208]],
+["TAO",-0.83,[0,-39,-62,-78,-171,-311,-377,-377,-431,-365,-400,-428,-400,-385,-381,-369,-330,-323,-237,-237,-253,-291,-319,-334,-354,-358,-393,-408,-400,-396,-373,-350,-377,-342,-307,-323,-307,-295,-334,-338,-249,-202,-206,-237,-218,-210,-253,-249,-210]],
+["AR",-0.84,[0,-68,-51,-76,-180,-333,-395,-389,-451,-364,-429,-485,-465,-429,-462,-454,-409,-389,-276,-257,-282,-336,-386,-403,-429,-437,-516,-530,-508,-494,-457,-448,-437,-398,-358,-372,-361,-350,-353,-355,-274,-237,-234,-251,-251,-257,-302,-259,-212]],
+["ADA",-0.86,[0,-39,-68,-92,-180,-374,-423,-418,-466,-393,-403,-447,-427,-408,-403,-384,-345,-330,-253,-253,-272,-321,-335,-350,-369,-379,-418,-427,-398,-403,-369,-359,-374,-355,-311,-311,-296,-291,-316,-306,-243,-219,-233,-253,-238,-233,-287,-257,-214]],
+["BNB",-0.89,[0,-20,-29,-26,-76,-155,-133,-137,-161,-101,-126,-161,-144,-139,-139,-116,-62,-34,19,-5,-15,-33,-54,-27,-67,-68,-85,-98,-108,-119,-80,-65,-59,-65,-76,-77,-112,-106,-171,-227,-205,-201,-218,-244,-236,-233,-228,-217,-217]],
+["ICP",-0.92,[0,-53,-30,-49,-136,-272,-344,-329,-405,-322,-378,-439,-397,-352,-390,-386,-341,-333,-219,-231,-227,-265,-310,-329,-363,-382,-420,-454,-435,-416,-397,-386,-382,-344,-314,-359,-329,-314,-348,-333,-257,-219,-231,-272,-242,-253,-272,-242,-219]],
+["RENDER",-0.96,[0,-29,-35,-53,-171,-365,-447,-459,-477,-406,-430,-512,-489,-459,-471,-471,-436,-388,-312,-283,-294,-347,-359,-371,-412,-441,-459,-506,-465,-465,-418,-394,-412,-400,-347,-347,-330,-312,-371,-353,-259,-218,-235,-283,-265,-277,-312,-294,-224]],
+["PENGU",-0.98,[0,-14,-13,-57,-147,-330,-410,-463,-472,-359,-428,-492,-483,-429,-414,-403,-345,-282,-151,-193,-211,-234,-297,-312,-342,-375,-448,-459,-456,-458,-442,-419,-433,-368,-326,-330,-325,-347,-383,-408,-315,-273,-259,-313,-284,-295,-324,-287,-225]],
+["STX",-1.0,[0,-40,-40,-70,-304,-427,-484,-421,-504,-441,-461,-621,-714,-761,-864,-831,-771,-774,-698,-614,-537,-487,-417,-601,-607,-617,-684,-674,-631,-581,-581,-561,-514,-491,-360,-411,-350,-347,-391,-391,-324,-287,-317,-354,-327,-360,-367,-337,-227]],
+["XRP",-1.07,[0,-16,-36,-45,-99,-186,-195,-213,-246,-201,-224,-245,-239,-248,-249,-244,-215,-195,-150,-159,-164,-178,-186,-205,-215,-218,-237,-245,-240,-258,-233,-230,-243,-239,-224,-231,-237,-227,-255,-267,-234,-215,-232,-249,-226,-237,-254,-243,-234]],
+["OP",-1.12,[0,-35,-53,-80,-194,-345,-415,-406,-477,-389,-433,-477,-433,-406,-442,-459,-424,-406,-274,-256,-274,-327,-353,-406,-433,-451,-504,-521,-495,-495,-442,-415,-424,-380,-318,-336,-353,-318,-327,-327,-247,-203,-212,-274,-256,-292,-318,-292,-239]],
+["ZEC",-1.14,[0,-42,-32,-53,-165,-354,-414,-433,-477,-438,-494,-535,-531,-482,-502,-481,-443,-431,-363,-376,-387,-388,-429,-412,-448,-443,-503,-516,-505,-477,-449,-431,-461,-424,-410,-401,-406,-378,-375,-379,-269,-279,-283,-317,-264,-218,-278,-304,-241]],
+["CRV",-1.18,[0,-12,-27,-54,-161,-262,-307,-349,-403,-280,-331,-355,-346,-352,-361,-385,-343,-304,-218,-200,-197,-244,-247,-250,-239,-274,-304,-292,-265,-233,-256,-182,-179,-179,-206,-253,-247,-253,-292,-313,-253,-212,-227,-265,-253,-271,-313,-295,-244]],
+["IMX",-1.22,[0,-35,-43,-57,-170,-284,-326,-334,-405,-341,-412,-426,-426,-419,-433,-390,-369,-362,-291,-291,-305,-319,-341,-369,-405,-405,-454,-518,-468,-483,-476,-490,-468,-440,-405,-412,-433,-419,-433,-440,-348,-248,-234,-263,-270,-312,-334,-291,-248]],
+["VET",-1.27,[0,-41,-39,-31,-135,-326,-338,-315,-410,-365,-393,-421,-410,-407,-430,-438,-430,-435,-352,-326,-332,-383,-377,-421,-463,-452,-512,-546,-518,-515,-488,-466,-499,-455,-385,-410,-401,-413,-409,-418,-337,-299,-316,-321,-302,-315,-358,-322,-254]],
+["CAKE",-1.39,[0,-19,-33,-47,-114,-204,-213,-232,-299,-251,-294,-322,-318,-294,-294,-284,-237,-223,-171,-185,-194,-218,-242,-232,-280,-299,-303,-318,-313,-318,-313,-294,-294,-284,-275,-289,-303,-294,-336,-379,-327,-294,-294,-318,-318,-303,-303,-284,-265]],
+["APT",-1.43,[0,-32,-47,-59,-192,-384,-483,-451,-542,-473,-484,-559,-566,-516,-529,-533,-504,-486,-360,-331,-350,-414,-479,-501,-530,-547,-630,-642,-613,-592,-589,-560,-562,-527,-479,-496,-490,-466,-470,-483,-377,-322,-324,-354,-347,-381,-418,-370,-269]],
+["PENDLE",-1.45,[0,-35,-40,-60,-191,-342,-403,-398,-458,-398,-433,-478,-463,-433,-443,-428,-403,-382,-262,-282,-262,-317,-357,-347,-372,-393,-428,-443,-428,-433,-413,-372,-388,-362,-292,-307,-322,-307,-342,-332,-216,-232,-211,-252,-226,-302,-347,-297,-272]],
+["FLOKI",-1.48,[0,-37,-62,-42,-120,-249,-291,-328,-378,-291,-328,-341,-332,-316,-341,-299,-270,-237,-108,-104,-145,-183,-220,-228,-249,-262,-320,-336,-357,-382,-353,-345,-361,-311,-278,-278,-295,-295,-316,-357,-311,-262,-270,-295,-270,-295,-332,-299,-274]],
+["PEPE",-1.51,[0,20,99,139,-40,-119,-139,-257,-257,-119,-178,-178,-198,-178,-218,-99,-99,0,198,79,-40,0,20,-40,-40,-20,-119,-119,-119,-277,-198,-238,-218,-99,-40,-59,-99,-178,-238,-436,-455,-376,-376,-297,-238,-257,-337,-277,-277]],
+["BONK",-1.58,[0,-32,-32,-32,-158,-315,-379,-347,-379,-284,-347,-442,-473,-442,-473,-442,-379,-315,-158,-189,-221,-252,-284,-347,-347,-410,-473,-473,-473,-473,-442,-442,-473,-379,-347,-347,-347,-347,-379,-442,-347,-284,-315,-347,-315,-315,-347,-315,-284]],
+["QNT",-1.7,[0,-39,-59,-44,-138,-228,-323,-327,-422,-343,-357,-441,-415,-421,-407,-375,-344,-324,-195,-194,-180,-208,-240,-262,-319,-296,-387,-410,-383,-349,-350,-326,-325,-353,-363,-397,-355,-327,-343,-331,-272,-269,-285,-326,-306,-280,-327,-306,-296]],
+["ETHFI",-1.76,[0,-45,-70,-105,-237,-336,-432,-385,-464,-388,-426,-483,-501,-456,-489,-483,-404,-388,-257,-241,-289,-372,-451,-494,-523,-526,-594,-609,-607,-540,-543,-483,-492,-486,-429,-476,-499,-496,-508,-515,-423,-371,-340,-372,-394,-406,-429,-383,-302]],
+["SEI",-1.77,[0,-39,-108,-126,-260,-405,-446,-446,-505,-433,-463,-509,-455,-424,-426,-418,-379,-349,-262,-253,-258,-320,-327,-351,-387,-416,-476,-500,-479,-485,-470,-453,-478,-450,-413,-439,-439,-413,-452,-466,-392,-322,-338,-385,-370,-379,-420,-377,-303]],
+["PUMP",-1.81,[0,-108,-128,-115,-246,-436,-573,-571,-642,-540,-644,-763,-726,-697,-690,-679,-586,-549,-462,-491,-513,-538,-573,-584,-628,-622,-715,-717,-681,-684,-655,-602,-653,-580,-538,-560,-571,-562,-586,-595,-412,-330,-290,-363,-321,-367,-409,-394,-308]],
+["ALGO",-1.82,[0,-19,-67,-87,-192,-327,-414,-433,-472,-433,-472,-510,-500,-491,-443,-433,-395,-375,-308,-289,-298,-337,-375,-395,-404,-433,-491,-510,-500,-491,-443,-433,-443,-443,-433,-452,-472,-433,-462,-433,-356,-366,-366,-375,-356,-385,-414,-366,-308]],
+["JUP",-1.87,[0,-46,-68,-78,-196,-352,-391,-413,-487,-406,-452,-512,-498,-470,-505,-477,-427,-402,-292,-295,-306,-356,-381,-402,-438,-462,-509,-527,-487,-494,-459,-448,-473,-427,-413,-434,-430,-413,-430,-466,-366,-327,-338,-374,-363,-374,-409,-366,-313]],
+["BCH",-2.07,[0,-28,-38,-49,-139,-205,-256,-218,-250,-184,-239,-347,-437,-378,-347,-336,-315,-291,-250,-243,-229,-250,-267,-295,-312,-315,-326,-312,-343,-326,-302,-291,-322,-298,-284,-291,-305,-305,-315,-305,-246,-256,-256,-288,-291,-308,-336,-326,-333]],
+["KMNO",-2.1,[0,-15,-111,-77,-116,-258,-302,-307,-304,-297,-320,-279,-242,-217,-227,-199,-144,-137,-111,-106,-137,-181,-209,-240,-222,-248,-286,-258,-227,-224,-271,-286,-364,-384,-369,-377,-369,-353,-340,-322,-315,-320,-286,-312,-312,-348,-366,-382,-335]],
+["WLD",-2.25,[0,-50,-64,-108,-197,-358,-470,-406,-511,-470,-502,-537,-509,-484,-482,-489,-445,-443,-312,-312,-330,-376,-459,-463,-507,-528,-576,-596,-571,-541,-491,-493,-470,-438,-381,-406,-431,-404,-431,-422,-344,-273,-275,-351,-362,-365,-401,-399,-351]],
+["NIGHT",-3.65,[0,-25,-37,0,-96,-207,-252,-279,-284,-230,-230,-262,-232,-220,-198,-230,-225,-235,-180,-205,-235,-235,-245,-57,-222,-232,-262,-405,-385,-395,-351,-346,-361,-333,-240,-252,-195,-227,-304,-400,-417,-420,-422,-506,-561,-543,-484,-437,-489]],
+["PYTH",-3.86,[0,-49,-102,-90,-164,-319,-400,-435,-550,-464,-530,-592,-562,-534,-539,-542,-523,-522,-427,-442,-410,-429,-433,-450,-524,-524,-598,-621,-570,-553,-528,-509,-544,-550,-492,-559,-584,-575,-615,-627,-476,-472,-511,-553,-557,-573,-644,-642,-509]],
+["JTO",-3.86,[0,-67,-88,-102,-234,-440,-555,-611,-710,-618,-680,-738,-715,-680,-703,-722,-696,-692,-562,-532,-539,-602,-685,-703,-731,-752,-794,-821,-835,-810,-796,-794,-789,-727,-659,-692,-708,-664,-689,-692,-590,-534,-534,-588,-578,-590,-639,-602,-509]],
+["NEAR",-4.15,[0,-72,-87,-117,-272,-455,-513,-530,-551,-487,-553,-617,-611,-589,-594,-591,-547,-530,-394,-434,-426,-449,-500,-494,-662,-764,-823,-853,-832,-815,-791,-770,-777,-751,-713,-736,-719,-702,-726,-723,-617,-602,-587,-628,-600,-596,-653,-628,-538]],
+["DASH",-4.17,[0,19,38,15,-60,-199,-211,-205,-303,-244,-310,-367,-312,-290,-342,-421,-393,-368,-308,-259,-274,-259,-355,-350,-385,-406,-438,-464,-496,-502,-485,-451,-447,-446,-447,-476,-530,-515,-517,-496,-464,-479,-451,-496,-487,-502,-581,-587,-540]],
+["RAY",-5.74,[0,-31,-70,-42,-164,-293,-355,-380,-463,-368,-404,-453,-436,-412,-414,-426,-379,-367,-328,-362,-315,-345,-456,-560,-664,-828,-847,-867,-813,-815,-821,-842,-824,-841,-817,-852,-799,-807,-807,-821,-748,-738,-759,-793,-774,-781,-832,-805,-695]],
+["CVX",-7.85,[0,-47,-68,-115,-208,-361,-445,-509,-585,-547,-611,-696,-666,-730,-759,-802,-692,-683,-611,-658,-692,-704,-730,-641,-670,-675,-670,-696,-675,-675,-662,-658,-641,-624,-619,-687,-683,-683,-717,-751,-725,-751,-815,-840,-836,-853,-887,-925,-904]]]},
+"24h":{"start":"21:45","times":["21:45","22:15","22:45","23:15","23:45","00:15","00:45","01:15","01:45","02:15","02:45","03:15","03:45","04:15","04:45","05:15","05:45","06:15","06:45","07:15","07:45","08:15","08:45","09:15","09:45","10:15","10:45","11:15","11:45","12:15","12:45","13:15","13:45","14:15","14:45","15:15","15:45","16:15","16:45","17:15","17:45","18:15","18:45","19:15","19:45","20:15","20:45","21:15","21:45"],"btc":-0.87,"beat":49,"n":81,
+"bl":[0,-12,-9,-22,-33,-17,-26,-32,-47,-40,-11,0,43,37,62,55,33,66,52,56,61,62,60,60,42,19,-34,-112,-138,-112,-116,-118,-96,-48,-63,-84,-102,-116,-118,-99,-103,-78,-77,-84,-71,-76,-80,-90,-87],"rows":[
+["HYPE",10.71,[0,-43,-66,-113,-98,-97,-106,-95,-97,-76,-40,-31,22,14,71,89,0,58,31,50,32,19,-1,-2,-30,-66,-129,-275,-307,-277,-292,-264,-227,-154,-166,-194,-219,-244,-250,-213,-209,-176,-184,-173,389,774,775,934,974]],
+["PUMP",3.77,[0,-42,-21,-155,-183,-108,-106,-131,-200,-162,-73,-23,193,301,411,561,505,683,735,662,625,679,622,679,613,477,352,5,-68,-70,-157,-120,-9,122,68,5,-54,-146,-110,-82,-80,42,7,-9,176,305,272,178,286]],
+["ARB",3.74,[0,-36,12,-91,-72,72,91,42,-6,-12,30,139,386,411,453,610,513,616,592,519,471,399,380,417,368,308,217,-54,-79,-72,-60,-30,-6,169,115,30,-30,-121,-139,-97,-85,-36,-30,-12,109,187,109,151,284]],
+["ENA",3.7,[0,-65,-70,-280,-305,-245,-195,-200,-250,-225,-155,-75,165,175,374,469,369,569,494,489,459,454,449,434,374,354,135,-155,-245,-240,-265,-230,-135,35,-40,-150,-200,-245,-220,-150,-155,-130,-160,-140,60,255,100,50,280]],
+["ZRO",3.47,[0,-53,-18,-117,-94,29,64,-82,-170,-146,-135,-140,41,23,199,175,6,94,111,29,12,-146,-105,0,-117,-199,-316,-468,-509,-491,-520,-532,-456,-281,-310,-433,-515,-573,-591,-509,-515,-444,-439,-468,-310,-216,-281,-404,257]],
+["UNI",3.43,[0,-10,30,-47,-20,41,81,60,30,30,51,111,243,237,253,274,232,391,382,341,311,301,257,354,360,290,161,-45,-141,-84,-73,-81,-20,127,125,23,1,-68,-57,1,-34,43,4,9,118,182,229,189,253]],
+["FIL",3.08,[0,-9,17,-125,-125,8,24,-17,-49,-97,-34,17,198,199,244,307,252,320,306,288,283,270,215,254,249,200,54,-180,-246,-183,-243,-230,-193,-34,-37,-127,-186,-261,-239,-214,-92,18,-40,-2,119,140,158,129,218]],
+["XPL",2.81,[0,34,141,-9,-33,96,215,114,56,83,188,169,377,391,338,258,209,272,226,238,215,160,131,165,118,89,8,-188,-210,-139,-171,-110,-29,100,36,-34,-103,-173,-176,-75,-57,22,135,114,209,221,208,130,192]],
+["TIA",2.68,[0,15,111,38,28,246,175,92,-9,-60,-109,-90,197,216,317,443,475,563,499,445,503,368,347,413,283,201,96,-128,-186,-161,-135,-45,-69,94,24,-152,-237,-323,-298,-261,-240,-79,-98,-69,17,51,0,11,178]],
+["BIANRENSHENG",2.5,[0,-62,-81,-85,-100,-51,-64,-51,-53,-51,-19,-57,-34,-42,-28,-61,-115,-57,-74,-9,-32,-2,21,30,-2,8,-49,-102,-104,-153,-23,6,70,131,38,-32,8,-2,201,199,210,240,180,174,176,167,146,161,161]],
+["STRK",2.37,[0,-11,-2,-102,-50,156,193,74,-46,-65,-17,4,145,117,230,286,258,326,404,312,243,200,221,245,148,132,17,-174,-182,-202,-158,-95,-39,161,161,72,67,-56,-156,-152,-104,0,-30,48,35,98,-7,-35,148]],
+["LTC",2.35,[0,-42,2,-21,17,134,198,212,265,326,202,151,225,251,322,339,225,287,339,345,345,313,259,348,326,331,296,122,54,70,2,-45,-14,139,89,14,-28,-59,-63,-57,-70,-2,-16,-17,78,75,103,106,146]],
+["ETHFI",2.28,[0,0,-31,-113,-96,-34,-21,-29,-35,-26,-6,53,203,134,177,224,172,368,372,331,385,456,423,441,455,382,208,3,-31,9,-69,-56,32,186,153,-17,-92,-166,-180,-113,-60,6,-67,-76,12,99,43,6,139]],
+["POL",1.84,[0,4,10,-37,-26,37,35,19,-2,-35,-22,-11,78,70,85,87,54,93,79,101,66,72,42,84,55,28,-61,-183,-204,-178,-196,-164,-119,-17,-34,-66,-82,-103,-115,-85,-49,-20,-28,-48,-2,37,12,16,95]],
+["SKY",1.67,[0,-22,-17,-83,-75,-55,-45,-43,72,78,78,114,232,148,174,163,108,121,108,105,72,45,45,60,71,62,-5,-163,-188,-186,-197,-143,-58,-31,-38,-52,-71,-106,-111,-58,-98,-35,-63,-49,6,51,62,22,78]],
+["ENS",1.65,[0,0,19,-38,0,95,115,76,19,38,19,38,172,134,172,210,115,191,191,172,153,115,76,115,115,95,-38,-210,-267,-210,-210,-191,-153,-57,-57,-95,-153,-191,-191,-153,-153,-38,-76,-57,19,38,0,-19,76]],
+["XLM",1.59,[0,-6,24,-29,-35,24,59,47,18,-6,18,18,112,106,147,188,177,230,206,212,188,188,153,153,130,106,18,-147,-153,-124,-130,-124,-82,0,-6,-82,-100,-147,-135,-124,-112,-59,-65,-65,-29,18,6,-6,71]],
+["ICP",1.43,[0,-8,39,-43,-47,66,82,27,31,23,70,97,299,257,319,292,253,307,311,307,323,315,280,292,280,249,140,-74,-136,-109,-128,-121,-70,54,47,-39,-93,-152,-167,-128,-113,-43,-58,-78,16,43,31,0,54]],
+["FET",1.38,[0,11,50,-88,-61,33,50,-17,-72,-88,-44,-11,155,155,216,249,199,276,249,243,227,210,171,188,171,122,6,-249,-276,-232,-249,-216,-155,17,0,-105,-160,-232,-221,-210,-177,-77,-105,-100,6,17,22,-28,50]],
+["AAVE",1.32,[0,-41,-3,-92,-79,9,19,-27,-61,-88,-41,0,164,193,257,304,204,288,244,212,186,152,109,130,129,83,-29,-226,-263,-220,-239,-223,-183,-34,-61,-107,-125,-214,-210,-150,-167,-115,-124,-143,-8,55,54,5,44]],
+["PEPE",1.29,[0,-20,-82,-82,-143,-20,-102,0,-164,-123,61,0,0,-20,123,389,184,389,368,307,348,327,225,450,327,429,286,184,61,143,123,102,225,532,286,348,286,204,204,123,102,286,225,82,-143,-61,82,-20,41]],
+["BONK",1.21,[0,0,0,-98,-65,0,0,0,-65,-33,0,33,130,163,228,423,326,489,391,391,358,358,293,326,326,293,163,-65,-65,-33,-163,-163,-65,163,98,33,-33,-163,-163,-130,-163,-33,-33,-65,-33,0,0,-33,33]],
+["PENGU",1.2,[0,-8,-18,-76,-78,-26,10,5,-22,-47,-18,-52,84,61,109,198,172,296,291,282,315,328,248,323,264,251,112,-158,-221,-176,-233,-161,-90,109,47,-41,-88,-196,-204,-190,-181,-71,-70,-129,-59,-3,-28,-68,32]],
+["INJ",1.16,[0,-31,32,-69,-87,-80,-93,-85,-154,-164,-124,-65,46,68,144,301,158,329,317,322,370,364,385,336,237,236,20,-219,-406,-359,-377,-301,-343,-185,-206,-217,-223,-285,-262,-273,-153,-47,-131,-55,98,195,51,31,28]],
+["MORPHO",1.11,[0,23,18,-50,-41,37,46,59,55,46,101,96,188,160,229,247,206,284,265,279,284,270,293,307,220,183,92,18,-59,-50,18,-5,5,59,101,55,41,0,-50,23,55,55,-50,-69,-14,-14,-50,-73,23]],
+["ONDO",1.05,[0,14,68,-29,-24,65,92,43,5,-24,7,17,169,147,183,200,133,207,193,186,176,169,140,157,135,94,-29,-253,-275,-207,-244,-215,-164,-53,-63,-140,-169,-224,-231,-200,-198,-94,-135,-147,-92,-31,-41,-87,17]],
+["LINK",1.04,[0,-26,3,-73,-88,-55,-43,-65,-91,-109,-59,-41,83,84,139,188,131,192,185,186,174,181,158,188,147,103,-5,-193,-263,-217,-201,-195,-145,-16,-56,-120,-148,-206,-205,-168,-153,-99,-107,-112,-53,-5,-8,-32,16]],
+["CFX",1.03,[0,-17,-27,-73,-71,25,-2,0,8,-25,-2,6,125,109,146,161,117,157,165,163,138,117,67,88,59,19,-54,-209,-249,-220,-236,-234,-180,-148,-155,-224,-263,-293,-251,-263,-222,-134,-134,-113,-105,-71,-36,-65,15]],
+["XTZ",1.02,[0,-14,-7,-97,-83,-50,-50,-58,-86,-76,-47,-7,130,108,158,209,148,173,198,187,202,194,140,166,158,79,0,-144,-140,-104,-119,-112,-47,-11,-29,-65,-115,-144,-176,-173,-166,-137,-130,-151,-122,-7,-18,-43,14]],
+["ASTER",0.85,[0,20,11,-20,-45,-24,-35,4,-35,-24,-27,-23,27,-4,20,3,-10,35,41,51,43,48,51,9,21,4,-62,-123,-182,-133,-121,-129,-96,-24,-40,-69,-65,-77,-95,-54,-72,-61,-72,-82,-54,-37,-34,-28,-3]],
+["TRX",0.82,[0,0,-3,9,0,-3,-6,-24,-42,-48,-48,-45,-51,-51,-60,-63,-66,-63,-72,-60,-54,-51,-63,-63,-72,-60,-57,-63,-45,-30,-24,-27,-15,0,-15,-12,-18,-6,-9,-9,-9,-12,-6,-6,-6,0,-6,-6,-6]],
+["SUI",0.82,[0,-25,17,-72,-68,-4,9,-15,-51,-45,-5,9,145,155,205,236,174,249,247,228,200,196,163,192,173,108,-14,-220,-278,-223,-270,-235,-189,-59,-78,-136,-178,-242,-219,-196,-183,-121,-132,-129,-70,-24,-43,-94,-5]],
+["ATOM",0.75,[0,-18,6,-61,-31,-6,-12,-18,-104,-159,-116,-92,31,18,25,74,25,92,92,67,49,86,80,110,98,25,-74,-233,-276,-215,-227,-245,-184,-86,-74,-141,-184,-221,-208,-190,-159,-86,-92,-110,-67,-31,-31,-67,-12]],
+["AR",0.7,[0,6,43,-29,-60,37,26,6,-12,-55,-3,12,204,184,244,290,236,319,302,267,253,230,190,201,198,147,14,-204,-262,-239,-276,-273,-219,-83,-89,-196,-239,-328,-319,-267,-247,-167,-170,-161,-81,-40,-58,-109,-17]],
+["OP",0.61,[0,-45,-9,-90,-81,9,27,9,-90,-99,-63,-45,181,162,271,289,244,298,289,271,244,226,199,244,217,162,18,-208,-271,-226,-226,-235,-217,-63,-63,-144,-226,-298,-289,-235,-217,-108,-144,-117,-36,0,-45,-108,-27]],
+["IMX",0.59,[0,-15,-29,-73,-44,7,36,15,-22,-73,-51,-73,109,152,254,239,152,239,225,232,247,239,232,239,225,181,51,-109,-189,-196,-210,-218,-152,-73,-87,-123,-189,-239,-254,-261,-254,-189,-218,-218,-131,-15,-51,-116,-29]],
+["RENDER",0.58,[0,18,12,-66,-60,18,18,6,-18,-78,-24,-6,186,162,246,252,186,264,258,234,228,216,216,216,198,162,24,-258,-288,-240,-300,-282,-246,-120,-102,-168,-222,-270,-276,-228,-222,-156,-138,-180,-66,-42,-72,-120,-30]],
+["LDO",0.53,[0,-35,11,-67,-54,35,40,11,-21,-35,-19,3,150,169,204,223,161,258,223,215,167,193,177,199,177,132,8,-204,-258,-191,-215,-226,-201,-56,-64,-169,-223,-298,-250,-236,-228,-196,-239,-207,-161,-102,-107,-91,-35]],
+["DOGE",0.5,[0,-18,-15,-60,-66,3,-3,-5,-38,-57,-21,-16,39,42,62,98,81,113,102,86,73,74,52,60,54,16,-55,-198,-221,-187,-197,-197,-152,-45,-71,-118,-149,-194,-203,-188,-180,-140,-144,-159,-135,-82,-82,-98,-38]],
+["TRUMP",0.35,[0,-41,0,-65,-47,29,18,41,12,-12,12,29,106,123,200,188,135,200,200,194,176,170,129,147,117,88,-23,-200,-235,-164,-158,-147,-123,-12,-53,-106,-158,-217,-205,-188,-223,-147,-170,-182,-117,-70,-41,-106,-53]],
+["TAO",0.32,[0,-16,4,-71,-75,-12,-20,-32,-59,-71,-20,8,146,150,178,249,182,237,213,193,170,197,170,186,158,95,-16,-225,-280,-249,-249,-229,-178,-83,-99,-166,-201,-241,-249,-221,-225,-154,-154,-182,-95,-51,-63,-99,-55]],
+["LUNC",0.28,[0,-29,-64,-108,-115,-55,-46,-53,-64,-66,-57,-24,77,51,66,71,24,71,75,62,57,53,31,37,33,-4,-64,-170,-199,-183,-163,-174,-117,-82,-64,-110,-143,-194,-185,-174,-165,-119,-143,-137,-79,-71,-64,-106,-60]],
+["GRAM",0.14,[0,-8,-33,-57,-41,0,-8,-8,-8,8,33,65,187,130,155,163,130,147,122,130,106,106,106,98,73,81,-8,-114,-155,-114,-98,-90,-73,-33,-24,-73,-65,-122,-122,-130,-155,-106,-114,-138,-98,-90,-90,-98,-73]],
+["ETC",0.08,[0,-13,0,-53,-53,-13,-13,-13,-26,-40,-26,-26,66,66,93,119,66,119,119,119,66,66,26,53,40,0,-66,-278,-278,-251,-278,-251,-212,-132,-132,-172,-212,-251,-278,-265,-265,-198,-212,-212,-146,-146,-146,-172,-79]],
+["SHIB",0.06,[0,0,0,-81,-40,-20,0,0,-61,-81,-61,-61,20,40,81,101,61,121,81,81,40,61,20,61,61,20,-61,-202,-283,-202,-222,-222,-162,-40,-101,-121,-182,-222,-242,-222,-222,-162,-162,-162,-182,-121,-101,-121,-81]],
+["APT",0.05,[0,-29,12,-85,-53,58,74,12,-51,-57,-48,-39,172,172,253,375,258,329,304,275,263,239,185,219,193,145,-3,-299,-359,-301,-384,-346,-321,-174,-164,-295,-348,-450,-432,-407,-380,-295,-307,-286,-191,-137,-161,-234,-82]],
+["SEI",0.05,[0,-23,19,-59,-44,30,53,11,-29,-72,-65,-78,108,97,181,306,186,266,278,259,222,211,192,270,228,118,-38,-228,-289,-245,-238,-207,-160,-40,-36,-106,-167,-259,-262,-253,-260,-194,-220,-234,-173,-118,-150,-201,-82]],
+["DCR",0.04,[0,7,21,-42,-21,49,49,21,7,0,-14,0,69,97,90,97,35,83,35,63,76,49,63,63,83,63,21,-35,-28,-28,-49,-42,-56,-7,-7,-35,-56,-56,-83,-56,-35,-76,-132,-104,-97,-104,-69,-118,-83]],
+["ETH",0.03,[0,-15,-15,-48,-50,-26,-33,-38,-54,-41,-3,16,65,66,92,103,42,82,80,73,83,82,68,69,61,21,-44,-165,-182,-147,-145,-143,-102,-41,-65,-106,-122,-144,-144,-114,-114,-91,-90,-102,-79,-72,-70,-84,-84]],
+["AVAX",-0.14,[0,-12,12,-81,-66,-18,-8,-19,-51,-55,-39,-30,81,62,103,127,98,151,151,154,129,135,133,139,106,51,-60,-299,-330,-288,-341,-322,-263,-120,-125,-177,-193,-264,-277,-269,-238,-178,-181,-205,-136,-116,-142,-193,-101]],
+["SOL",-0.2,[0,-26,-14,-87,-84,-60,-61,-67,-83,-63,-21,-10,62,43,83,95,51,90,70,80,88,79,64,74,34,-8,-94,-212,-210,-186,-197,-195,-160,-102,-113,-152,-163,-186,-185,-168,-167,-137,-146,-150,-116,-106,-123,-140,-107]],
+["DOT",-0.23,[0,-20,30,-40,-20,70,10,-10,-80,-100,-60,-40,150,170,190,240,180,220,180,170,160,130,90,90,80,30,-60,-289,-349,-329,-339,-299,-259,-160,-150,-220,-259,-299,-269,-269,-240,-190,-180,-160,-140,-120,-160,-210,-110]],
+["ADA",-0.31,[0,-64,-34,-88,-98,-44,-44,-64,-123,-128,-74,-64,39,49,108,123,93,147,132,118,118,113,103,113,98,29,-83,-329,-373,-309,-333,-309,-250,-157,-177,-240,-275,-324,-304,-275,-280,-216,-201,-221,-147,-137,-142,-191,-118]],
+["ALGO",-0.41,[0,-29,-29,-88,-69,29,39,39,-10,-20,10,10,167,127,206,255,186,225,196,196,186,206,186,206,186,118,-10,-235,-294,-294,-324,-265,-216,-127,-118,-196,-225,-314,-324,-265,-265,-255,-294,-284,-176,-186,-176,-235,-127]],
+["PYTH",-0.41,[0,21,18,-1,-10,36,42,-27,-71,-102,-95,-21,115,100,161,174,133,234,372,363,377,386,293,349,402,296,231,-14,-170,-149,-182,-158,-142,-42,-24,-48,-143,-220,-191,-147,-164,-109,-205,-237,-93,-129,-177,-268,-128]],
+["KITE",-0.52,[0,0,-17,-52,-52,-17,-17,0,-35,-52,-35,-61,122,139,130,95,52,104,139,139,113,113,104,61,17,-17,-69,-252,-278,-252,-260,-304,-252,-208,-208,-260,-295,-330,-286,-260,-286,-252,-252,-304,-234,-148,-122,-148,-139]],
+["FLOKI",-0.52,[0,21,51,-63,-114,-55,-51,-46,-88,-76,-29,-38,46,59,46,143,76,185,194,131,126,131,114,185,139,76,17,-156,-244,-194,-198,-206,-135,29,-8,-84,-114,-185,-223,-219,-227,-143,-160,-181,-177,-135,-135,-198,-139]],
+["VIRTUAL",-0.53,[0,-29,-6,-82,-68,-10,-8,-31,-68,-76,-43,-31,87,74,116,166,92,149,129,133,101,104,66,69,59,13,-103,-328,-342,-289,-305,-294,-246,-154,-180,-236,-286,-328,-331,-301,-317,-265,-270,-286,-196,-164,-183,-214,-140]],
+["ZEC",-0.62,[0,-45,5,-77,-123,-103,-104,-118,-177,-183,-56,-56,7,-12,28,66,-19,120,52,78,167,173,135,175,94,62,-73,-323,-387,-404,-442,-413,-353,-272,-296,-338,-358,-414,-415,-359,-370,-319,-316,-284,-178,-191,-172,-187,-149]],
+["QNT",-0.66,[0,81,19,-90,-171,-106,-88,-161,-134,-124,-95,-117,-14,104,131,215,160,226,163,213,163,305,229,201,148,88,8,-180,-280,-215,-273,-265,-202,-50,-35,-96,-176,-245,-241,-208,-183,-221,-213,-201,-128,-141,-163,-184,-153]],
+["GRT",-0.75,[0,-4,4,-63,-72,13,4,22,13,-22,22,22,161,99,175,197,139,184,152,139,116,103,54,72,31,-13,-125,-340,-372,-340,-363,-354,-327,-246,-246,-313,-367,-434,-425,-390,-372,-282,-300,-287,-202,-206,-219,-260,-161]],
+["XRP",-0.94,[0,5,49,-8,-33,-11,-26,-29,-46,-27,20,34,103,87,125,125,103,116,112,114,95,90,74,72,55,18,-45,-141,-192,-170,-185,-196,-161,-96,-110,-132,-162,-184,-187,-179,-189,-170,-184,-201,-180,-179,-173,-201,-180]],
+["BNB",-0.95,[0,-6,-45,-70,-88,-65,-68,-60,-87,-90,-73,-81,-37,-39,-23,1,-25,24,25,19,34,43,51,75,36,7,-40,-97,-125,-90,-108,-103,-26,55,22,-18,-31,-49,-72,-44,-23,-39,-76,-136,-169,-183,-200,-192,-181]],
+["PENDLE",-0.97,[0,-10,-5,-91,-102,-20,-36,-51,-91,-91,-66,-56,137,112,157,188,91,193,183,163,127,142,102,117,91,51,-102,-315,-371,-345,-376,-356,-315,-173,-173,-269,-284,-340,-340,-325,-300,-203,-234,-254,-127,-122,-137,-259,-183]],
+["HBAR",-0.98,[0,-7,13,-42,-45,28,44,21,-68,-72,-75,-93,41,-8,23,72,0,34,7,-9,-32,-37,-86,-60,-24,-78,-163,-277,-302,-291,-294,-295,-261,-162,-152,-208,-224,-278,-282,-249,-256,-236,-222,-222,-222,-226,-254,-279,-184]],
+["CAKE",-1.05,[0,-19,-10,-53,-53,14,43,33,-10,-24,5,-5,86,57,86,115,76,110,100,96,100,105,100,129,76,43,-38,-138,-224,-220,-244,-220,-162,-96,-119,-167,-205,-229,-239,-239,-220,-201,-229,-263,-253,-220,-244,-229,-191]],
+["WLD",-1.1,[0,7,47,-35,-28,98,79,-5,-51,-135,-61,-54,179,168,263,301,233,301,247,214,226,219,182,203,161,96,-40,-317,-359,-350,-357,-329,-291,-156,-175,-305,-354,-424,-419,-338,-317,-226,-277,-277,-189,-119,-207,-247,-196]],
+["VET",-1.15,[0,-46,-22,-137,-120,-74,-80,-80,-96,-113,-88,-90,42,38,82,209,153,203,173,159,127,121,69,94,54,14,-82,-286,-359,-341,-359,-379,-379,-301,-280,-326,-412,-461,-467,-437,-448,-334,-349,-357,-285,-264,-250,-307,-201]],
+["WLFI",-1.43,[0,-38,-57,-57,-57,0,-19,0,-19,-57,-38,-76,-38,-57,-19,-38,-57,-38,-57,-19,-57,-57,-76,-76,-76,-95,-76,-153,-172,-210,-172,-210,-210,-115,-134,-172,-153,-172,-210,-191,-210,-191,-191,-210,-210,-210,-210,-229,-229]],
+["JTO",-1.52,[0,-26,-2,-95,-69,29,45,43,-7,-36,-38,-57,169,181,288,328,233,317,302,319,321,300,255,288,286,195,45,-286,-445,-414,-450,-438,-431,-293,-269,-419,-466,-531,-574,-533,-526,-393,-443,-424,-321,-264,-309,-371,-238]],
+["JUP",-1.83,[0,-25,-7,-86,-86,-32,7,14,-36,-68,-32,-21,182,172,229,250,179,254,225,179,143,125,89,61,46,-21,-150,-347,-443,-407,-454,-461,-382,-247,-261,-336,-393,-465,-443,-415,-429,-368,-386,-386,-322,-293,-318,-365,-268]],
+["AERO",-1.84,[0,-61,-34,-87,-40,47,158,61,9,-61,-75,0,58,57,40,19,-65,-17,-28,-24,-38,-23,-53,-78,-122,-201,-327,-428,-485,-505,-502,-500,-444,-364,-327,-372,-381,-386,-404,-421,-423,-367,-337,-354,-269,-208,-283,-335,-269]],
+["STX",-1.87,[0,-20,-3,-113,-116,-30,-10,23,-13,-53,-83,-47,123,73,133,229,73,163,153,93,23,-30,-47,-30,-47,-86,-349,-528,-548,-505,-757,-907,-814,-741,-581,-462,-651,-728,-674,-625,-558,-405,-395,-435,-369,-362,-372,-412,-272]],
+["CRV",-1.88,[0,-48,-27,-89,-86,-54,-27,-39,-59,-116,-83,-95,80,18,74,131,95,163,190,128,65,62,42,9,-30,-56,-190,-336,-431,-360,-375,-389,-372,-247,-226,-276,-268,-333,-294,-285,-208,-235,-276,-321,-282,-256,-282,-342,-273]],
+["KMNO",-2.73,[0,-51,72,-18,31,113,224,214,162,98,67,-54,57,3,0,-126,-144,-116,-100,-98,-170,-167,-106,-18,-23,-134,-139,-324,-327,-342,-265,-250,-167,-134,-160,-232,-244,-309,-250,-293,-386,-391,-391,-363,-337,-309,-335,-389,-358]],
+["NEAR",-2.75,[0,9,43,-111,-74,28,61,-11,-87,-80,-20,4,189,212,254,247,156,275,273,277,262,293,251,234,189,100,-89,-334,-373,-375,-434,-416,-369,-212,-245,-321,-486,-650,-659,-618,-603,-538,-544,-551,-440,-410,-423,-477,-360]],
+["RAY",-2.84,[0,-111,-66,-132,-58,6,24,39,13,6,69,80,232,301,394,544,512,569,493,463,427,439,409,425,350,278,180,-18,-130,-68,-101,-78,-43,10,24,-122,-337,-527,-491,-499,-503,-496,-477,-485,-424,-435,-451,-511,-369]],
+["NIGHT",-3.43,[0,-15,25,-35,-42,-37,0,-20,-32,-82,-37,40,142,154,216,206,221,199,174,152,104,85,40,109,65,27,-32,-189,-221,-167,-169,-134,-162,-117,-172,-181,-159,-199,-323,-288,-298,-176,-132,-241,-355,-360,-500,-423,-428]],
+["DASH",-5.1,[0,-62,-69,-105,-92,-75,-54,-43,-79,-88,-28,-28,15,7,34,30,41,110,37,21,50,47,24,30,-56,-19,-116,-265,-357,-365,-366,-396,-447,-363,-329,-409,-439,-492,-550,-538,-501,-501,-583,-570,-518,-505,-540,-634,-593]],
+["BCH",-5.11,[0,-13,-44,-64,-91,-98,-111,-185,-239,-307,-351,-435,-368,-354,-290,-283,-256,-250,-239,-233,-185,-199,-277,-250,-270,-307,-405,-519,-513,-503,-695,-607,-577,-513,-492,-530,-573,-587,-604,-563,-583,-546,-567,-577,-509,-519,-553,-597,-594]],
+["CVX",-7.09,[0,77,17,47,9,56,95,43,95,129,288,56,215,258,318,365,288,296,253,253,266,245,163,198,125,56,-86,-326,-468,-494,-550,-644,-576,-494,-576,-614,-554,-554,-558,-546,-524,-503,-567,-601,-610,-700,-722,-773,-790]]]}
+}};
+
+const W = 768, H = 532, X0 = 52, X1 = 590, YT = 14, YB = 494, PW = X1 - X0, PH = YB - YT;
+const LX = 618, LH = 20, TW = 256;
+const SW = 56, SH = 26, SP = 3;
+const BLUE = "#3987e5", RED = "#e66767", INK = "#f0efec";
+const NONE = "M0 0";
+const MAXPIN = 3;
+const ANCH = [["1h", "1시간 전"], ["4h", "4시간 전"], ["12h", "12시간 전"], ["24h", "24시간 전"]];
+const TIERS = [["1-10", "1-10위"], ["11-50", "11-50위"], ["51-100", "51-100위"], ["101-125", "101-125위"]];
+const MODES = [["ext", "상위·하위 5개"], ["tier", "구간별"], ["pin", "선택만"]];
+const ANCH_BY_LABEL = { "1시간 전": "1h", "4시간 전": "4h", "12시간 전": "12h", "24시간 전": "24h" };
+const MODE_BY_LABEL = { "상위·하위 5개": "ext", "구간별": "tier", "선택만": "pin" };
+const ASOF_D = DATA.asof.slice(0, 10), ASOF_T = DATA.asof.slice(11, 16);
+
+function r1(v) { return Math.round(v * 10) / 10; }
+function sg(v, d) { const s = Math.abs(v).toFixed(d); return Number(s) === 0 ? (0).toFixed(d) : (v > 0 ? "+" : "-") + s; }
+function p2(v) { return sg(v, 2) + "%"; }
+function mins(t) { return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)); }
+function hhmm(m) { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), x = m % 60; return (h < 10 ? "0" : "") + h + ":" + (x < 10 ? "0" : "") + x; }
+function dot(x, y) { return "M" + x + " " + y + " l0 0"; }
+function median(a) { const s = a.slice().sort(function (p, q) { return p - q; }); const n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wrapOf(a) { for (let i = 1; i < a.times.length; i++) { if (mins(a.times[i]) < mins(a.times[i - 1])) return true; } return false; }
+function stepOf(a) { return (mins(a.times[1]) - mins(a.times[0]) + 1440) % 1440; }
+function prevDay(d) { return new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))) - 86400000).toISOString().slice(0, 10); }
+function startLabel(k) { const a = DATA.A[k]; return (wrapOf(a) ? "어제 " : "") + a.start; }
+function startDT(k) { const a = DATA.A[k]; return (wrapOf(a) ? prevDay(ASOF_D) : ASOF_D) + "T" + a.start; }
+function dur(m) { return m >= 60 && m % 60 === 0 ? (m / 60) + "시간" : m + "분"; }
+function ptr(e) {
+  const ne = e && e.nativeEvent ? e.nativeEvent : e;
+  if (ne && typeof ne.offsetX === "number" && typeof ne.offsetY === "number") return { x: ne.offsetX, y: ne.offsetY };
+  const tg = e && e.currentTarget;
+  if (tg && tg.getBoundingClientRect && typeof e.clientX === "number") {
+    const rc = tg.getBoundingClientRect();
+    if (rc.width > 0 && rc.height > 0) return { x: (e.clientX - rc.left) * W / rc.width, y: (e.clientY - rc.top) * H / rc.height };
+  }
+  return null;
+}
+
+function spark(vals, off, M, minSpan) {
+  let lo = 0, hi = 0;
+  vals.forEach(function (v) { if (v < lo) lo = v; if (v > hi) hi = v; });
+  if (hi - lo < minSpan) { const c = (hi + lo) / 2; lo = c - minSpan / 2; hi = c + minSpan / 2; }
+  const sx = function (i) { return r1(SP + (SW - 2 * SP) * off[i] / M); };
+  const sy = function (v) { return r1(SP + (hi - v) / (hi - lo) * (SH - 2 * SP)); };
+  const z = sy(0);
+  const P = { up: "", dn: "" }, last = { up: "", dn: "" };
+  const seg = function (key, xa, ya, xb, yb) {
+    if (xa === xb && ya === yb) return;
+    const a = xa + " " + ya;
+    P[key] += (last[key] === a ? "" : "M" + a) + " L" + xb + " " + yb;
+    last[key] = xb + " " + yb;
+  };
+  for (let i = 0; i < vals.length - 1; i++) {
+    const a = vals[i], b = vals[i + 1];
+    const xa = sx(i), ya = sy(a), xb = sx(i + 1), yb = sy(b);
+    const ka = a >= 0 ? "up" : "dn", kb = b >= 0 ? "up" : "dn";
+    if (ka === kb) seg(ka, xa, ya, xb, yb);
+    else { const xc = r1(xa + (xb - xa) * (a / (a - b))); seg(ka, xa, ya, xc, z); seg(kb, xc, z, xb, yb); }
+  }
+  return { up: P.up || NONE, dn: P.dn || NONE, z: z };
+}
+
+function stack(items, lo, hi) {
+  items.sort(function (a, b) { return a.ty - b.ty; });
+  const cl = items.map(function (it) { return { m: [it], top: it.ty }; });
+  const place = function (c) {
+    const mean = c.m.reduce(function (s, it) { return s + it.ty; }, 0) / c.m.length;
+    const span = (c.m.length - 1) * LH;
+    c.top = Math.max(lo, Math.min(hi - span, mean - span / 2));
+  };
+  cl.forEach(place);
+  let again = true;
+  while (again) {
+    again = false;
+    for (let i = 0; i < cl.length - 1; i++) {
+      const a = cl[i], b = cl[i + 1];
+      if (a.top + a.m.length * LH > b.top + 0.01) { a.m = a.m.concat(b.m); place(a); cl.splice(i + 1, 1); again = true; break; }
+    }
+  }
+  cl.forEach(function (c) { c.m.forEach(function (it, j) { it.cy = r1(c.top + j * LH); }); });
+}
+
+const TIER_N = {};
+Object.keys(DATA.meta).forEach(function (t) { const tr = DATA.meta[t][2]; TIER_N[tr] = (TIER_N[tr] || 0) + 1; });
+
+const GEO = {};
+function geo(k) {
+  if (GEO[k]) return GEO[k];
+  const a = DATA.A[k];
+  const n = a.times.length;
+  const m0 = mins(a.times[0]);
+  const off = [];
+  let add = 0, prev = -1;
+  a.times.forEach(function (t) {
+    let m = mins(t) + add;
+    if (m < prev) { add += 1440; m += 1440; }
+    prev = m;
+    off.push(m - m0);
+  });
+  const M = off[n - 1];
+  const xs = off.map(function (o) { return r1(X0 + PW * o / M); });
+  const bl = a.bl.map(function (v) { return v / 100; });
+  const V = { BTC: bl };
+  const rows = a.rows.map(function (r, i) {
+    const m = DATA.meta[r[0]];
+    const line = r[2].map(function (v) { return v / 100; });
+    V[r[0]] = line;
+    return { t: r[0], name: m[0], rank: m[1], tier: m[2], l1: m[3], vs: r[1], chg: line[n - 1], pos: i + 1 };
+  });
+  const byT = {};
+  rows.forEach(function (r) { byT[r.t] = r; });
+  const keys = Object.keys(V);
+  let lo = 0, hi = 0;
+  keys.forEach(function (t) { V[t].forEach(function (v) { if (v < lo) lo = v; if (v > hi) hi = v; }); });
+  const STEPS = [0.5, 1, 2, 2.5, 5, 10];
+  let step = 10;
+  for (let i = 0; i < STEPS.length; i++) {
+    if (Math.ceil(hi / STEPS[i]) - Math.floor(lo / STEPS[i]) <= 11) { step = STEPS[i]; break; }
+  }
+  const y0 = Math.floor(lo / step) * step, y1 = Math.ceil(hi / step) * step;
+  const yOf = function (v) { return r1(YB - (v - y0) / (y1 - y0) * PH); };
+  const YS = {}, PATH = {};
+  keys.forEach(function (t) {
+    const ys = V[t].map(yOf);
+    YS[t] = ys;
+    PATH[t] = "M" + xs.map(function (x, i) { return x + " " + ys[i]; }).join(" L");
+  });
+  let grid = "";
+  const yticks = [];
+  const cnt = Math.round((y1 - y0) / step);
+  for (let j = 0; j <= cnt; j++) {
+    const v = Math.round((y0 + j * step) * 100) / 100;
+    const y = yOf(v);
+    if (v !== 0) grid += "M" + X0 + " " + y + " H" + X1 + " ";
+    yticks.push({ top: r1(y - 7), t: (v > 0 ? "+" : (v < 0 ? "-" : "")) + String(Math.abs(v)) + "%", cls: v === 0 ? "yt yt-zero" : "yt" });
+  }
+  const iv = M <= 60 ? 15 : (M <= 240 ? 60 : (M <= 720 ? 120 : 240));
+  const xticks = [{ l: X0 - 2, t: a.times[0], cls: "xt xt-start" }];
+  grid += "M" + X0 + " " + YT + " V" + YB + " ";
+  for (let m = (Math.floor(m0 / iv) + 1) * iv; m < m0 + M; m += iv) {
+    const x = r1(X0 + PW * (m - m0) / M);
+    if (x - X0 >= 40 && X1 - x >= 40) {
+      xticks.push({ l: r1(x - 30), t: hhmm(m), cls: "xt" });
+      grid += "M" + x + " " + YT + " V" + YB + " ";
+    }
+  }
+  xticks.push({ l: X1 - 58, t: a.times[n - 1], cls: "xt xt-end" });
+  grid += "M" + X1 + " " + YT + " V" + YB;
+  const rel = {};
+  const spans = rows.map(function (r) {
+    const rv = V[r.t].map(function (c, i) { return ((1 + c / 100) / (1 + bl[i] / 100) - 1) * 100; });
+    rel[r.t] = rv;
+    return Math.max(0, Math.max.apply(null, rv)) - Math.min(0, Math.min.apply(null, rv));
+  });
+  const minSpan = Math.max(0.5, Math.round(median(spans) * 2) / 2);
+  const SPK = {};
+  const sstep = n > 30 ? Math.ceil((n - 1) / 28) : 1;
+  const sIdx = [];
+  for (let i = 0; i < n; i += sstep) sIdx.push(i);
+  if (sIdx[sIdx.length - 1] !== n - 1) sIdx.push(n - 1);
+  const sub = function (arr) { return sIdx.map(function (i) { return arr[i]; }); };
+  const sOff = sub(off);
+  rows.forEach(function (r) { SPK[r.t] = spark(sub(rel[r.t]), sOff, M, minSpan); });
+  const bs = spark(sub(bl), sOff, M, minSpan);
+  const tstep = Math.max(1, Math.round((n - 1) / 6));
+  const tcols = [];
+  for (let i = 0; i < n; i += tstep) tcols.push(i);
+  if (tcols[tcols.length - 1] !== n - 1) tcols.push(n - 1);
+  GEO[k] = {
+    a: a, n: n, M: M, xs: xs, V: V, YS: YS, PATH: PATH, rows: rows, byT: byT, yticks: yticks, xticks: xticks, grid: grid,
+    zero: "M" + X0 + " " + yOf(0) + " H" + X1, SPK: SPK, btcSpark: { d: bs.up + " " + bs.dn, z: bs.z }, minSpan: minSpan,
+    stepMin: stepOf(a), tcols: tcols, colStep: stepOf(a) * tstep, times: a.times,
+    sparkN: sIdx.length, sparkStep: stepOf(a) * sstep
+  };
+  return GEO[k];
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    const self = this;
+    const st = this.state || {};
+    const P = this.props || {};
+    const getSt = function () { return self.state || {}; };
+    const k = DATA.A[st.anchor] ? st.anchor : (ANCH_BY_LABEL[P.startAnchor] || "12h");
+    const mode = st.mode || MODE_BY_LABEL[P.startMode] || "ext";
+    const tier = st.tier || "1-10";
+    const sort = st.sort === "l1" ? "l1" : "since";
+    const table = !!st.table;
+    const custom = !!st.custom;
+    const rawOp = Number(P.contextOpacity ?? 0.4);
+    const ctxBase = isNaN(rawOp) ? 0.4 : Math.max(0.15, Math.min(0.7, rawOp));
+    const G = geo(k);
+    const A = G.a;
+    const n = G.n;
+    const rows = G.rows;
+    const N = rows.length;
+    const pins = (st.pins || []).filter(function (t) { return !!G.byT[t]; });
+    const hv = st.hover && (st.hover.t === "BTC" || G.byT[st.hover.t]) ? st.hover : null;
+    const anchorName = ANCH.find(function (x) { return x[0] === k; })[1];
+    const startLbl = startLabel(k);
+    const endT = G.times[n - 1];
+    const endLbl = (wrapOf(A) ? "오늘 " : "") + endT;
+    const tierName = (TIERS.find(function (x) { return x[0] === tier; }) || TIERS[0])[1];
+
+    const togglePin = function (t) {
+      const cur = (getSt().pins || []).slice();
+      const i = cur.indexOf(t);
+      if (i >= 0) cur.splice(i, 1);
+      else { cur.push(t); while (cur.length > MAXPIN) cur.shift(); }
+      self.setState({ pins: cur });
+    };
+    const setHover = function (h) {
+      const c = getSt().hover || null;
+      if (!h && !c) return;
+      if (h && c && c.t === h.t && c.i === h.i && c.src === h.src) return;
+      self.setState({ hover: h });
+    };
+
+    const anchors = ANCH.map(function (row) {
+      return { label: row[1], sub: startLabel(row[0]), on: row[0] === k, pick: function () { self.setState({ anchor: row[0], hover: null }); } };
+    });
+    const modes = MODES.map(function (m) {
+      return { label: m[1], on: m[0] === mode, hasN: m[0] === "pin" && pins.length > 0, n: pins.length + "/" + MAXPIN, pick: function () { self.setState({ mode: m[0], hover: null }); } };
+    });
+    const tiers = TIERS.map(function (t) {
+      return { label: t[1], n: TIER_N[t[0]] || 0, on: t[0] === tier, pick: function () { self.setState({ tier: t[0], mode: "tier", hover: null }); } };
+    });
+
+    let up = [], down = [], labeled = [];
+    if (mode === "ext") { up = rows.slice(0, 5); down = rows.slice(N - 5); labeled = up.concat(down); }
+    else if (mode === "tier") {
+      up = rows.filter(function (r) { return r.tier === tier; });
+      labeled = up.length <= 7 ? up : up.slice(0, 3).concat(up.slice(up.length - 3));
+    }
+    const pinSet = {};
+    pins.forEach(function (t) { pinSet[t] = true; });
+    const upSet = {}, emSet = {};
+    up.forEach(function (r) { upSet[r.t] = true; emSet[r.t] = true; });
+    down.forEach(function (r) { emSet[r.t] = true; });
+    const pinRows = pins.map(function (t) { return G.byT[t]; });
+    const join = function (list) { return list.length ? list.map(function (r) { return G.PATH[r.t]; }).join(" ") : NONE; };
+    const ctxRows = rows.filter(function (r) { return !emSet[r.t] && !pinSet[r.t]; });
+    const emUpR = up.filter(function (r) { return !pinSet[r.t]; });
+    const emDnR = down.filter(function (r) { return !pinSet[r.t]; });
+    const pinUpR = pinRows.filter(function (r) { return r.vs >= 0; });
+    const pinDnR = pinRows.filter(function (r) { return r.vs < 0; });
+
+    const items = [{ t: "BTC", ty: G.YS.BTC[n - 1], c: INK, v: "", pin: false }];
+    labeled.forEach(function (r) { if (!pinSet[r.t]) items.push({ t: r.t, ty: G.YS[r.t][n - 1], c: upSet[r.t] ? BLUE : RED, v: p2(r.vs), pin: false }); });
+    pinRows.forEach(function (r) { items.push({ t: r.t, ty: G.YS[r.t][n - 1], c: r.vs >= 0 ? BLUE : RED, v: p2(r.vs), pin: true }); });
+    stack(items, YT, YB);
+    const ld = { u: "", d: "", i: "" }, dt = { u: "", d: "", i: "" };
+    let ring = "";
+    items.forEach(function (it) {
+      const key = it.c === BLUE ? "u" : (it.c === RED ? "d" : "i");
+      ld[key] += "M" + (X1 + 7) + " " + it.ty + " L" + (X1 + 11) + " " + it.ty + " L" + (LX - 7) + " " + it.cy + " L" + (LX - 3) + " " + it.cy + " ";
+      dt[key] += dot(X1, it.ty) + " ";
+      ring += dot(X1, it.ty) + " ";
+    });
+    const labels = items.map(function (it) {
+      return {
+        t: it.t, v: it.v, hasV: !!it.v, top: r1(it.cy - 9), cy: it.cy,
+        w: Math.round(it.t.length * 7.2 + (it.v ? 6 + it.v.length * 7.2 : 0) + 12),
+        o: hv && hv.t !== it.t ? 0.35 : 1, cls: it.pin ? "elab elab-pin" : "elab"
+      };
+    });
+
+    let hovD = NONE, hovDot = NONE, hovDotB = NONE, hovRing = NONE, cx = -20, cxOp = 0;
+    if (hv) {
+      const i = hv.src === "c" ? Math.max(0, Math.min(n - 1, hv.i)) : n - 1;
+      if (hv.t !== "BTC") hovD = G.PATH[hv.t];
+      hovDot = dot(G.xs[i], G.YS[hv.t][i]);
+      hovRing = hovDot;
+      if (hv.src === "c") {
+        cx = G.xs[i]; cxOp = 1;
+        if (hv.t !== "BTC") { hovDotB = dot(G.xs[i], G.YS.BTC[i]); hovRing += " " + hovDotB; }
+      }
+    }
+    const emW = mode === "tier" && emUpR.length > 10 ? 1.5 : 2;
+    const g = {
+      grid: G.grid, zero: G.zero,
+      ctx: join(ctxRows), ctxOp: Math.round((hv ? ctxBase * 0.6 : ctxBase) * 100) / 100,
+      emAll: join(emUpR.concat(emDnR)), emUp: join(emUpR), emDown: join(emDnR), emW: emW, emHalo: emW + 2, emOp: hv ? 0.35 : 1,
+      pinAll: join(pinRows), pinUp: join(pinUpR), pinDown: join(pinDnR), pinOp: hv ? 0.45 : 1,
+      btc: G.PATH.BTC,
+      ldUp: ld.u || NONE, ldDown: ld.d || NONE, ldInk: ld.i || NONE, ldOp: hv ? 0.4 : 1,
+      ring: ring || NONE, dotUp: dt.u || NONE, dotDown: dt.d || NONE, dotInk: dt.i || NONE,
+      cx: cx, cxOp: cxOp, hovD: hovD, hovC: hv && hv.t === "BTC" ? INK : BLUE, hovDot: hovDot, hovDotB: hovDotB, hovRing: hovRing
+    };
+
+    let tip = { l: 0, t: 0, c: BLUE, tick: "", name: "", rank: "", sub: "", kv: [], hint: "" };
+    if (hv) {
+      const isB = hv.t === "BTC";
+      const r = isB ? null : G.byT[hv.t];
+      const i = hv.src === "c" ? Math.max(0, Math.min(n - 1, hv.i)) : n - 1;
+      const kv = [];
+      if (hv.src === "c") {
+        kv.push({ k: G.times[i] + " 시점 변화", v: p2(G.V[hv.t][i]), cls: "" });
+        if (!isB) kv.push({ k: G.times[i] + " BTC", v: p2(G.V.BTC[i]), cls: "" });
+      }
+      if (isB) {
+        kv.push({ k: "기준 이후 변화", v: p2(A.btc), cls: "tipv-s" });
+        kv.push({ k: "최근 1시간 변화", v: p2(DATA.A["1h"].btc), cls: "" });
+      } else {
+        kv.push({ k: "기준 이후 변화", v: p2(r.chg), cls: "" });
+        kv.push({ k: "기준 이후 BTC 대비", v: p2(r.vs), cls: "tipv-s" });
+        kv.push({ k: "최근 1시간 BTC 대비", v: p2(r.l1), cls: "" });
+        kv.push({ k: "BTC 대비 순위", v: r.pos + " / " + N, cls: "" });
+      }
+      const th = 120 + kv.length * 22;
+      const ax = G.xs[i], ay = G.YS[hv.t][i];
+      let tx, ty;
+      if (hv.src === "c") { tx = ax + 18; if (tx + TW > W - 2) tx = ax - 18 - TW; ty = ay - 40; }
+      else { tx = X1 - 22 - TW; ty = ay - th / 2; }
+      ty = Math.max(2, Math.min(H - th - 2, ty));
+      tip = {
+        l: r1(tx), t: r1(ty), c: isB ? INK : BLUE, tick: hv.t, name: isB ? "Bitcoin" : r.name, rank: (isB ? 1 : r.rank) + "위",
+        sub: isB ? "이 화면의 기준선입니다." : r.tier + "위 구간", kv: kv,
+        hint: isB ? "BTC는 기준선이라 고정하지 않습니다." : (pinSet[hv.t] ? "다시 누르면 고정이 풀립니다." : (pins.length >= MAXPIN ? "누르면 고정되고, 가장 먼저 고정한 코인이 풀립니다." : "누르면 그래프에 고정됩니다."))
+      };
+    }
+
+    const bias = { BTC: 3 };
+    up.concat(down).forEach(function (r) { bias[r.t] = 2; });
+    pins.forEach(function (t) { bias[t] = 4; });
+    const cands = ["BTC"].concat(rows.map(function (r) { return r.t; }));
+    const hitAt = function (e) {
+      const p = ptr(e);
+      if (!p) return null;
+      if (p.x >= LX - 10) {
+        for (let j = 0; j < labels.length; j++) {
+          const lb = labels[j];
+          if (Math.abs(p.y - lb.cy) <= LH / 2 && p.x <= LX + lb.w + 6) return { t: lb.t, i: n - 1, src: "l" };
+        }
+        return null;
+      }
+      if (p.x < X0 - 12 || p.y < YT - 16 || p.y > YB + 16) return null;
+      const x = Math.max(X0, Math.min(X1, p.x));
+      let j = 0;
+      while (j < n - 2 && G.xs[j + 1] < x) j++;
+      const f = (x - G.xs[j]) / (G.xs[j + 1] - G.xs[j]);
+      let best = null, bd = 14;
+      cands.forEach(function (t) {
+        const ys = G.YS[t];
+        const y = ys[j] + (ys[j + 1] - ys[j]) * f;
+        const d = Math.abs(y - p.y) - (bias[t] || 0);
+        if (d < bd) { bd = d; best = t; }
+      });
+      return best ? { t: best, i: f < 0.5 ? j : j + 1, src: "c" } : null;
+    };
+
+    const sorted = sort === "l1" ? rows.slice().sort(function (a, b) { return b.l1 - a.l1 || b.vs - a.vs; }) : rows;
+    const list = sorted.map(function (r, i) {
+      return {
+        pos: i + 1, t: r.t, tier: r.tier, vs: p2(r.vs), l1: p2(r.l1), sp: G.SPK[r.t], pressed: !!pinSet[r.t],
+        cls: hv && hv.t === r.t ? "lrow-hov" : "",
+        aria: r.t + " " + r.name + ", " + (sort === "l1" ? "최근 1시간" : "기준 이후") + " BTC 대비 " + (i + 1) + "위, 기준 이후 BTC 대비 " + p2(r.vs) + ", 최근 1시간 BTC 대비 " + p2(r.l1),
+        pick: function () { togglePin(r.t); },
+        enter: function () { setHover({ t: r.t, i: n - 1, src: "r" }); },
+        leave: function () { const c = getSt().hover; if (c && c.t === r.t && c.src === "r") self.setState({ hover: null }); }
+      };
+    });
+    const sorts = [["since", "기준 이후"], ["l1", "최근 1시간"]].map(function (s) {
+      return { label: s[1], on: s[0] === sort, pick: function () { self.setState({ sort: s[0] }); } };
+    });
+
+    const tcols = G.tcols.map(function (i) { return { t: G.times[i] }; });
+    const trows = !table ? [] : [{ pos: "기준", t: "BTC", name: "Bitcoin", cells: G.tcols.map(function (i) { return { v: p2(G.V.BTC[i]) }; }), vs: "기준", l1: "기준", cls: "trow-ref" }].concat(rows.map(function (r) {
+      return { pos: r.pos, t: r.t, name: r.name, cells: G.tcols.map(function (i) { return { v: p2(G.V[r.t][i]) }; }), vs: p2(r.vs), l1: p2(r.l1), cls: pinSet[r.t] ? "trow-on" : "" };
+    }));
+
+    const pinChips = pinRows.map(function (r) {
+      return { t: r.t, c: r.vs >= 0 ? BLUE : RED, aria: r.t + " 고정 해제", unpin: function () { togglePin(r.t); } };
+    });
+
+    const ui = {
+      asof: DATA.asof, anchorName: anchorName, startLbl: startLbl, n: A.n, beat: A.beat,
+      showChart: !table, table: table, custom: custom,
+      customVal: typeof st.customVal === "string" ? st.customVal : startDT(k),
+      customMin: startDT("24h"), customMax: ASOF_D + "T" + ASOF_T,
+      isExt: mode === "ext", isTier: mode === "tier", isPin: mode === "pin",
+      tierName: tierName, tierN: up.length, ctxN: ctxRows.length,
+      showPinKey: pins.length > 0 && mode !== "pin", pinEmpty: mode === "pin" && pins.length === 0,
+      hasPins: pins.length > 0, noPins: pins.length === 0, pinN: pins.length,
+      hasTip: !!hv, cursor: hv && hv.src !== "r" && hv.t !== "BTC" ? "pointer" : "default",
+      same: G.M === 60,
+      sinceCls: sort === "since" ? "lh-on" : "", l1Cls: sort === "l1" ? "lh-on" : "",
+      chartSub: startLbl + "부터 " + endLbl + "까지 " + G.stepMin + "분 간격 " + n + "개 점입니다. 같은 기간 BTC는 " + p2(A.btc) + " 움직였습니다.",
+      xTitle: "KST 시각, 기준 " + startLbl + "부터 지금 " + endT + "까지",
+      chartAria: "선 그래프. " + startLbl + "부터 " + endLbl + "까지 BTC와 코인 " + N + "개의 기준 시각 이후 변화율입니다. 같은 숫자는 오른쪽 목록과 표로 보기에서 읽을 수 있습니다.",
+      listCap: "코인 줄의 숫자는 모두 BTC 대비 값이고, 맨 위 BTC 줄만 BTC 자체 변화입니다. 기준 이후 열은 " + startLbl + "부터 지금까지를, 1시간 열은 마지막 60분을 잽니다.",
+      btcAria: "기준 BTC, 기준 이후 자체 변화 " + p2(A.btc) + ", 최근 1시간 자체 변화 " + p2(DATA.A["1h"].btc),
+      tableCap: "기준 시각 이후 변화율을 " + dur(G.colStep) + " 간격 " + G.tcols.length + "개 시각으로 줄여 보여 줍니다. 그 사이의 점은 그래프에서 선을 가리키면 읽을 수 있습니다.",
+      tableLabel: anchorName + " 기준, 코인별 기준 시각 이후 변화율과 BTC 대비 값"
+    };
+
+    const foot = {
+      asof: DATA.asof, missN: DATA.missing.length, missList: DATA.missing.join(", "),
+      covered: N, universe: N + DATA.missing.length, anchorName: anchorName, minSpan: String(G.minSpan),
+      sparkN: G.sparkN, sparkStep: G.sparkStep,
+      steps: ANCH.map(function (x) { return x[1] + " 기준 " + stepOf(DATA.A[x[0]]) + "분"; }).join(", ")
+    };
+
+    return {
+      ui: ui, g: g, tip: tip, foot: foot,
+      anchors: anchors, modes: modes, tiers: tiers, sorts: sorts,
+      yticks: G.yticks, xticks: G.xticks, labels: labels, list: list, pinChips: pinChips,
+      ref: { d: G.btcSpark.d, z: G.btcSpark.z, chg: p2(A.btc), l1: p2(DATA.A["1h"].btc) },
+      tcols: tcols, trows: trows,
+      ovMove: function (e) { setHover(hitAt(e)); },
+      ovLeave: function () { const c = getSt().hover; if (c && c.src !== "r") self.setState({ hover: null }); },
+      ovTap: function (e) { const h = hitAt(e); if (h && h.t !== "BTC") togglePin(h.t); },
+      toggleTable: function () { self.setState({ table: !getSt().table, hover: null }); },
+      toggleCustom: function () { self.setState({ custom: !getSt().custom }); },
+      setCustom: function (e) { const v = e && e.target && typeof e.target.value === "string" ? e.target.value : ""; self.setState({ customVal: v }); },
+      clearPins: function () { self.setState({ pins: [] }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

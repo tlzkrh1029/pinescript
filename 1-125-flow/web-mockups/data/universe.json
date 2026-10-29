@@ -1,0 +1,1933 @@
+{
+"asof": "2026-10-29",
+"source": "TradingView coin screener (CRYPTO: index)",
+"coins": [
+{
+"rank": 1,
+"tick": "BTC",
+"name": "Bitcoin",
+"sym": "CRYPTO:BTCUSD",
+"tier": "1-10",
+"close": 80058.74,
+"mcap": 1609594417568.32,
+"chg1d": -1.4488454093839458,
+"chg7d": -4.701642166770702,
+"chg30d": -4.093531242868447,
+"chg90d": 23.745411834025212,
+"cats": [
+"cryptocurrencies",
+"layer-1"
+]
+},
+{
+"rank": 2,
+"tick": "ETH",
+"name": "Ethereum",
+"sym": "CRYPTO:ETHUSD",
+"tier": "1-10",
+"close": 2322.69,
+"mcap": 283770307429.86017,
+"chg1d": -1.4619349638334445,
+"chg7d": -6.009630948527022,
+"chg30d": -13.588472956985647,
+"chg90d": 21.226624356077018,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 4,
+"tick": "BNB",
+"name": "BNB",
+"sym": "CRYPTO:BNBUSD",
+"tier": "1-10",
+"close": 737.86,
+"mcap": 97037067435.8692,
+"chg1d": -2.769871389415979,
+"chg7d": -1.0248155600268258,
+"chg30d": -3.3936473853727462,
+"chg90d": 24.76285487225445,
+"cats": [
+"smart-contract-platforms",
+"centralized-exchange",
+"layer-1",
+"exchange-based-tokens",
+"made-in-china"
+]
+},
+{
+"rank": 5,
+"tick": "XRP",
+"name": "XRP",
+"sym": "CRYPTO:XRPUSD",
+"tier": "1-10",
+"close": 1.2915,
+"mcap": 81818071768.8495,
+"chg1d": -2.454682779456191,
+"chg7d": -5.31524926686217,
+"chg30d": -13.681326025932353,
+"chg90d": 19.41747572815536,
+"cats": [
+"cryptocurrencies",
+"enterprise-solutions",
+"layer-1",
+"made-in-america",
+"iso-20022"
+]
+},
+{
+"rank": 7,
+"tick": "SOL",
+"name": "Solana",
+"sym": "CRYPTO:SOLUSD",
+"tier": "1-10",
+"close": 100.348,
+"mcap": 59203701164.11891,
+"chg1d": -1.9090722475831152,
+"chg7d": -6.093954707093394,
+"chg30d": -15.567522086663859,
+"chg90d": 34.84190865236029,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 8,
+"tick": "TRX",
+"name": "TRON",
+"sym": "CRYPTO:TRXUSD",
+"tier": "1-10",
+"close": 0.33127,
+"mcap": 31477024398.4308,
+"chg1d": 0.5982386881263368,
+"chg7d": 0.22388962846424376,
+"chg30d": -1.2461244932029623,
+"chg90d": 0.9262080311985824,
+"cats": [
+"smart-contract-platforms",
+"payments",
+"layer-1",
+"world-liberty-financial-portfolio",
+"made-in-china"
+]
+},
+{
+"rank": 9,
+"tick": "ZEC",
+"name": "Zcash",
+"sym": "CRYPTO:ZECUSD",
+"tier": "1-10",
+"close": 1263.42,
+"mcap": 21401655762.975113,
+"chg1d": -3.464347932394016,
+"chg7d": -3.8843446832794335,
+"chg30d": -14.81786181504309,
+"chg90d": 168.97197853675155,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 10,
+"tick": "HYPE",
+"name": "Hyperliquid",
+"sym": "CRYPTO:HYPEHUSD",
+"tier": "1-10",
+"close": 86.437,
+"mcap": 21925103191.11937,
+"chg1d": 7.259235360542016,
+"chg7d": 7.233952807483319,
+"chg30d": -1.2001783122063818,
+"chg90d": 54.899465968961685,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"layer-1",
+"exchange-based-tokens",
+"perpetuals"
+]
+},
+{
+"rank": 11,
+"tick": "DOGE",
+"name": "Dogecoin",
+"sym": "CRYPTO:DOGEUSD",
+"tier": "11-50",
+"close": 0.078509,
+"mcap": 12288521234.658314,
+"chg1d": -1.4683919225893955,
+"chg7d": -4.1134873041269335,
+"chg30d": -16.412205613048847,
+"chg90d": 11.350807023515722,
+"cats": [
+"memecoins",
+"cryptocurrencies",
+"layer-1",
+"made-in-america",
+"animal-memes"
+]
+},
+{
+"rank": 12,
+"tick": "XMR",
+"name": "Monero",
+"sym": "CRYPTO:XMRUSD",
+"tier": "11-50",
+"close": 600.66,
+"mcap": 11306757295.628716,
+"chg1d": 0.49691311549463996,
+"chg7d": -3.353285705091078,
+"chg30d": 11.017873315712626,
+"chg90d": 67.04861497385694,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"layer-1"
+]
+},
+{
+"rank": 13,
+"tick": "LEO",
+"name": "UNUS SED LEO",
+"sym": "CRYPTO:LEOUSD",
+"tier": "11-50",
+"close": 9.4422,
+"mcap": 8685481809.21018,
+"chg1d": 0.35605343990136884,
+"chg7d": 4.157611992984227,
+"chg30d": 3.964942028825923,
+"chg90d": -3.454974898007172,
+"cats": [
+"centralized-exchange",
+"payments",
+"exchange-based-tokens"
+]
+},
+{
+"rank": 14,
+"tick": "LINK",
+"name": "Chainlink",
+"sym": "CRYPTO:LINKUSD",
+"tier": "11-50",
+"close": 11.569,
+"mcap": 8654768557.845484,
+"chg1d": -1.974241653956946,
+"chg7d": -7.336804164997986,
+"chg30d": -25.07609610776504,
+"chg90d": 37.03449256135698,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"smart-contract-platforms",
+"developments-tools",
+"oracles",
+"prediction-markets",
+"internet-of-things",
+"data-management-ai",
+"identity",
+"collectibles-nfts",
+"lending-borrowing",
+"asset-management",
+"derivatives",
+"insurance",
+"interoperability",
+"scaling",
+"enterprise-solutions",
+"payments",
+"energy",
+"defi",
+"analytics",
+"metaverse",
+"cybersecurity",
+"e-commerce",
+"sports",
+"real-estate",
+"web3",
+"depin",
+"made-in-america",
+"real-world-assets",
+"world-liberty-financial-portfolio",
+"iso-20022"
+]
+},
+{
+"rank": 15,
+"tick": "ADA",
+"name": "Cardano",
+"sym": "CRYPTO:ADAUSD",
+"tier": "11-50",
+"close": 0.20048,
+"mcap": 7381521236.707702,
+"chg1d": -2.5660964230171106,
+"chg7d": -10.897777777777783,
+"chg30d": -18.90623735943694,
+"chg90d": 18.228460222916784,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"made-in-america",
+"iso-20022"
+]
+},
+{
+"rank": 16,
+"tick": "XLM",
+"name": "Stellar",
+"sym": "CRYPTO:XLMUSD",
+"tier": "11-50",
+"close": 0.16956,
+"mcap": 5976455056.140999,
+"chg1d": -1.5502525692388118,
+"chg7d": -7.621901389267231,
+"chg30d": -27.02074545924077,
+"chg90d": -1.257861635220139,
+"cats": [
+"cryptocurrencies",
+"smart-contract-platforms",
+"layer-1",
+"made-in-america",
+"real-world-assets",
+"exchange-based-tokens",
+"iso-20022"
+]
+},
+{
+"rank": 17,
+"tick": "NEAR",
+"name": "NEAR Protocol",
+"sym": "CRYPTO:NEARUSD",
+"tier": "11-50",
+"close": 4.4112,
+"mcap": 5779727900.1216,
+"chg1d": -6.672872678034958,
+"chg7d": -16.073059360730596,
+"chg30d": -8.496515101228017,
+"chg90d": 163.2923480959771,
+"cats": [
+"smart-contract-platforms",
+"data-management-ai",
+"interoperability",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 18,
+"tick": "BCH",
+"name": "Bitcoin Cash",
+"sym": "CRYPTO:BCHUSD",
+"tier": "11-50",
+"close": 279.65,
+"mcap": 5623595457.8125,
+"chg1d": -3.1347419466574338,
+"chg7d": -2.216860729396144,
+"chg30d": -9.865918906723397,
+"chg90d": 29.01365565602509,
+"cats": [
+"cryptocurrencies",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 21,
+"tick": "LTC",
+"name": "Litecoin",
+"sym": "CRYPTO:LTCUSD",
+"tier": "11-50",
+"close": 57.811,
+"mcap": 4496004025.534838,
+"chg1d": -2.2505157079571254,
+"chg7d": -6.007543979449159,
+"chg30d": -16.47137015792287,
+"chg90d": 27.00410817460841,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 22,
+"tick": "UNI",
+"name": "Uniswap",
+"sym": "CRYPTO:UNIUSD",
+"tier": "11-50",
+"close": 7.1586,
+"mcap": 4470004670.76792,
+"chg1d": -1.0846886183692366,
+"chg7d": -3.8365438865156833,
+"chg30d": -18.673528509594092,
+"chg90d": 61.68492377188028,
+"cats": [
+"decentralized-exchange",
+"defi",
+"dao",
+"made-in-america",
+"exchange-based-tokens"
+]
+},
+{
+"rank": 24,
+"tick": "AVAX",
+"name": "Avalanche",
+"sym": "CRYPTO:AVAXUSD",
+"tier": "11-50",
+"close": 8.7522,
+"mcap": 3885739634.245484,
+"chg1d": -2.67006216429612,
+"chg7d": -9.28388561241306,
+"chg30d": -17.509896324222424,
+"chg90d": 36.18921652532483,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"made-in-america",
+"real-world-assets",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 25,
+"tick": "CC",
+"name": "Canton",
+"sym": "CRYPTO:CCCAUSD",
+"tier": "11-50",
+"close": 0.098969,
+"mcap": 3953988198.7920914,
+"chg1d": -1.387975528586522,
+"chg7d": -11.238565022421525,
+"chg30d": -24.508771929824558,
+"chg90d": -18.160092615562718,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"smart-contract-platforms",
+"interoperability",
+"scaling",
+"enterprise-solutions",
+"layer-1"
+]
+},
+{
+"rank": 26,
+"tick": "SUI",
+"name": "Sui",
+"sym": "CRYPTO:SUIUSD",
+"tier": "11-50",
+"close": 0.9214,
+"mcap": 3794574390.455855,
+"chg1d": -2.17125869299782,
+"chg7d": -10.369649805447475,
+"chg30d": -21.05894448252228,
+"chg90d": 33.25620073758044,
+"cats": [
+"smart-contract-platforms",
+"developments-tools",
+"scaling",
+"layer-1",
+"made-in-america",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 27,
+"tick": "GRAM",
+"name": "Gram (prev. Toncoin)",
+"sym": "CRYPTO:GRAMUSD",
+"tier": "11-50",
+"close": 1.2153,
+"mcap": 3447259740.447319,
+"chg1d": -2.0235407932924785,
+"chg7d": -10.409141172134168,
+"chg30d": -22.715421303656598,
+"chg90d": -14.87111235640235,
+"cats": [
+"layer-1"
+]
+},
+{
+"rank": 28,
+"tick": "HBAR",
+"name": "Hedera",
+"sym": "CRYPTO:HBARUSD",
+"tier": "11-50",
+"close": 0.073507,
+"mcap": 3258356316.0105953,
+"chg1d": -1.804750327286317,
+"chg7d": -12.317967678454295,
+"chg30d": -39.715457154571546,
+"chg90d": 7.613150652848524,
+"cats": [
+"smart-contract-platforms",
+"enterprise-solutions",
+"defi",
+"layer-1",
+"made-in-america",
+"real-world-assets",
+"iso-20022"
+]
+},
+{
+"rank": 32,
+"tick": "TAO",
+"name": "Bittensor",
+"sym": "CRYPTO:TAOBUSD",
+"tier": "11-50",
+"close": 251.02,
+"mcap": 2929307633.709933,
+"chg1d": -2.3192466339793008,
+"chg7d": -7.560301970171239,
+"chg30d": -18.521163334198903,
+"chg90d": 30.549199084668196,
+"cats": [
+"distributed-computing-storage",
+"oracles",
+"data-management-ai",
+"dao",
+"layer-1",
+"depin"
+]
+},
+{
+"rank": 33,
+"tick": "SHIB",
+"name": "Shiba Inu",
+"sym": "CRYPTO:SHIBUSD",
+"tier": "11-50",
+"close": 4.8828e-06,
+"mcap": 2877132563.6348333,
+"chg1d": -1.5981137018601044,
+"chg7d": -5.250902316916979,
+"chg30d": -14.036724705550958,
+"chg90d": 3.5061686522236855,
+"cats": [
+"memecoins",
+"cryptocurrencies",
+"animal-memes"
+]
+},
+{
+"rank": 34,
+"tick": "CRO",
+"name": "Cronos",
+"sym": "CRYPTO:CROUSD",
+"tier": "11-50",
+"close": 0.053883,
+"mcap": 2734369235.6217294,
+"chg1d": 0.9366277653934783,
+"chg7d": -7.43979111553922,
+"chg30d": -22.605248416426083,
+"chg90d": -2.354028487550291,
+"cats": [
+"smart-contract-platforms",
+"centralized-exchange",
+"payments",
+"layer-1",
+"exchange-based-tokens"
+]
+},
+{
+"rank": 35,
+"tick": "ENA",
+"name": "Ethena",
+"sym": "CRYPTO:ENAUSD",
+"tier": "11-50",
+"close": 0.20166,
+"mcap": 2703504375,
+"chg1d": -3.6824759994268494,
+"chg7d": -5.5089708155712716,
+"chg30d": -21.357557799524347,
+"chg90d": 148.8649262202043,
+"cats": [
+"defi",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 37,
+"tick": "M",
+"name": "MemeCore",
+"sym": "CRYPTO:MEMECOREUSD",
+"tier": "11-50",
+"close": 1.06249,
+"mcap": 2434867478.6096163,
+"chg1d": 2.8567832871885153,
+"chg7d": 42.396301011860885,
+"chg30d": -7.4082788671024,
+"chg90d": 8.937579461099944,
+"cats": [
+"memecoins",
+"layer-1"
+]
+},
+{
+"rank": 38,
+"tick": "OKB",
+"name": "OKB",
+"sym": "CRYPTO:OKBUSD",
+"tier": "11-50",
+"close": 110.89,
+"mcap": 2328690000,
+"chg1d": -0.6895934085617016,
+"chg7d": -4.322691975841247,
+"chg30d": -6.705367659431262,
+"chg90d": 28.367193378480053,
+"cats": [
+"layer-1",
+"made-in-china"
+]
+},
+{
+"rank": 39,
+"tick": "QNT",
+"name": "Quant",
+"sym": "CRYPTO:QNTUSD",
+"tier": "11-50",
+"close": 193.41,
+"mcap": 2334988256.58,
+"chg1d": -4.076774289540246,
+"chg7d": -5.4784478545596755,
+"chg30d": -16.134767149423297,
+"chg90d": 218.92159287657677,
+"cats": [
+"interoperability",
+"real-world-assets",
+"iso-20022"
+]
+},
+{
+"rank": 40,
+"tick": "PEPE",
+"name": "Pepe",
+"sym": "CRYPTO:PEPEUSD",
+"tier": "11-50",
+"close": 4.8703e-06,
+"mcap": 2015195476.6829774,
+"chg1d": -2.9994622478041766,
+"chg7d": 5.286134163208837,
+"chg30d": 15.733460030882517,
+"chg90d": 76.48252128237637,
+"cats": [
+"memecoins"
+]
+},
+{
+"rank": 41,
+"tick": "AAVE",
+"name": "Aave",
+"sym": "CRYPTO:AAVEUSD",
+"tier": "11-50",
+"close": 133.05,
+"mcap": 2053862390.2300158,
+"chg1d": -0.619958171496851,
+"chg7d": -14.028172654432659,
+"chg30d": -10.96165428628789,
+"chg90d": 33.84369310008351,
+"cats": [
+"lending-borrowing",
+"defi",
+"dao",
+"made-in-america",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 42,
+"tick": "ONDO",
+"name": "Ondo",
+"sym": "CRYPTO:ONDOUSD",
+"tier": "11-50",
+"close": 0.4122,
+"mcap": 2007138092.6934001,
+"chg1d": -2.1785561725758145,
+"chg7d": -10.38545992129921,
+"chg30d": -20.660584363090422,
+"chg90d": -0.7870604375767192,
+"cats": [
+"made-in-america",
+"real-world-assets",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 43,
+"tick": "PUMP",
+"name": "Pump.fun",
+"sym": "CRYPTO:PUMPFUSD",
+"tier": "11-50",
+"close": 0.0043579,
+"mcap": 2006758229.6473255,
+"chg1d": -3.7757512861842866,
+"chg7d": -14.927966267129976,
+"chg30d": -11.547048794349285,
+"chg90d": 119.79623745397687,
+"cats": []
+},
+{
+"rank": 44,
+"tick": "ASTER",
+"name": "Aster",
+"sym": "CRYPTO:ASTER2USD",
+"tier": "11-50",
+"close": 0.70095,
+"mcap": 1897316806.4805331,
+"chg1d": -0.8234644933995567,
+"chg7d": -2.1497871152369763,
+"chg30d": -0.9383965290634534,
+"chg90d": 15.41501325473794,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"defi",
+"exchange-based-tokens",
+"made-in-china",
+"perpetuals"
+]
+},
+{
+"rank": 46,
+"tick": "DOT",
+"name": "Polkadot",
+"sym": "CRYPTO:DOTUSD",
+"tier": "11-50",
+"close": 0.98352,
+"mcap": 1681411831.501978,
+"chg1d": -2.608282336165412,
+"chg7d": -13.951168285639275,
+"chg30d": -16.805144259243583,
+"chg90d": 28.13803169307756,
+"cats": [
+"smart-contract-platforms",
+"layer-1"
+]
+},
+{
+"rank": 47,
+"tick": "WLFI",
+"name": "World Liberty Financial",
+"sym": "CRYPTO:WLFIOUSD",
+"tier": "11-50",
+"close": 0.051325,
+"mcap": 1631106310.6808002,
+"chg1d": -1.5120987085755897,
+"chg7d": -9.03209797770333,
+"chg30d": -9.9577200399993,
+"chg90d": -6.52375835503669,
+"cats": [
+"defi",
+"made-in-america"
+]
+},
+{
+"rank": 48,
+"tick": "MNT",
+"name": "Mantle",
+"sym": "CRYPTO:MNTUSD",
+"tier": "11-50",
+"close": 0.49525,
+"mcap": 1635317175.20137,
+"chg1d": -2.2114720110573467,
+"chg7d": -11.009487529648528,
+"chg30d": -25.53527395200577,
+"chg90d": 24.861335215812833,
+"cats": [
+"scaling",
+"defi",
+"dao",
+"made-in-china"
+]
+},
+{
+"rank": 50,
+"tick": "WLD",
+"name": "Worldcoin",
+"sym": "CRYPTO:WLDWUSD",
+"tier": "11-50",
+"close": 0.41928,
+"mcap": 1562465480.862021,
+"chg1d": -4.083453434904955,
+"chg7d": -28.129875027857306,
+"chg30d": -14.656786906603699,
+"chg90d": 36.885754399712674,
+"cats": [
+"identity",
+"made-in-america"
+]
+},
+{
+"rank": 51,
+"tick": "SKY",
+"name": "Sky",
+"sym": "CRYPTO:SKY2USD",
+"tier": "51-100",
+"close": 0.065318,
+"mcap": 1530097821.6305683,
+"chg1d": -0.04437847185027813,
+"chg7d": -13.300061058164541,
+"chg30d": -17.049134526243595,
+"chg90d": 13.713201371842416,
+"cats": [
+"cryptocurrencies",
+"lending-borrowing",
+"defi",
+"dao",
+"real-world-assets"
+]
+},
+{
+"rank": 53,
+"tick": "ICP",
+"name": "Internet Computer",
+"sym": "CRYPTO:ICPUSD",
+"tier": "51-100",
+"close": 2.5705,
+"mcap": 1434814132.1514463,
+"chg1d": -2.8533635676492786,
+"chg7d": -10.953684137596559,
+"chg30d": -17.961893211629913,
+"chg90d": 24.40712418933309,
+"cats": [
+"smart-contract-platforms",
+"distributed-computing-storage",
+"data-management-ai",
+"defi",
+"layer-1",
+"depin"
+]
+},
+{
+"rank": 54,
+"tick": "BGB",
+"name": "Bitget Token",
+"sym": "CRYPTO:BGBUSD",
+"tier": "51-100",
+"close": 1.8513,
+"mcap": 1295895244.4875345,
+"chg1d": -1.3113705421397706,
+"chg7d": -4.05286343612335,
+"chg30d": -7.421113166975051,
+"chg90d": 13.416651350854613,
+"cats": [
+"centralized-exchange",
+"exchange-based-tokens",
+"made-in-china"
+]
+},
+{
+"rank": 55,
+"tick": "ETC",
+"name": "Ethereum Classic",
+"sym": "CRYPTO:ETCUSD",
+"tier": "51-100",
+"close": 7.4324,
+"mcap": 1180654569.4513273,
+"chg1d": -2.0157409726708213,
+"chg7d": -7.952195182364234,
+"chg30d": -19.880992163161462,
+"chg90d": 9.961385391546216,
+"cats": [
+"smart-contract-platforms",
+"layer-1"
+]
+},
+{
+"rank": 56,
+"tick": "MORPHO",
+"name": "Morpho",
+"sym": "CRYPTO:MORPHOUSD",
+"tier": "51-100",
+"close": 2.1662,
+"mcap": 1157595933.0907094,
+"chg1d": -3.7330015109768055,
+"chg7d": -7.5064047822374125,
+"chg30d": -14.578650577704165,
+"chg90d": 7.365186360031725,
+"cats": [
+"lending-borrowing",
+"defi"
+]
+},
+{
+"rank": 57,
+"tick": "VVV",
+"name": "Venice Token",
+"sym": "CRYPTO:VVVUSD",
+"tier": "51-100",
+"close": 23.481,
+"mcap": 1149836676.0780568,
+"chg1d": -2.9108951829646355,
+"chg7d": -12.77117384843983,
+"chg30d": -15.571854888002013,
+"chg90d": 90.16844833171362,
+"cats": [
+"data-management-ai",
+"made-in-america"
+]
+},
+{
+"rank": 59,
+"tick": "ARB",
+"name": "Arbitrum",
+"sym": "CRYPTO:ARBIUSD",
+"tier": "51-100",
+"close": 0.16702,
+"mcap": 1151121052.4776201,
+"chg1d": -2.8727611072342403,
+"chg7d": -11.060226849140001,
+"chg30d": -17.312738254369027,
+"chg90d": 115.8243632651479,
+"cats": [
+"scaling",
+"web3",
+"dao"
+]
+},
+{
+"rank": 60,
+"tick": "KCS",
+"name": "KuCoin Token",
+"sym": "CRYPTO:KCSUSD",
+"tier": "51-100",
+"close": 7.4633,
+"mcap": 1042287320.2995858,
+"chg1d": -1.4212312935053917,
+"chg7d": 0.6948379610890725,
+"chg30d": 0.26330991308086715,
+"chg90d": 11.495712450327167,
+"cats": [
+"centralized-exchange",
+"exchange-based-tokens",
+"made-in-china"
+]
+},
+{
+"rank": 62,
+"tick": "KAS",
+"name": "Kaspa",
+"sym": "CRYPTO:KASUSD",
+"tier": "51-100",
+"close": 0.035651,
+"mcap": 990447061.7568215,
+"chg1d": -4.5028393871209555,
+"chg7d": -7.512906322152167,
+"chg30d": -21.572035110104043,
+"chg90d": 28.815580286168533,
+"cats": [
+"cryptocurrencies",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 63,
+"tick": "POL",
+"name": "Polygon (prev. MATIC)",
+"sym": "CRYPTO:POLYGUSD",
+"tier": "51-100",
+"close": 0.091402,
+"mcap": 972544099.9227613,
+"chg1d": -0.5191610705384312,
+"chg7d": -3.3335448526767792,
+"chg30d": -21.818492857753828,
+"chg90d": 27.67960663248914,
+"cats": [
+"scaling"
+]
+},
+{
+"rank": 64,
+"tick": "ALGO",
+"name": "Algorand",
+"sym": "CRYPTO:ALGOUSD",
+"tier": "51-100",
+"close": 0.09981,
+"mcap": 905817964.6243111,
+"chg1d": -4.019617270891435,
+"chg7d": -11.750663129973484,
+"chg30d": -26.567098293113606,
+"chg90d": 26.545205583659804,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"made-in-america",
+"real-world-assets",
+"iso-20022"
+]
+},
+{
+"rank": 65,
+"tick": "JUP",
+"name": "Jupiter",
+"sym": "CRYPTO:JUPIUSD",
+"tier": "51-100",
+"close": 0.27011,
+"mcap": 896594815.7923807,
+"chg1d": -4.141528852296103,
+"chg7d": -17.205026049647557,
+"chg30d": -17.538611806361033,
+"chg90d": 38.81409927037305,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"interoperability",
+"defi",
+"exchange-based-tokens",
+"perpetuals"
+]
+},
+{
+"rank": 66,
+"tick": "ATOM",
+"name": "Cosmos",
+"sym": "CRYPTO:ATOMUSD",
+"tier": "51-100",
+"close": 1.6213,
+"mcap": 873165466.3509766,
+"chg1d": -1.3387695490780758,
+"chg7d": -7.2907136322049375,
+"chg30d": -6.596382071667246,
+"chg90d": 26.733369811615717,
+"cats": [
+"smart-contract-platforms",
+"interoperability",
+"layer-1"
+]
+},
+{
+"rank": 68,
+"tick": "RENDER",
+"name": "Render",
+"sym": "CRYPTO:RENDERUSD",
+"tier": "51-100",
+"close": 1.6477,
+"mcap": 854787612.7614907,
+"chg1d": -3.235846840498012,
+"chg7d": -13.656133731593572,
+"chg30d": -15.420152969560084,
+"chg90d": 16.428773318258898,
+"cats": [
+"gaming",
+"distributed-computing-storage",
+"data-management-ai",
+"collectibles-nfts",
+"scaling",
+"social-media-content",
+"metaverse",
+"web3",
+"depin",
+"made-in-america"
+]
+},
+{
+"rank": 69,
+"tick": "INJ",
+"name": "Injective",
+"sym": "CRYPTO:INJUSD",
+"tier": "51-100",
+"close": 7.8827,
+"mcap": 788041043.03715,
+"chg1d": -3.1573645220339777,
+"chg7d": -8.420563462097011,
+"chg30d": 6.3433389544688055,
+"chg90d": 57.276536312849174,
+"cats": [
+"privacy",
+"smart-contract-platforms",
+"data-management-ai",
+"interoperability",
+"defi",
+"web3",
+"layer-1",
+"made-in-america",
+"real-world-assets"
+]
+},
+{
+"rank": 70,
+"tick": "FIL",
+"name": "Filecoin",
+"sym": "CRYPTO:FILUSD",
+"tier": "51-100",
+"close": 0.90524,
+"mcap": 759032177.36948,
+"chg1d": -0.9334952996924748,
+"chg7d": -13.966926439840332,
+"chg30d": -14.841015992474121,
+"chg90d": 27.01379242609197,
+"cats": [
+"distributed-computing-storage",
+"data-management-ai",
+"web3",
+"layer-1",
+"depin",
+"made-in-america"
+]
+},
+{
+"rank": 71,
+"tick": "XDC",
+"name": "XDC Network",
+"sym": "CRYPTO:XDCUSD",
+"tier": "51-100",
+"close": 0.032951,
+"mcap": 707946168.8362285,
+"chg1d": 0.7429375076433905,
+"chg7d": -5.318659847135218,
+"chg30d": -4.818163436263312,
+"chg90d": 25.30803163979313,
+"cats": [
+"smart-contract-platforms",
+"enterprise-solutions",
+"layer-1",
+"real-world-assets",
+"iso-20022"
+]
+},
+{
+"rank": 72,
+"tick": "LIT",
+"name": "Lighter",
+"sym": "CRYPTO:LITLUSD",
+"tier": "51-100",
+"close": 2.9671,
+"mcap": 741775000,
+"chg1d": 1.0661489202261696,
+"chg7d": -21.126086609777488,
+"chg30d": -33.24784017278617,
+"chg90d": 30.13157894736844,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"defi",
+"exchange-based-tokens",
+"perpetuals"
+]
+},
+{
+"rank": 73,
+"tick": "CAKE",
+"name": "PancakeSwap",
+"sym": "CRYPTO:CAKEUSD",
+"tier": "51-100",
+"close": 2.0378,
+"mcap": 697920632.219279,
+"chg1d": -3.5178258605179695,
+"chg7d": -8.753861997940268,
+"chg30d": -21.4023990434682,
+"chg90d": 40.35401887182312,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"defi",
+"exchange-based-tokens",
+"perpetuals"
+]
+},
+{
+"rank": 74,
+"tick": "ZRO",
+"name": "LayerZero",
+"sym": "CRYPTO:ZROLUSD",
+"tier": "51-100",
+"close": 1.6572,
+"mcap": 671187693.7282894,
+"chg1d": -2.3453152622274636,
+"chg7d": -14.97614283515469,
+"chg30d": 6.2443903064495405,
+"chg90d": 116.4774731231957,
+"cats": [
+"interoperability"
+]
+},
+{
+"rank": 75,
+"tick": "DASH",
+"name": "Dash",
+"sym": "CRYPTO:DASHUSD",
+"tier": "51-100",
+"close": 50.483,
+"mcap": 650247917.6742105,
+"chg1d": -5.931129579249432,
+"chg7d": -2.2537611090673253,
+"chg30d": -23.008998017385995,
+"chg90d": 66.86940138168114,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"dao",
+"made-in-america"
+]
+},
+{
+"rank": 76,
+"tick": "NIGHT",
+"name": "Midnight",
+"sym": "CRYPTO:NIGHTMIUSD",
+"tier": "51-100",
+"close": 0.038231,
+"mcap": 634917486.499631,
+"chg1d": -5.077465488131885,
+"chg7d": -8.21329107845962,
+"chg30d": 33.21370082581276,
+"chg90d": 103.80084226238071,
+"cats": [
+"privacy"
+]
+},
+{
+"rank": 77,
+"tick": "ETHFI",
+"name": "ether.fi",
+"sym": "CRYPTO:ETHFIUSD",
+"tier": "51-100",
+"close": 0.65718,
+"mcap": 634408713,
+"chg1d": -3.718354430379741,
+"chg7d": -7.531904715003302,
+"chg30d": -7.384650074692072,
+"chg90d": 64.34430329098728,
+"cats": [
+"defi"
+]
+},
+{
+"rank": 78,
+"tick": "AERO",
+"name": "Aerodrome Finance",
+"sym": "CRYPTO:AERODUSD",
+"tier": "51-100",
+"close": 0.68086,
+"mcap": 601196290.1935209,
+"chg1d": -2.336656386717353,
+"chg7d": -16.558206796818506,
+"chg30d": -17.342268516832384,
+"chg90d": 57.62107602555792,
+"cats": [
+"decentralized-exchange",
+"defi",
+"made-in-america"
+]
+},
+{
+"rank": 79,
+"tick": "APT",
+"name": "Aptos",
+"sym": "CRYPTO:APTOUSD",
+"tier": "51-100",
+"close": 0.67141,
+"mcap": 593295162.4038199,
+"chg1d": -4.0129810716532335,
+"chg7d": -18.08576831574453,
+"chg30d": -19.05651733616242,
+"chg90d": 18.070869603446752,
+"cats": [
+"smart-contract-platforms",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 80,
+"tick": "PYTH",
+"name": "Pyth Network",
+"sym": "CRYPTO:PYTHUSD",
+"tier": "51-100",
+"close": 0.069909,
+"mcap": 550530500.3577129,
+"chg1d": -5.074274230779681,
+"chg7d": -11.39656024638471,
+"chg30d": -13.894568296588249,
+"chg90d": 71.57266970991019,
+"cats": [
+"oracles",
+"interoperability"
+]
+},
+{
+"rank": 81,
+"tick": "BIANRENSHENG",
+"name": "Bi An Ren Sheng",
+"sym": "CRYPTO:BIANRENSHENGUSD",
+"tier": "51-100",
+"close": 0.53517,
+"mcap": 535170000.00000006,
+"chg1d": 1.3291678500426065,
+"chg7d": 5.290391123003086,
+"chg30d": 8.452559477971878,
+"chg90d": -17.04848409696818,
+"cats": [
+"memecoins"
+]
+},
+{
+"rank": 83,
+"tick": "STX",
+"name": "Stacks",
+"sym": "CRYPTO:STXSUSD",
+"tier": "51-100",
+"close": 0.28847,
+"mcap": 541953243.2005959,
+"chg1d": -3.740656700480512,
+"chg7d": -20.971453618979783,
+"chg30d": -8.133498933154996,
+"chg90d": 106.33001931192334,
+"cats": [
+"smart-contract-platforms",
+"gaming",
+"collectibles-nfts",
+"defi",
+"metaverse",
+"web3",
+"made-in-america"
+]
+},
+{
+"rank": 84,
+"tick": "VET",
+"name": "VeChain",
+"sym": "CRYPTO:VETUSD",
+"tier": "51-100",
+"close": 0.006181,
+"mcap": 531473539.515037,
+"chg1d": -3.549972692517754,
+"chg7d": -18.947271797427188,
+"chg30d": -30.42783336897673,
+"chg90d": 31.499446855586744,
+"cats": [
+"smart-contract-platforms",
+"internet-of-things",
+"logistics",
+"layer-1",
+"real-world-assets",
+"made-in-china"
+]
+},
+{
+"rank": 85,
+"tick": "CRV",
+"name": "Curve DAO Token",
+"sym": "CRYPTO:CRVUSD",
+"tier": "51-100",
+"close": 0.32664,
+"mcap": 516613290.03328264,
+"chg1d": -3.1144331731624875,
+"chg7d": -18.800805429189356,
+"chg30d": -13.860759493670885,
+"chg90d": 54.16273362280535,
+"cats": [
+"decentralized-exchange",
+"defi",
+"dao",
+"exchange-based-tokens"
+]
+},
+{
+"rank": 87,
+"tick": "TIA",
+"name": "Celestia",
+"sym": "CRYPTO:TIA2USD",
+"tier": "51-100",
+"close": 0.53179,
+"mcap": 524951391.22133976,
+"chg1d": -3.7118180665954417,
+"chg7d": -11.284053183858003,
+"chg30d": 18.554931335830204,
+"chg90d": 62.42822235797188,
+"cats": [
+"developments-tools",
+"scaling",
+"layer-1"
+]
+},
+{
+"rank": 89,
+"tick": "STABLE",
+"name": "Stable",
+"sym": "CRYPTO:STABLE3USD",
+"tier": "51-100",
+"close": 0.027512,
+"mcap": 495216000.00000006,
+"chg1d": 0.998531571218801,
+"chg7d": 4.9675696299122505,
+"chg30d": -5.4765340479626134,
+"chg90d": -19.298348537737237,
+"cats": [
+"enterprise-solutions",
+"payments",
+"layer-1"
+]
+},
+{
+"rank": 90,
+"tick": "PENGU",
+"name": "Pudgy Penguins",
+"sym": "CRYPTO:PENGUPUDUSD",
+"tier": "51-100",
+"close": 0.0076825,
+"mcap": 482924992.9617323,
+"chg1d": -3.3027476746088613,
+"chg7d": -5.295792704725046,
+"chg30d": -18.84368760761861,
+"chg90d": 27.122149783234605,
+"cats": [
+"memecoins",
+"collectibles-nfts",
+"made-in-america",
+"animal-memes"
+]
+},
+{
+"rank": 91,
+"tick": "TRUMP",
+"name": "OFFICIAL TRUMP",
+"sym": "CRYPTO:TRUMPOFUSD",
+"tier": "51-100",
+"close": 1.6926,
+"mcap": 477087667.5733498,
+"chg1d": -1.974865350089755,
+"chg7d": -8.240268892984925,
+"chg30d": -15.757515429026467,
+"chg90d": 16.24201634503126,
+"cats": [
+"memecoins",
+"made-in-america"
+]
+},
+{
+"rank": 93,
+"tick": "RAY",
+"name": "Raydium",
+"sym": "CRYPTO:RAYUSD",
+"tier": "51-100",
+"close": 1.6516,
+"mcap": 445871820.6115447,
+"chg1d": -8.801766979569297,
+"chg7d": -15.931996335131831,
+"chg30d": -12.995838381709959,
+"chg90d": 170.20040899795504,
+"cats": [
+"decentralized-exchange",
+"derivatives",
+"defi",
+"exchange-based-tokens",
+"perpetuals"
+]
+},
+{
+"rank": 94,
+"tick": "FET",
+"name": "Artificial Superintelligence Alliance",
+"sym": "CRYPTO:FETUSD",
+"tier": "51-100",
+"close": 0.18076,
+"mcap": 433668389.224383,
+"chg1d": -1.8248968064305897,
+"chg7d": -7.231203489863994,
+"chg30d": -19.519145146927865,
+"chg90d": 25.562656293414836,
+"cats": [
+"data-management-ai",
+"interoperability",
+"layer-1"
+]
+},
+{
+"rank": 95,
+"tick": "VIRTUAL",
+"name": "Virtuals Protocol",
+"sym": "CRYPTO:VIRTUALUSD",
+"tier": "51-100",
+"close": 0.60926,
+"mcap": 401533881.6266733,
+"chg1d": -2.652350365896518,
+"chg7d": -11.42794823324123,
+"chg30d": -26.36217464366453,
+"chg90d": 6.580927384076996,
+"cats": [
+"gaming",
+"data-management-ai",
+"metaverse"
+]
+},
+{
+"rank": 96,
+"tick": "SEI",
+"name": "Sei",
+"sym": "CRYPTO:SEIUSD",
+"tier": "51-100",
+"close": 0.051655,
+"mcap": 397729151.37741,
+"chg1d": -3.695210395808859,
+"chg7d": -17.041403012880224,
+"chg30d": -33.232081690687004,
+"chg90d": 21.698668865590772,
+"cats": [
+"developments-tools",
+"layer-1",
+"made-in-america",
+"world-liberty-financial-portfolio"
+]
+},
+{
+"rank": 97,
+"tick": "SPX",
+"name": "SPX6900",
+"sym": "CRYPTO:SPX6USD",
+"tier": "51-100",
+"close": 0.3967,
+"mcap": 369324958.830769,
+"chg1d": -1.5925778924389715,
+"chg7d": 4.985973641031077,
+"chg30d": -5.389935606963989,
+"chg90d": 19.401637370575493,
+"cats": [
+"memecoins"
+]
+},
+{
+"rank": 98,
+"tick": "XPL",
+"name": "Plasma",
+"sym": "CRYPTO:XPLUSD",
+"tier": "51-100",
+"close": 0.077031,
+"mcap": 366753149.99999917,
+"chg1d": 0.48133364639587833,
+"chg7d": -6.013909224011716,
+"chg30d": -21.636826042726344,
+"chg90d": -1.2688891452301188,
+"cats": [
+"payments",
+"layer-1"
+]
+},
+{
+"rank": 99,
+"tick": "BSV",
+"name": "Bitcoin SV",
+"sym": "CRYPTO:BSVUSD",
+"tier": "51-100",
+"close": 17.691,
+"mcap": 355652068.903125,
+"chg1d": -2.3675496688741835,
+"chg7d": -4.717031931506118,
+"chg30d": -13.5986328125,
+"chg90d": 40.514571587389824,
+"cats": [
+"cryptocurrencies",
+"scaling"
+]
+},
+{
+"rank": 100,
+"tick": "BTT",
+"name": "BitTorrent-New",
+"sym": "CRYPTO:BTTUSD",
+"tier": "51-100",
+"close": 3.6165e-07,
+"mcap": 349142795.6114247,
+"chg1d": -0.9530852025305989,
+"chg7d": -5.986794218571271,
+"chg30d": -2.917964136153761,
+"chg90d": 36.40478255949912,
+"cats": [
+"distributed-computing-storage",
+"web3",
+"depin"
+]
+},
+{
+"rank": 101,
+"tick": "STRK",
+"name": "Starknet",
+"sym": "CRYPTO:STRKSUSD",
+"tier": "101-125",
+"close": 0.046011,
+"mcap": 349288014.5282115,
+"chg1d": -2.0813381855327835,
+"chg7d": -19.690068582796712,
+"chg30d": 10.056199928255412,
+"chg90d": 79.35926416712137,
+"cats": [
+"privacy",
+"smart-contract-platforms",
+"scaling",
+"web3"
+]
+},
+{
+"rank": 102,
+"tick": "PENDLE",
+"name": "Pendle",
+"sym": "CRYPTO:PENDLEUSD",
+"tier": "101-125",
+"close": 1.9345,
+"mcap": 336418604.846333,
+"chg1d": -2.8475291281639197,
+"chg7d": -10.140282422891115,
+"chg30d": -18.78673383711167,
+"chg90d": 34.99651081646895,
+"cats": [
+"social-media-content",
+"defi",
+"web3",
+"real-world-assets"
+]
+},
+{
+"rank": 105,
+"tick": "LDO",
+"name": "Lido DAO",
+"sym": "CRYPTO:LDOUSD",
+"tier": "101-125",
+"close": 0.36767,
+"mcap": 305007179.86499524,
+"chg1d": -3.318520076783513,
+"chg7d": -9.135839078755517,
+"chg30d": -16.868259817774852,
+"chg90d": -0.38199994581560154,
+"cats": [
+"derivatives",
+"defi",
+"dao"
+]
+},
+{
+"rank": 106,
+"tick": "XTZ",
+"name": "Tezos",
+"sym": "CRYPTO:XTZUSD",
+"tier": "101-125",
+"close": 0.27687,
+"mcap": 304571712.3894919,
+"chg1d": -1.7250559045894918,
+"chg7d": -12.224582316203273,
+"chg30d": -11.622191011235955,
+"chg90d": 34.81521156936262,
+"cats": [
+"privacy",
+"smart-contract-platforms",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 108,
+"tick": "PIEVERSE",
+"name": "Pieverse",
+"sym": "CRYPTO:PIEVERSEUSD",
+"tier": "101-125",
+"close": 1.0092,
+"mcap": 303115460.424,
+"chg1d": -2.3228803716608404,
+"chg7d": -6.033519553072622,
+"chg30d": -31.384280663584445,
+"chg90d": 52.13917448065849,
+"cats": [
+"payments"
+]
+},
+{
+"rank": 110,
+"tick": "KITE",
+"name": "Kite",
+"sym": "CRYPTO:KITEUSD",
+"tier": "101-125",
+"close": 0.11349,
+"mcap": 291454385.00841,
+"chg1d": -2.5502318392581147,
+"chg7d": -7.180829312177975,
+"chg30d": -17.413768010478822,
+"chg90d": 18.60793227778647,
+"cats": [
+"data-management-ai",
+"web3",
+"layer-1"
+]
+},
+{
+"rank": 111,
+"tick": "IMX",
+"name": "Immutable",
+"sym": "CRYPTO:IMXUSD",
+"tier": "101-125",
+"close": 0.13668,
+"mcap": 273360000,
+"chg1d": -2.9881467811767988,
+"chg7d": -12.322791712104692,
+"chg30d": -21.74958493158527,
+"chg90d": 25.57883131201763,
+"cats": [
+"developments-tools",
+"gaming",
+"collectibles-nfts",
+"scaling",
+"marketplace"
+]
+},
+{
+"rank": 112,
+"tick": "BONK",
+"name": "Bonk",
+"sym": "CRYPTO:BONKUSD",
+"tier": "101-125",
+"close": 3.0594e-06,
+"mcap": 269209791.06789887,
+"chg1d": -3.0485486119913814,
+"chg7d": -4.8753186990858755,
+"chg30d": -12.498569957670751,
+"chg90d": 5.423845623707786,
+"cats": [
+"memecoins",
+"made-in-america",
+"animal-memes"
+]
+},
+{
+"rank": 113,
+"tick": "DCR",
+"name": "Decred",
+"sym": "CRYPTO:DCRUSD",
+"tier": "101-125",
+"close": 14.204,
+"mcap": 250950467.3051573,
+"chg1d": -1.6547808627016478,
+"chg7d": -7.314845024469812,
+"chg30d": -20.247052217855128,
+"chg90d": 4.556496135443502,
+"cats": [
+"privacy",
+"cryptocurrencies",
+"dao",
+"layer-1",
+"made-in-america"
+]
+},
+{
+"rank": 114,
+"tick": "OP",
+"name": "Optimism",
+"sym": "CRYPTO:OPUSD",
+"tier": "101-125",
+"close": 0.11006,
+"mcap": 252122266.49558002,
+"chg1d": -2.644847412649264,
+"chg7d": -14.496581727781228,
+"chg30d": -18.043041179536814,
+"chg90d": 25.213315433798268,
+"cats": [
+"scaling",
+"made-in-america"
+]
+},
+{
+"rank": 115,
+"tick": "LUNC",
+"name": "Terra Classic",
+"sym": "CRYPTO:LUNCUSD",
+"tier": "101-125",
+"close": 4.4926e-05,
+"mcap": 247619242.29880014,
+"chg1d": -1.233319409941295,
+"chg7d": -3.837761519702228,
+"chg30d": -15.717633823942997,
+"chg90d": -9.803764195995026,
+"cats": [
+"smart-contract-platforms",
+"payments",
+"layer-1"
+]
+},
+{
+"rank": 116,
+"tick": "CFX",
+"name": "Conflux",
+"sym": "CRYPTO:CFXUSD",
+"tier": "101-125",
+"close": 0.047509,
+"mcap": 249472800.1926668,
+"chg1d": -1.3824597820446287,
+"chg7d": -13.49476558944015,
+"chg30d": -11.735091956158282,
+"chg90d": 15.973052796016503,
+"cats": [
+"smart-contract-platforms",
+"interoperability",
+"defi",
+"web3",
+"layer-1",
+"made-in-china"
+]
+},
+{
+"rank": 117,
+"tick": "MON",
+"name": "Monad",
+"sym": "CRYPTO:MONADUSD",
+"tier": "101-125",
+"close": 0.020622,
+"mcap": 243858552.63000003,
+"chg1d": -3.2466923149103795,
+"chg7d": -6.573642006070753,
+"chg30d": -27.73338940285954,
+"chg90d": -4.875686147885045,
+"cats": [
+"smart-contract-platforms",
+"defi",
+"layer-1"
+]
+},
+{
+"rank": 118,
+"tick": "GRT",
+"name": "The Graph",
+"sym": "CRYPTO:GRTUSD",
+"tier": "101-125",
+"close": 0.021788,
+"mcap": 240316385.00591737,
+"chg1d": -2.7625295666532845,
+"chg7d": -12.743291950340412,
+"chg30d": -28.692521682212405,
+"chg90d": 45.59305045105245,
+"cats": [
+"data-management-ai",
+"enterprise-solutions",
+"web3",
+"made-in-america"
+]
+},
+{
+"rank": 119,
+"tick": "NFT",
+"name": "AINFT",
+"sym": "CRYPTO:NFTUSD",
+"tier": "101-125",
+"close": 2.3634e-07,
+"mcap": 234001555.84557262,
+"chg1d": 0.6644518272425343,
+"chg7d": -0.15209125475284524,
+"chg30d": -1.2699473640237304,
+"chg90d": -11.895619757688713,
+"cats": [
+"collectibles-nfts",
+"marketplace"
+]
+},
+{
+"rank": 120,
+"tick": "KMNO",
+"name": "Kamino",
+"sym": "CRYPTO:KMNOUSD",
+"tier": "101-125",
+"close": 0.037476,
+"mcap": 219747983.667786,
+"chg1d": -2.730481727574744,
+"chg7d": -10.62119947537856,
+"chg30d": -12.625591533207444,
+"chg90d": 108.1583916472287,
+"cats": [
+"lending-borrowing",
+"defi"
+]
+},
+{
+"rank": 121,
+"tick": "AR",
+"name": "Arweave",
+"sym": "CRYPTO:ARUSD",
+"tier": "101-125",
+"close": 3.4481,
+"mcap": 226376268.0146,
+"chg1d": -2.623552668737638,
+"chg7d": -9.78519661965934,
+"chg30d": -20.123702742772416,
+"chg90d": 99.73932688408738,
+"cats": [
+"distributed-computing-storage",
+"web3",
+"layer-1",
+"depin"
+]
+},
+{
+"rank": 122,
+"tick": "FLOKI",
+"name": "FLOKI",
+"sym": "CRYPTO:FLOKIUSD",
+"tier": "101-125",
+"close": 2.3355e-05,
+"mcap": 222444277.48398498,
+"chg1d": -2.6875000000000058,
+"chg7d": -5.022366815778775,
+"chg30d": -13.394148403604413,
+"chg90d": 13.932386945704657,
+"cats": [
+"memecoins",
+"gaming",
+"metaverse",
+"animal-memes"
+]
+},
+{
+"rank": 123,
+"tick": "CVX",
+"name": "Convex Finance",
+"sym": "CRYPTO:CVXUSD",
+"tier": "101-125",
+"close": 2.1569,
+"mcap": 215658415.05732903,
+"chg1d": -8.806866226957567,
+"chg7d": -17.57175067833531,
+"chg30d": -3.008364061516341,
+"chg90d": 62.6253487144688,
+"cats": [
+"defi"
+]
+},
+{
+"rank": 124,
+"tick": "ENS",
+"name": "Ethereum Name Service",
+"sym": "CRYPTO:ENSUSD",
+"tier": "101-125",
+"close": 5.2272,
+"mcap": 221142973.30365652,
+"chg1d": -1.265535869442034,
+"chg7d": -9.28779675135361,
+"chg30d": -22.510636405413827,
+"chg90d": 21.80072700158449,
+"cats": [
+"identity",
+"web3",
+"dao"
+]
+},
+{
+"rank": 125,
+"tick": "JTO",
+"name": "Jito",
+"sym": "CRYPTO:JTOUSD",
+"tier": "101-125",
+"close": 0.40628,
+"mcap": 218446882.78658,
+"chg1d": -5.691736304549685,
+"chg7d": -14.580661438513134,
+"chg30d": -27.891663560690773,
+"chg90d": -18.69521713027817,
+"cats": [
+"derivatives",
+"defi",
+"dao"
+]
+}
+]
+}

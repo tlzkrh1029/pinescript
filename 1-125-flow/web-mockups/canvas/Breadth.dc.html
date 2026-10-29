@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>시장 폭</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0d0d0d; }
+    body { color: #f0efec; font-family: "IBM Plex Sans KR", system-ui, sans-serif; font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .small { font-size: 12px; line-height: 18px; }
+    .muted { color: #898781; }
+    .sec { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec; }
+    .card { background: #1a1a19; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 24px; box-sizing: border-box; }
+    .tab { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: #c3c2b7; text-decoration: none; border-bottom: 2px solid transparent; font-size: 14px; line-height: 22px; white-space: nowrap; }
+    .tab:hover { color: #f0efec; }
+    .tab[aria-current="page"] { color: #f0efec; font-weight: 600; border-bottom-color: #3987e5; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: transparent; color: #c3c2b7; font-family: inherit; font-size: 14px; line-height: 22px; cursor: pointer; box-sizing: border-box; white-space: nowrap; }
+    .chip:hover { background: #222220; color: #f0efec; }
+    .chip[aria-pressed="true"] { border-color: #3987e5; background: rgba(57,135,229,0.16); color: #f0efec; }
+    .chip-static, .chip-static:hover { cursor: default; background: transparent; color: #c3c2b7; }
+    .chip svg { display: block; flex: none; }
+    button:focus-visible, a:focus-visible { outline: 2px solid #3987e5; outline-offset: 2px; }
+    a { color: #6da7ec; text-underline-offset: 2px; }
+    a:hover { color: #f0efec; }
+    .ticks text { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .xt { position: absolute; transform: translateX(-50%); font-family: "IBM Plex Mono", "IBM Plex Sans KR", ui-monospace, monospace; font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; color: #c3c2b7; white-space: nowrap; pointer-events: none; }
+    .yt { position: absolute; left: 0; width: 36px; text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; color: #c3c2b7; white-space: nowrap; pointer-events: none; }
+    .vg { position: absolute; width: 1px; background: #2c2c2a; pointer-events: none; }
+    .hg { position: absolute; left: 44px; width: 648px; height: 1px; background: #2c2c2a; pointer-events: none; }
+    .elab { position: absolute; left: 708px; height: 18px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 18px; white-space: nowrap; pointer-events: none; }
+    .elab-v { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-weight: 500; color: #f0efec; }
+    .half { position: absolute; font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; pointer-events: none; }
+    .hover-layer { position: absolute; left: 36px; top: 36px; width: 664px; height: 514px; cursor: crosshair; z-index: 5; border-radius: 4px; }
+    .hover-layer:focus { outline: none; }
+    .hover-layer:focus-visible { outline: 2px solid #3987e5; outline-offset: 2px; }
+    .tip { position: absolute; width: 232px; box-sizing: border-box; padding: 12px 14px; background: #222220; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; pointer-events: none; z-index: 20; }
+    .tiprow { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 22px; }
+    .tipk { font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; }
+    .tipv { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; font-weight: 500; color: #f0efec; white-space: nowrap; }
+    .thead, .trow { display: grid; grid-template-columns: 100px repeat(5, minmax(96px, 1fr)) 84px; align-items: center; column-gap: 8px; padding: 0 12px; min-width: 760px; box-sizing: border-box; }
+    .thead { position: sticky; top: 0; z-index: 1; min-height: 40px; background: #222220; font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .trow { min-height: 40px; border-top: 1px solid #2c2c2a; font-size: 13px; line-height: 20px; color: #f0efec; }
+    .num { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tn { margin-left: 6px; font-size: 11px; color: #c3c2b7; }
+    .covrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; border-bottom: 1px solid #2c2c2a; }
+    .ftitle { margin: 0 0 6px; font-size: 12px; line-height: 18px; font-weight: 600; color: #f0efec; }
+    .fblock p { margin: 0 0 6px; }
+  </style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 2.5vw, 32px) 48px; box-sizing: border-box; background: #0d0d0d; color: #f0efec;">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 64px; border-bottom: 1px solid rgba(255,255,255,0.10);">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#f0efec" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M 2 14 A 4 4 0 0 1 6 18"></path>
+        <path d="M 2 10 A 8 8 0 0 1 10 18"></path>
+        <path d="M 2 6 A 12 12 0 0 1 14 18"></path>
+        <path d="M 2 2 A 16 16 0 0 1 18 18"></path>
+      </svg>
+      <span style="font-size: 16px; line-height: 24px; font-weight: 600; white-space: nowrap;">1-125 Flow</span>
+    </div>
+    <nav aria-label="화면" style="display: flex; flex-wrap: wrap; align-self: stretch; gap: 4px;">
+      <a class="tab" href="Main.dc.html">회전 그래프</a>
+      <a class="tab" href="Heatmap.dc.html">히트맵</a>
+      <a class="tab" href="RankFlow.dc.html">순위 흐름</a>
+      <a class="tab" href="Breadth.dc.html" aria-current="page">시장 폭</a>
+    </nav>
+    <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+      <span class="chip chip-static">기준 BTC</span>
+      <span class="small" style="color: #c3c2b7; white-space: nowrap;">{{ui.asof}} 종가 기준</span>
+    </div>
+  </header>
+
+  <section style="padding: 32px 0 24px; display: flex; flex-direction: column; gap: 8px;">
+    <h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; text-wrap: balance;">시장 폭: 30일 수익률로 BTC를 앞선 코인은 {{h.n}}개 중 {{h.k}}개입니다</h1>
+    <p style="margin: 0; max-width: 780px; color: #c3c2b7; text-wrap: pretty;">선 하나는 순위 구간 하나에서 최근 30일 수익률이 BTC보다 높은 코인의 비율을 날마다 이은 것입니다. 50% 점선보다 위에 있으면 그 구간 코인의 절반 넘게 BTC를 앞섰다는 뜻입니다. {{h.trend}}</p>
+  </section>
+
+  <div role="group" aria-label="기간" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+    <span class="small muted" style="margin-right: 4px;">기간</span>
+    <sc-for list="{{ranges}}" as="r" hint-placeholder-count="4">
+      <button type="button" class="chip" aria-pressed="{{r.on}}" onClick="{{r.pick}}">{{r.label}}</button>
+    </sc-for>
+  </div>
+
+  <section aria-label="구간별 마지막 종가일 값" style="margin-top: 24px; display: flex; flex-direction: column; gap: 8px;">
+    <p class="small" style="margin: 0; color: #c3c2b7;">타일은 기간 선택과 관계없이 마지막 종가일인 {{ui.lastK}} 값과 30일 전인 {{ui.prevK}} 값을 비교합니다.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px;">
+      <sc-for list="{{tiles}}" as="t" hint-placeholder-count="5">
+        <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true" style="display: block; flex: none;"><line x1="2" y1="5" x2="16" y2="5" stroke="{{t.color}}" stroke-width="{{t.sw}}" stroke-linecap="round"></line></svg>
+            <span style="font-weight: 600; color: #c3c2b7;">{{t.label}}</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px;">
+            <span style="font-size: 28px; line-height: 36px; font-weight: 600;">{{t.pct}}</span>
+            <span class="small" style="color: #c3c2b7;">{{t.n}}개 중 {{t.k}}개</span>
+          </div>
+          <p class="small" style="margin: 0; color: #c3c2b7;">{{t.delta}}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+
+    <section class="card" aria-labelledby="br-title" style="flex: 999 1 760px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 320px;">
+          <h2 id="br-title" class="sec">순위 구간별로 BTC를 앞선 코인 비율</h2>
+          <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.first}}부터 {{ui.last}}까지 {{ui.days}}일의 값입니다. 그래프를 가리키면 그날 다섯 구간의 값과 BTC 종가가 함께 보입니다.</p>
+        </div>
+        <button type="button" class="chip" onClick="{{toggleTable}}"><sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">표로 보기</sc-if><sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">그래프로 보기</sc-if></button>
+      </div>
+
+      <sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">
+        <div role="group" aria-label="선 켜고 끄기" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <span class="small muted" style="margin-right: 4px;">표시할 선</span>
+          <sc-for list="{{legend}}" as="lg" hint-placeholder-count="5">
+            <button type="button" class="chip" aria-pressed="{{lg.on}}" onClick="{{lg.toggle}}"><svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true"><line x1="2" y1="5" x2="16" y2="5" stroke="{{lg.color}}" stroke-width="{{lg.sw}}" stroke-linecap="round" opacity="{{lg.ko}}"></line></svg>{{lg.label}}</button>
+          </sc-for>
+        </div>
+
+        <div style="overflow-x: auto; overflow-y: hidden;">
+          <div style="position: relative; width: 820px; height: 584px;">
+            <div class="small" style="position: absolute; left: 0; top: 0; color: #c3c2b7; white-space: nowrap;">↑ 30일 수익률이 BTC보다 높은 코인 비율</div>
+
+            <sc-for list="{{xt}}" as="g" hint-placeholder-count="8">
+              <div class="vg" style="left: {{g.x}}px; top: 36px; height: 340px;"></div>
+              <div class="vg" style="left: {{g.x}}px; top: 450px; height: 100px;"></div>
+              <div class="xt" style="left: {{g.lx}}px; top: 390px;">{{g.t}}</div>
+              <div class="xt" style="left: {{g.lx}}px; top: 558px;">{{g.t}}</div>
+            </sc-for>
+
+            <svg class="ticks" width="820" height="380" viewBox="0 0 820 380" aria-hidden="true" style="position: absolute; left: 0; top: 24px; display: block; overflow: visible;">
+              <line x1="44" y1="12" x2="692" y2="12" stroke="#2c2c2a" stroke-width="1"></line>
+              <line x1="44" y1="97" x2="692" y2="97" stroke="#2c2c2a" stroke-width="1"></line>
+              <line x1="44" y1="267" x2="692" y2="267" stroke="#2c2c2a" stroke-width="1"></line>
+              <line x1="44" y1="352" x2="692" y2="352" stroke="#383835" stroke-width="1"></line>
+              <line x1="44" y1="182" x2="692" y2="182" stroke="#898781" stroke-width="1" stroke-dasharray="4 4"></line>
+              <text x="36" y="16" text-anchor="end" fill="#c3c2b7">100%</text>
+              <text x="36" y="101" text-anchor="end" fill="#c3c2b7">75%</text>
+              <text x="36" y="186" text-anchor="end" fill="#f0efec">50%</text>
+              <text x="36" y="271" text-anchor="end" fill="#c3c2b7">25%</text>
+              <text x="36" y="356" text-anchor="end" fill="#c3c2b7">0%</text>
+              <line x1="{{cr.x}}" y1="12" x2="{{cr.x}}" y2="352" stroke="#c3c2b7" stroke-width="1" opacity="{{cr.o}}"></line>
+              <path d="{{ln.t1.d}}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{ln.t1.o}}"></path>
+              <path d="{{ln.t2.d}}" fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{ln.t2.o}}"></path>
+              <path d="{{ln.t3.d}}" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{ln.t3.o}}"></path>
+              <path d="{{ln.t4.d}}" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="{{ln.t4.o}}"></path>
+              <path d="{{ln.all.d}}" fill="none" stroke="#f0efec" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="{{ln.all.o}}"></path>
+              <line x1="{{ld.t1.x1}}" y1="{{ld.t1.y1}}" x2="{{ld.t1.x2}}" y2="{{ld.t1.y2}}" stroke="#3987e5" stroke-width="1" stroke-linecap="round" opacity="{{ld.t1.o}}"></line>
+              <line x1="{{ld.t2.x1}}" y1="{{ld.t2.y1}}" x2="{{ld.t2.x2}}" y2="{{ld.t2.y2}}" stroke="#d95926" stroke-width="1" stroke-linecap="round" opacity="{{ld.t2.o}}"></line>
+              <line x1="{{ld.t3.x1}}" y1="{{ld.t3.y1}}" x2="{{ld.t3.x2}}" y2="{{ld.t3.y2}}" stroke="#199e70" stroke-width="1" stroke-linecap="round" opacity="{{ld.t3.o}}"></line>
+              <line x1="{{ld.t4.x1}}" y1="{{ld.t4.y1}}" x2="{{ld.t4.x2}}" y2="{{ld.t4.y2}}" stroke="#c98500" stroke-width="1" stroke-linecap="round" opacity="{{ld.t4.o}}"></line>
+              <line x1="{{ld.all.x1}}" y1="{{ld.all.y1}}" x2="{{ld.all.x2}}" y2="{{ld.all.y2}}" stroke="#f0efec" stroke-width="1" stroke-linecap="round" opacity="{{ld.all.o}}"></line>
+              <circle cx="{{hd.t1.x}}" cy="{{hd.t1.y}}" r="4" fill="#3987e5" stroke="#1a1a19" stroke-width="2" opacity="{{hd.t1.o}}"></circle>
+              <circle cx="{{hd.t2.x}}" cy="{{hd.t2.y}}" r="4" fill="#d95926" stroke="#1a1a19" stroke-width="2" opacity="{{hd.t2.o}}"></circle>
+              <circle cx="{{hd.t3.x}}" cy="{{hd.t3.y}}" r="4" fill="#199e70" stroke="#1a1a19" stroke-width="2" opacity="{{hd.t3.o}}"></circle>
+              <circle cx="{{hd.t4.x}}" cy="{{hd.t4.y}}" r="4" fill="#c98500" stroke="#1a1a19" stroke-width="2" opacity="{{hd.t4.o}}"></circle>
+              <circle cx="{{hd.all.x}}" cy="{{hd.all.y}}" r="4.5" fill="#f0efec" stroke="#1a1a19" stroke-width="2" opacity="{{hd.all.o}}"></circle>
+            </svg>
+
+            <sc-if value="{{ui.halfGutter}}" hint-placeholder-val="{{ true }}">
+              <div class="half" style="left: 700px; top: 197px;">절반</div>
+            </sc-if>
+            <sc-if value="{{ui.halfInside}}" hint-placeholder-val="{{ false }}">
+              <div class="half" style="left: 50px; top: 182px; padding: 0 4px; border-radius: 4px; background: rgba(26,26,25,0.86);">절반</div>
+            </sc-if>
+
+            <sc-for list="{{elabs}}" as="e" hint-placeholder-count="5">
+              <div class="elab" style="top: {{e.top}}px;" aria-hidden="true"><span style="color: #c3c2b7;">{{e.name}}</span><span class="elab-v">{{e.v}}</span></div>
+            </sc-for>
+
+            <sc-if value="{{ui.noneOn}}" hint-placeholder-val="{{ false }}">
+              <p class="small" style="position: absolute; left: 44px; top: 170px; width: 648px; margin: 0; text-align: center; color: #c3c2b7;">켜진 선이 없습니다. 위의 단추로 선을 하나 이상 켜 주세요.</p>
+            </sc-if>
+
+            <div style="position: absolute; left: 0; top: 412px; display: flex; align-items: baseline; gap: 8px; white-space: nowrap;">
+              <span style="font-weight: 600; color: #f0efec;">BTC 종가</span>
+              <span class="small" style="color: #c3c2b7;">단위는 USDT이며, 위 그래프와 같은 기간을 따로 그린 축입니다.</span>
+            </div>
+            <sc-for list="{{bticks}}" as="b" hint-placeholder-count="4">
+              <div class="hg" style="top: {{b.gy}}px;"></div>
+              <div class="yt" style="top: {{b.ty}}px;">{{b.t}}</div>
+            </sc-for>
+            <svg width="820" height="140" viewBox="0 0 820 140" aria-hidden="true" style="position: absolute; left: 0; top: 440px; display: block; overflow: visible;">
+              <line x1="{{cr.x}}" y1="10" x2="{{cr.x}}" y2="110" stroke="#c3c2b7" stroke-width="1" opacity="{{cr.o}}"></line>
+              <path d="{{btc.d}}" fill="none" stroke="#c3c2b7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <circle cx="{{btc.hx}}" cy="{{btc.hy}}" r="4" fill="#c3c2b7" stroke="#1a1a19" stroke-width="2" opacity="{{btc.ho}}"></circle>
+            </svg>
+            <div class="elab" style="top: {{btc.lt}}px;" aria-hidden="true"><span class="elab-v">{{btc.last}}</span></div>
+
+            <sc-if value="{{ui.hasTip}}" hint-placeholder-val="{{ false }}">
+              <div class="tip" style="left: {{tip.l}}px; top: {{tip.t}}px;" aria-hidden="true">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                  <span class="mono" style="font-size: 14px; line-height: 22px; font-weight: 500; color: #f0efec;">{{tip.date}}</span>
+                  <sc-if value="{{tip.pinned}}" hint-placeholder-val="{{ false }}">
+                    <span class="small" style="color: #c3c2b7;">고정됨</span>
+                  </sc-if>
+                </div>
+                <div style="margin-top: 6px; display: flex; flex-direction: column;">
+                  <sc-for list="{{tip.rows}}" as="tr" hint-placeholder-count="5">
+                    <div class="tiprow">
+                      <span style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <svg width="14" height="8" viewBox="0 0 14 8" aria-hidden="true" style="display: block; flex: none;"><line x1="1" y1="4" x2="13" y2="4" stroke="{{tr.color}}" stroke-width="2" stroke-linecap="round"></line></svg>
+                        <span class="tipv" style="min-width: 48px; text-align: right;">{{tr.v}}</span>
+                        <span class="tipk">{{tr.name}}</span>
+                      </span>
+                      <span class="tipk mono">{{tr.kn}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div class="tiprow" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.10);">
+                  <span class="tipk">BTC 종가</span>
+                  <span class="tipv">{{tip.btc}}</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <div class="hover-layer" role="slider" tabIndex="0" aria-label="날짜별 값 읽기" aria-orientation="horizontal" aria-valuemin="{{hv.min}}" aria-valuemax="{{hv.max}}" aria-valuenow="{{hv.now}}" aria-valuetext="{{hv.text}}" onMouseMove="{{hv.move}}" onMouseLeave="{{hv.leave}}" onMouseDown="{{hv.down}}" onClick="{{hv.click}}" onKeyDown="{{hv.key}}" onFocus="{{hv.focus}}" onBlur="{{hv.blur}}"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;">
+          <p class="small" style="margin: 0; color: #c3c2b7; flex: 1 1 360px;">그래프를 누르면 그 날짜가 고정되고, 같은 날짜를 다시 누르면 풀립니다. 키보드로는 그래프에 초점을 둔 뒤 화살표 키로 하루씩, Page Up과 Page Down으로 7일씩 옮기고 Enter로 고정합니다.</p>
+          <sc-if value="{{ui.hasPin}}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="chip" onClick="{{unpin}}">{{ui.pinDate}} 고정 풀기</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">
+        <div style="overflow: auto; max-height: 600px; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px;">
+          <div role="table" aria-label="{{ui.tableLabel}}">
+            <div role="rowgroup">
+              <div role="row" class="thead">
+                <span role="columnheader">날짜</span>
+                <span role="columnheader" class="num">전체</span>
+                <span role="columnheader" class="num">1-10위</span>
+                <span role="columnheader" class="num">11-50위</span>
+                <span role="columnheader" class="num">51-100위</span>
+                <span role="columnheader" class="num">101-125위</span>
+                <span role="columnheader" class="num">BTC 종가</span>
+              </div>
+            </div>
+            <div role="rowgroup">
+              <sc-for list="{{trows}}" as="rw" hint-placeholder-count="8">
+                <div role="row" class="trow">
+                  <span role="cell" class="mono" style="color: #c3c2b7;">{{rw.d}}</span>
+                  <sc-for list="{{rw.cells}}" as="c" hint-placeholder-count="5">
+                    <span role="cell" class="num">{{c.v}}<span class="tn">{{c.kn}}</span></span>
+                  </sc-for>
+                  <span role="cell" class="num">{{rw.btc}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">최근 날짜가 위에 있습니다. 비율 옆의 작은 숫자는 그날 셈에 들어간 코인 수 중 BTC를 앞선 코인 수입니다(앞선 수/센 수).</p>
+      </sc-if>
+    </section>
+
+    <aside class="card" aria-label="읽는 법과 구간별로 센 코인" style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <h2 id="howto-title" class="sec">읽는 법</h2>
+        <p style="margin: 0; color: #c3c2b7;">선은 순위 구간마다 최근 30일 수익률이 BTC보다 높은 코인의 비율입니다. 날마다 그날 종가와 30일 전 종가를 비교해 새로 셉니다.</p>
+        <p style="margin: 0; color: #c3c2b7;">50% 점선(절반)보다 위에 있으면 그 구간 코인의 절반 넘게 지난 30일 동안 BTC보다 많이 올랐거나 덜 내렸다는 뜻입니다. 점선보다 아래에 있으면 절반 넘게 BTC에 뒤졌다는 뜻입니다.</p>
+        <p style="margin: 0; color: #c3c2b7;">아래 BTC 종가가 내리는 동안 어떤 구간의 선이 오르면, 상대적인 강세가 BTC에서 그 구간의 알트코인 쪽으로 옮겨 가고 있다는 뜻입니다. 반대로 BTC가 오르는데 선이 내려가면, BTC의 상승을 따라가지 못하는 코인이 늘고 있다는 뜻입니다.</p>
+        <p style="margin: 0; color: #c3c2b7;">1-10위 구간은 BTC를 빼면 지금 {{how.n1}}개뿐이라, 코인 하나가 바뀔 때마다 선이 {{how.step1}}%p씩 움직입니다. {{how.early}} 이 구간의 큰 계단은 코인 한두 개의 변화일 수 있습니다.</p>
+      </div>
+
+      <div style="border-top: 1px solid #2c2c2a; padding-top: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <h2 class="sec">구간별로 센 코인</h2>
+        <p class="small" style="margin: 0; color: #c3c2b7;">Binance USDT 일봉이 있는 코인만 셉니다. 오른쪽 숫자는 그 구간의 코인 수 중 셈에 들어간 코인 수입니다.</p>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{cov}}" as="cv" hint-placeholder-count="5">
+            <div class="covrow">
+              <span style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true" style="display: block; flex: none;"><line x1="2" y1="5" x2="16" y2="5" stroke="{{cv.color}}" stroke-width="{{cv.sw}}" stroke-linecap="round"></line></svg>
+                <span>{{cv.label}}</span>
+              </span>
+              <span style="color: #f0efec; font-variant-numeric: tabular-nums; white-space: nowrap;">{{cv.text}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">빠진 코인의 이름과 이유는 아래 각주에 있습니다.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.10); color: #c3c2b7; font-size: 12px; line-height: 18px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 24px 32px;">
+      <div class="fblock">
+        <h2 class="ftitle">지표 정의</h2>
+        <p>날마다 각 코인의 30일 수익률(그날 종가를 30일 전 종가로 나눈 값에서 1을 뺀 값)을 BTC의 같은 기간 수익률과 비교해, BTC보다 높은 코인이 그 구간에서 몇 퍼센트인지 셌습니다. 수익률이 BTC와 똑같으면 앞선 것으로 세지 않습니다.</p>
+        <p>‘n개 중 k개’의 n은 그날 계산할 수 있었던 코인 수이고, k는 비율에 n을 곱해 반올림한 값입니다. 타일의 변화는 마지막 종가일 값에서 30일 전 값을 뺀 차이이며 단위는 %포인트(%p)입니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">자료</h2>
+        <p>가격은 Binance USDT 현물 일봉 종가이며, {{foot.first}}부터 {{foot.last}} 종가까지 {{foot.days}}일을 그렸습니다. 첫날 값에도 30일 전 종가가 필요해서 그보다 앞선 일봉도 함께 썼습니다.</p>
+        <p>순위 구간은 TradingView 코인 스크리너(CRYPTO: 지수)의 {{foot.uasof}} 시가총액 순위입니다. 지난 날짜에도 이 순위 구간을 그대로 적용했기 때문에, 그사이 순위가 바뀐 코인도 지금 구간에 들어가 있습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">대상</h2>
+        <p>스테이블코인, 금 토큰, 그리고 PI, JST, FLR, NEXO, GNO, FF, SUN, GT는 처음부터 대상에서 뺐습니다. 기준인 BTC도 셈에서 뺐습니다. 마지막 종가일에는 대상 {{foot.universe}}개 중 {{foot.counted}}개를 셌습니다.</p>
+        <p>이 화면은 시장의 상태를 설명할 뿐이며, 사고팔 시점을 알려 주지 않습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">셈에서 빠지거나 늦게 들어온 코인</h2>
+        <p>Binance USDT 일봉이 없어서 뺀 코인 {{foot.missN}}개: {{foot.missList}}.</p>
+        <p>기록이 짧아서 중간부터 센 코인 {{foot.lateN}}개는 30일 전 종가가 생긴 날부터 셈에 들어갑니다: {{foot.lateList}}. 그래서 전체에서 센 코인 수는 {{foot.n0}}개에서 {{foot.n1}}개로 늘었습니다.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2100},"startRange":{"editor":"enum","options":["120","90","60","30"],"default":"120","section":"보기"},"endLabels":{"editor":"boolean","default":true,"section":"보기"}}'>
+const DATA = {"asof":"2026-10-28","uasof":"2026-10-29","win":30,"cover":{"1-10":[7,7],"11-50":[24,31],"51-100":[32,42],"101-125":[18,21]},"missing":[["XMR",12,"11-50"],
+["LEO",13,"11-50"],
+["CC",25,"11-50"],
+["CRO",34,"11-50"],
+["M",37,"11-50"],
+["OKB",38,"11-50"],
+["MNT",48,"11-50"],
+["BGB",54,"51-100"],
+["VVV",57,"51-100"],
+["KCS",60,"51-100"],
+["KAS",62,"51-100"],
+["XDC",71,"51-100"],
+["LIT",72,"51-100"],
+["STABLE",89,"51-100"],
+["SPX",97,"51-100"],
+["BSV",99,"51-100"],
+["BTT",100,"51-100"],
+["PIEVERSE",108,"101-125"],
+["MON",117,"101-125"],
+["NFT",119,"101-125"]],"late":[["HYPE",10,"1-10","2026-09-24"],
+["GRAM",27,"11-50","2026-07-02"],
+["AERO",78,"51-100","2026-07-17"]],"rows":[["2026-07-01",60024,29.5,33.3,30.4,32.3,22.2,78,6,23,31,18],
+["2026-07-02",61560,34.6,33.3,39.1,38.7,22.2,78,6,23,31,18],
+["2026-07-03",62583.26,23.1,16.7,13.0,32.3,22.2,78,6,23,31,18],
+["2026-07-04",63144.01,35.9,66.7,30.4,41.9,22.2,78,6,23,31,18],
+["2026-07-05",63650,51.3,66.7,43.5,54.8,50.0,78,6,23,31,18],
+["2026-07-06",64042.02,46.2,50.0,39.1,51.6,44.4,78,6,23,31,18],
+["2026-07-07",63363.99,37.2,66.7,30.4,35.5,38.9,78,6,23,31,18],
+["2026-07-08",62290,34.6,66.7,21.7,35.5,38.9,78,6,23,31,18],
+["2026-07-09",63230,34.6,66.7,26.1,38.7,27.8,78,6,23,31,18],
+["2026-07-10",64161.72,42.3,50.0,39.1,48.4,33.3,78,6,23,31,18],
+["2026-07-11",63819,38.5,66.7,21.7,48.4,33.3,78,6,23,31,18],
+["2026-07-12",63780,37.2,66.7,26.1,41.9,33.3,78,6,23,31,18],
+["2026-07-13",62334.52,35.9,66.7,30.4,38.7,27.8,78,6,23,31,18],
+["2026-07-14",65043.98,37.2,66.7,30.4,38.7,33.3,78,6,23,31,18],
+["2026-07-15",64756.28,38.5,66.7,39.1,41.9,22.2,78,6,23,31,18],
+["2026-07-16",63830.2,34.6,66.7,30.4,38.7,22.2,78,6,23,31,18],
+["2026-07-17",63931.67,33.3,66.7,34.8,32.3,22.2,78,6,23,31,18],
+["2026-07-18",64834.22,28.2,50.0,30.4,25.8,22.2,78,6,23,31,18],
+["2026-07-19",64722.54,29.5,50.0,39.1,25.8,16.7,78,6,23,31,18],
+["2026-07-20",65255.51,33.3,50.0,47.8,29.0,16.7,78,6,23,31,18],
+["2026-07-21",66556.16,30.8,50.0,43.5,25.8,16.7,78,6,23,31,18],
+["2026-07-22",66114.49,33.3,50.0,43.5,29.0,22.2,78,6,23,31,18],
+["2026-07-23",65098.97,32.1,50.0,39.1,29.0,22.2,78,6,23,31,18],
+["2026-07-24",64139.99,32.1,50.0,39.1,29.0,22.2,78,6,23,31,18],
+["2026-07-25",64375,30.8,50.0,47.8,22.6,16.7,78,6,23,31,18],
+["2026-07-26",65399.99,28.2,33.3,43.5,19.4,22.2,78,6,23,31,18],
+["2026-07-27",63755.86,28.2,33.3,43.5,22.6,16.7,78,6,23,31,18],
+["2026-07-28",63915,26.9,33.3,47.8,16.1,16.7,78,6,23,31,18],
+["2026-07-29",63984.28,19.2,33.3,30.4,12.9,11.1,78,6,23,31,18],
+["2026-07-30",64780.02,21.8,33.3,39.1,9.7,16.7,78,6,23,31,18],
+["2026-07-31",62887.88,26.9,50.0,39.1,19.4,16.7,78,6,23,31,18],
+["2026-08-01",62823.64,25.3,66.7,37.5,12.9,16.7,79,6,24,31,18],
+["2026-08-02",63570,22.8,50.0,37.5,9.7,16.7,79,6,24,31,18],
+["2026-08-03",63520,25.3,66.7,37.5,12.9,16.7,79,6,24,31,18],
+["2026-08-04",64106.56,21.5,33.3,37.5,9.7,16.7,79,6,24,31,18],
+["2026-08-05",64665.23,20.3,50.0,37.5,3.2,16.7,79,6,24,31,18],
+["2026-08-06",64323.61,22.8,50.0,37.5,12.9,11.1,79,6,24,31,18],
+["2026-08-07",64923.19,20.3,33.3,37.5,9.7,11.1,79,6,24,31,18],
+["2026-08-08",64962.6,24.1,50.0,37.5,12.9,16.7,79,6,24,31,18],
+["2026-08-09",64901.59,22.8,50.0,37.5,9.7,16.7,79,6,24,31,18],
+["2026-08-10",63970.01,24.1,50.0,37.5,12.9,16.7,79,6,24,31,18],
+["2026-08-11",63600,24.1,50.0,37.5,12.9,16.7,79,6,24,31,18],
+["2026-08-12",63479.99,19.0,50.0,29.2,12.9,5.6,79,6,24,31,18],
+["2026-08-13",63490.86,24.1,66.7,33.3,16.1,11.1,79,6,24,31,18],
+["2026-08-14",63043.56,21.5,66.7,25.0,16.1,11.1,79,6,24,31,18],
+["2026-08-15",63086.01,24.1,66.7,29.2,16.1,16.7,79,6,24,31,18],
+["2026-08-16",62900,25.0,66.7,29.2,18.8,16.7,80,6,24,32,18],
+["2026-08-17",64532.1,22.5,66.7,29.2,15.6,11.1,80,6,24,32,18],
+["2026-08-18",64725.42,23.8,66.7,29.2,18.8,11.1,80,6,24,32,18],
+["2026-08-19",69334.79,20.0,50.0,25.0,18.8,5.6,80,6,24,32,18],
+["2026-08-20",73025.15,22.5,66.7,29.2,15.6,11.1,80,6,24,32,18],
+["2026-08-21",78338.03,35.0,83.3,37.5,28.1,27.8,80,6,24,32,18],
+["2026-08-22",77074.93,36.2,83.3,41.7,31.2,22.2,80,6,24,32,18],
+["2026-08-23",77734,43.8,83.3,41.7,43.8,33.3,80,6,24,32,18],
+["2026-08-24",78992.75,38.8,83.3,37.5,40.6,22.2,80,6,24,32,18],
+["2026-08-25",78539.14,32.5,83.3,29.2,34.4,16.7,80,6,24,32,18],
+["2026-08-26",79023.75,41.2,83.3,41.7,40.6,27.8,80,6,24,32,18],
+["2026-08-27",80249.58,40.0,66.7,41.7,40.6,27.8,80,6,24,32,18],
+["2026-08-28",77845.87,37.5,66.7,33.3,40.6,27.8,80,6,24,32,18],
+["2026-08-29",78230,36.2,66.7,33.3,34.4,33.3,80,6,24,32,18],
+["2026-08-30",77682,30.0,66.7,20.8,34.4,22.2,80,6,24,32,18],
+["2026-08-31",78581.29,36.2,66.7,25.0,46.9,22.2,80,6,24,32,18],
+["2026-09-01",77439,37.5,66.7,20.8,46.9,33.3,80,6,24,32,18],
+["2026-09-02",77340.01,36.2,66.7,20.8,43.8,33.3,80,6,24,32,18],
+["2026-09-03",81270.37,37.5,66.7,25.0,40.6,38.9,80,6,24,32,18],
+["2026-09-04",79660.77,41.2,66.7,25.0,46.9,44.4,80,6,24,32,18],
+["2026-09-05",79831.75,52.5,83.3,41.7,53.1,55.6,80,6,24,32,18],
+["2026-09-06",80341.83,63.8,83.3,45.8,68.8,72.2,80,6,24,32,18],
+["2026-09-07",79112.01,67.5,83.3,54.2,75.0,66.7,80,6,24,32,18],
+["2026-09-08",78455.8,71.2,83.3,54.2,84.4,66.7,80,6,24,32,18],
+["2026-09-09",78306.43,51.2,66.7,37.5,56.2,55.6,80,6,24,32,18],
+["2026-09-10",76568.72,46.2,66.7,29.2,53.1,50.0,80,6,24,32,18],
+["2026-09-11",77225.7,48.8,66.7,33.3,53.1,55.6,80,6,24,32,18],
+["2026-09-12",77278.73,51.2,66.7,33.3,56.2,61.1,80,6,24,32,18],
+["2026-09-13",76842.01,50.0,66.7,37.5,56.2,50.0,80,6,24,32,18],
+["2026-09-14",78189.21,46.2,66.7,29.2,53.1,50.0,80,6,24,32,18],
+["2026-09-15",75644.48,42.5,66.7,29.2,50.0,38.9,80,6,24,32,18],
+["2026-09-16",76206.01,50.0,83.3,29.2,59.4,50.0,80,6,24,32,18],
+["2026-09-17",76417.01,68.8,83.3,58.3,68.8,77.8,80,6,24,32,18],
+["2026-09-18",80883.87,70.0,66.7,58.3,75.0,77.8,80,6,24,32,18],
+["2026-09-19",81249.99,81.2,66.7,70.8,87.5,88.9,80,6,24,32,18],
+["2026-09-20",81178,71.2,66.7,62.5,78.1,72.2,80,6,24,32,18],
+["2026-09-21",86620,66.2,66.7,62.5,71.9,61.1,80,6,24,32,18],
+["2026-09-22",86208.56,68.8,66.7,66.7,71.9,66.7,80,6,24,32,18],
+["2026-09-23",84397.6,65.0,66.7,58.3,68.8,66.7,80,6,24,32,18],
+["2026-09-24",84410.24,82.5,66.7,83.3,84.4,83.3,80,6,24,32,18],
+["2026-09-25",84099.99,85.0,83.3,83.3,87.5,83.3,80,6,24,32,18],
+["2026-09-26",84433.1,87.5,66.7,87.5,90.6,88.9,80,6,24,32,18],
+["2026-09-27",84472,91.2,83.3,91.7,93.8,88.9,80,6,24,32,18],
+["2026-09-28",83500.01,85.0,83.3,87.5,87.5,77.8,80,6,24,32,18],
+["2026-09-29",83663.66,90.0,83.3,91.7,90.6,88.9,80,6,24,32,18],
+["2026-09-30",83623.6,91.2,83.3,95.8,90.6,88.9,80,6,24,32,18],
+["2026-10-01",84880.05,88.8,83.3,91.7,87.5,88.9,80,6,24,32,18],
+["2026-10-02",84518.01,86.2,83.3,91.7,84.4,83.3,80,6,24,32,18],
+["2026-10-03",84753.56,88.8,66.7,91.7,90.6,88.9,80,6,24,32,18],
+["2026-10-04",86530,86.2,83.3,91.7,81.2,88.9,80,6,24,32,18],
+["2026-10-05",85766.87,82.5,50.0,83.3,84.4,88.9,80,6,24,32,18],
+["2026-10-06",85549.93,76.2,50.0,75.0,75.0,88.9,80,6,24,32,18],
+["2026-10-07",83321.81,68.8,33.3,66.7,75.0,72.2,80,6,24,32,18],
+["2026-10-08",81754.45,56.2,16.7,62.5,56.2,61.1,80,6,24,32,18],
+["2026-10-09",82635.55,73.8,16.7,83.3,71.9,83.3,80,6,24,32,18],
+["2026-10-10",82988.36,77.5,33.3,83.3,75.0,88.9,80,6,24,32,18],
+["2026-10-11",83773.12,77.5,33.3,79.2,81.2,83.3,80,6,24,32,18],
+["2026-10-12",81850,63.8,0.0,75.0,65.6,66.7,80,6,24,32,18],
+["2026-10-13",83169,68.8,16.7,75.0,75.0,66.7,80,6,24,32,18],
+["2026-10-14",81682.01,66.2,0.0,75.0,71.9,66.7,80,6,24,32,18],
+["2026-10-15",82245.93,71.2,33.3,75.0,78.1,66.7,80,6,24,32,18],
+["2026-10-16",81615.64,68.8,0.0,75.0,78.1,66.7,80,6,24,32,18],
+["2026-10-17",81491.04,57.5,0.0,58.3,65.6,61.1,80,6,24,32,18],
+["2026-10-18",82116,48.8,0.0,54.2,50.0,55.6,80,6,24,32,18],
+["2026-10-19",81938.4,47.5,0.0,54.2,53.1,44.4,80,6,24,32,18],
+["2026-10-20",83028.15,45.0,0.0,45.8,53.1,44.4,80,6,24,32,18],
+["2026-10-21",84093.42,46.2,0.0,45.8,56.2,44.4,80,6,24,32,18],
+["2026-10-22",81416.09,32.5,16.7,33.3,43.8,16.7,80,6,24,32,18],
+["2026-10-23",81189.43,47.5,33.3,50.0,53.1,38.9,80,6,24,32,18],
+["2026-10-24",80888.16,25.9,14.3,25.0,34.4,16.7,81,7,24,32,18],
+["2026-10-25",80154.09,17.3,14.3,12.5,21.9,16.7,81,7,24,32,18],
+["2026-10-26",80150.56,17.3,28.6,16.7,18.8,11.1,81,7,24,32,18],
+["2026-10-27",80909.77,13.6,14.3,8.3,18.8,11.1,81,7,24,32,18],
+["2026-10-28",81343.5,14.8,28.6,12.5,15.6,11.1,81,7,24,32,18]]};
+
+/* Row layout: [date, BTC close, all, 1-10, 11-50, 51-100, 101-125, n all, n 1-10, n 11-50, n 51-100, n 101-125] */
+const SER = [
+  { id: "all", k: "all", label: "전체", color: "#f0efec", sw: 2.5 },
+  { id: "t1", k: "1-10", label: "1-10위", color: "#3987e5", sw: 2 },
+  { id: "t2", k: "11-50", label: "11-50위", color: "#d95926", sw: 2 },
+  { id: "t3", k: "51-100", label: "51-100위", color: "#199e70", sw: 2 },
+  { id: "t4", k: "101-125", label: "101-125위", color: "#c98500", sw: 2 }
+];
+const RANGES = [120, 90, 60, 30];
+const W = 820, PL = 44, PR = 692, PW = PR - PL;
+const MT = 12, MH = 340, MB = MT + MH, MAIN_TOP = 24;
+const BT = 10, BH = 100, BTC_TOP = 440;
+const HOV_PAD = 8, LBL_GAP = 18, TIPW = 232;
+const ROWS = DATA.rows;
+const N = ROWS.length;
+const LAST = ROWS[N - 1];
+
+function r1(v) { return Math.round(v * 10) / 10; }
+function f1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+function comma(v) { return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+function kfmt(v) { return (Math.round(v / 100) / 10) + "K"; }
+function korDate(s) { return Number(s.slice(5, 7)) + "월 " + Number(s.slice(8, 10)) + "일"; }
+function addDays(s, n) { return new Date(Date.parse(s + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10); }
+function ym(v) { return r1(MT + (100 - v) / 100 * MH); }
+function kOf(row, j) { return Math.round(row[2 + j] * row[7 + j] / 100); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+const PREV_D = addDays(LAST[0], -DATA.win);
+const PREV = ROWS.find(function (r) { return r[0] === PREV_D; }) || ROWS[Math.max(0, N - 1 - DATA.win)];
+
+function deltaText(j) {
+  const a = r1(LAST[2 + j]), b = r1(PREV[2 + j]);
+  const d = r1(a - b);
+  const head = korDate(PREV[0]) + " " + f1(b) + "%";
+  if (d === 0) return head + "와 같습니다.";
+  return head + "보다 " + f1(Math.abs(d)) + "%p " + (d < 0 ? "낮습니다." : "높습니다.");
+}
+
+/* End labels that would overlap are merged into groups centred on their lines' mean position. */
+function layoutLabels(items, gap, lo, hi) {
+  const arr = items.slice().sort(function (a, b) { return a.d - b.d; });
+  const fit = function (g) {
+    const len = g.m.length;
+    const mean = g.m.reduce(function (s, x) { return s + x.d; }, 0) / len;
+    g.top = clamp(mean - (len - 1) * gap / 2, lo, Math.max(lo, hi - (len - 1) * gap));
+    return g;
+  };
+  const groups = arr.map(function (it) { return fit({ m: [it], top: it.d }); });
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 1; i < groups.length; i++) {
+      const a = groups[i - 1], b = groups[i];
+      if (a.top + a.m.length * gap > b.top + 0.01) {
+        groups.splice(i - 1, 2, fit({ m: a.m.concat(b.m), top: 0 }));
+        changed = true;
+        break;
+      }
+    }
+  }
+  const out = {};
+  groups.forEach(function (g) { g.m.forEach(function (it, k) { out[it.id] = r1(g.top + k * gap); }); });
+  return out;
+}
+
+const LATE = DATA.late.map(function (a) {
+  const join = addDays(a[3], DATA.win);
+  const row = ROWS.find(function (r) { return r[0] >= join; });
+  return { t: a[0], r: a[1], tier: a[2], d: row ? row[0] : join };
+}).sort(function (a, b) { return a.d < b.d ? -1 : (a.d > b.d ? 1 : a.r - b.r); });
+
+const COV = (function () {
+  let tot = 0, got = 0;
+  const rows = SER.slice(1).map(function (s) {
+    const c = DATA.cover[s.k];
+    tot += c[1]; got += c[0];
+    return { label: s.label, color: s.color, sw: s.sw, text: c[1] + "개 중 " + c[0] + "개" };
+  });
+  rows.unshift({ label: SER[0].label, color: SER[0].color, sw: SER[0].sw, text: tot + "개 중 " + got + "개" });
+  return { rows: rows, tot: tot, got: got };
+})();
+
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const P = this.props || {};
+    const self = this;
+    const getSt = function () { return self.state || {}; };
+
+    const startDays = RANGES.indexOf(Number(P.startRange)) >= 0 ? Number(P.startRange) : 120;
+    const days = Math.min(N, st.days || startDays);
+    const i0 = N - days;
+    const span = Math.max(1, N - 1 - i0);
+    const off = st.off || {};
+    const showLabels = P.endLabels !== false;
+    const table = !!st.table;
+    const xOf = function (i) { return r1(PL + (i - i0) / span * PW); };
+    const valid = function (i) { return typeof i === "number" && i >= i0 && i <= N - 1; };
+
+    let cur = null;
+    [st.hover, st.kb, st.pin].some(function (i) { if (valid(i)) { cur = i; return true; } return false; });
+    if (cur === null && st.focused) cur = N - 1;
+
+    const ln = {}, hd = {}, ld = {};
+    SER.forEach(function (s, j) {
+      const pts = [];
+      for (let i = i0; i < N; i++) pts.push(xOf(i) + " " + ym(ROWS[i][2 + j]));
+      ln[s.id] = { d: "M " + pts.join(" L "), o: off[s.id] ? 0 : 1 };
+      hd[s.id] = cur !== null
+        ? { x: xOf(cur), y: ym(ROWS[cur][2 + j]), o: off[s.id] ? 0 : 1 }
+        : { x: 0, y: 0, o: 0 };
+    });
+    const cr = cur !== null ? { x: xOf(cur), o: 1 } : { x: 0, o: 0 };
+
+    const visible = [];
+    SER.forEach(function (s, j) { if (!off[s.id]) visible.push({ s: s, j: j }); });
+    const pos = layoutLabels(visible.map(function (o) { return { id: o.s.id, d: ym(LAST[2 + o.j]) }; }), LBL_GAP, MT + 2, MB - 2);
+    const elabs = showLabels ? visible.map(function (o) {
+      return { name: o.s.label, v: f1(LAST[2 + o.j]) + "%", top: r1(MAIN_TOP + pos[o.s.id] - 9) };
+    }) : [];
+    SER.forEach(function (s, j) {
+      const on = showLabels && !off[s.id];
+      const y1 = ym(LAST[2 + j]);
+      ld[s.id] = { x1: PR + 3, y1: y1, x2: PR + 13, y2: on ? pos[s.id] : y1, o: on ? 0.8 : 0 };
+    });
+    const Y50 = ym(50);
+    const halfGutter = !(showLabels && visible.some(function (o) { return Math.abs(pos[o.s.id] - Y50) < 16; }));
+
+    let bmin = Infinity, bmax = -Infinity;
+    for (let i = i0; i < N; i++) { bmin = Math.min(bmin, ROWS[i][1]); bmax = Math.max(bmax, ROWS[i][1]); }
+    const steps = [500, 1000, 2000, 5000, 10000, 20000, 50000];
+    let stp = steps[steps.length - 1], lo = Math.floor(bmin / stp) * stp, hi = Math.ceil(bmax / stp) * stp;
+    for (let k = 0; k < steps.length; k++) {
+      const s = steps[k], a = Math.floor(bmin / s) * s, b = Math.ceil(bmax / s) * s;
+      if ((b - a) / s <= 4) { stp = s; lo = a; hi = b; break; }
+    }
+    if (hi <= lo) hi = lo + stp;
+    const yb = function (v) { return r1(BT + (hi - v) / (hi - lo) * BH); };
+    const bticks = [];
+    for (let v = lo; v <= hi + 0.5; v += stp) bticks.push({ gy: BTC_TOP + yb(v), ty: r1(BTC_TOP + yb(v) - 7), t: kfmt(v) });
+    const bpts = [];
+    for (let i = i0; i < N; i++) bpts.push(xOf(i) + " " + yb(ROWS[i][1]));
+    const btc = {
+      d: "M " + bpts.join(" L "),
+      last: comma(LAST[1]), lt: r1(BTC_TOP + yb(LAST[1]) - 9),
+      hx: cur !== null ? xOf(cur) : 0, hy: cur !== null ? yb(ROWS[cur][1]) : 0, ho: cur !== null ? 1 : 0
+    };
+
+    const dset = days <= 60 ? [1, 8, 15, 22] : [1, 15];
+    const xt = [];
+    for (let i = i0; i < N; i++) {
+      if (dset.indexOf(Number(ROWS[i][0].slice(8, 10))) >= 0) {
+        const x = xOf(i);
+        xt.push({ x: r1(x - 0.5), lx: x, t: korDate(ROWS[i][0]) });
+      }
+    }
+
+    let tip = { l: 0, t: 0, date: "", pinned: false, rows: [], btc: "" };
+    if (cur !== null) {
+      const row = ROWS[cur];
+      const cx = xOf(cur);
+      let l = cx + 14;
+      if (l + TIPW > W) l = cx - 14 - TIPW;
+      tip = {
+        l: r1(Math.max(0, l)), t: MAIN_TOP + MT + 4, date: row[0], pinned: cur === st.pin,
+        rows: SER.map(function (s, j) { return { color: s.color, name: s.label, v: f1(row[2 + j]) + "%", kn: kOf(row, j) + "/" + row[7 + j] }; }),
+        btc: comma(row[1])
+      };
+    }
+
+    const aIdx = cur !== null ? cur : N - 1;
+    const arow = ROWS[aIdx];
+    const idxAt = function (e) {
+      const ne = e && e.nativeEvent ? e.nativeEvent : e;
+      let ox = ne && typeof ne.offsetX === "number" ? ne.offsetX : null;
+      if (ox === null && e && e.currentTarget && e.currentTarget.getBoundingClientRect && typeof e.clientX === "number") {
+        const rc = e.currentTarget.getBoundingClientRect();
+        if (rc.width > 0) ox = (e.clientX - rc.left) * (PW + 2 * HOV_PAD) / rc.width;
+      }
+      if (ox === null) return null;
+      return clamp(i0 + Math.round((ox - HOV_PAD) / PW * span), i0, N - 1);
+    };
+    const hv = {
+      min: i0, max: N - 1, now: aIdx,
+      text: arow[0] + ", " + SER.map(function (s, j) { return s.label + " " + f1(arow[2 + j]) + "% (" + arow[7 + j] + "개 중 " + kOf(arow, j) + "개)"; }).join(", ") + ", BTC 종가 " + comma(arow[1]),
+      move: function (e) { const i = idxAt(e); if (i !== null && getSt().hover !== i) self.setState({ hover: i }); },
+      leave: function () { if (getSt().hover != null) self.setState({ hover: null }); },
+      down: function () { self._md = true; },
+      click: function (e) {
+        self._md = false;
+        const i = idxAt(e);
+        if (i === null) return;
+        self.setState({ pin: getSt().pin === i ? null : i, kb: null });
+      },
+      focus: function () { if (!self._md) self.setState({ focused: true }); self._md = false; },
+      blur: function () { self.setState({ focused: false, kb: null }); },
+      key: function (e) {
+        const s = getSt();
+        const base = valid(s.kb) ? s.kb : (valid(s.pin) ? s.pin : N - 1);
+        let nx = null;
+        switch (e.key) {
+          case "ArrowLeft": case "ArrowDown": nx = base - 1; break;
+          case "ArrowRight": case "ArrowUp": nx = base + 1; break;
+          case "PageDown": nx = base - 7; break;
+          case "PageUp": nx = base + 7; break;
+          case "Home": nx = i0; break;
+          case "End": nx = N - 1; break;
+          case "Enter": case " ":
+            if (e.preventDefault) e.preventDefault();
+            self.setState({ pin: s.pin === base ? null : base, kb: base, focused: true, hover: null });
+            return;
+          case "Escape":
+            self.setState({ pin: null, kb: null, focused: false, hover: null });
+            return;
+          default: return;
+        }
+        if (e.preventDefault) e.preventDefault();
+        self.setState({ kb: clamp(nx, i0, N - 1), focused: true, hover: null });
+      }
+    };
+
+    const ranges = RANGES.filter(function (d) { return d <= N; }).map(function (d) {
+      return { label: "최근 " + d + "일", on: d === days, pick: function () { self.setState({ days: d, hover: null, kb: null, pin: null }); } };
+    });
+
+    const legend = SER.map(function (s) {
+      const on = !off[s.id];
+      return {
+        label: s.label, color: s.color, sw: s.sw, on: on, ko: on ? 1 : 0.35,
+        toggle: function () { const o = Object.assign({}, getSt().off || {}); o[s.id] = !o[s.id]; self.setState({ off: o }); }
+      };
+    });
+
+    const tiles = SER.map(function (s, j) {
+      return { label: s.label, color: s.color, sw: s.sw, pct: f1(LAST[2 + j]) + "%", n: LAST[7 + j], k: kOf(LAST, j), delta: deltaText(j) };
+    });
+
+    const trows = [];
+    if (table) {
+      for (let i = N - 1; i >= i0; i--) {
+        const r = ROWS[i];
+        trows.push({ d: r[0], btc: comma(r[1]), cells: SER.map(function (s, j) { return { v: f1(r[2 + j]) + "%", kn: kOf(r, j) + "/" + r[7 + j] }; }) });
+      }
+    }
+
+    const n1First = ROWS[0][8];
+    const late1 = LATE.filter(function (l) { return l.tier === "1-10"; });
+    const early = (n1First !== LAST[8] && late1.length)
+      ? (late1.map(function (l) { return l.t; }).join(", ") + "가 셈에 들어온 " + korDate(late1[late1.length - 1].d) + " 전에는 " + n1First + "개여서 한 계단이 " + f1(100 / n1First) + "%p였습니다.")
+      : "";
+
+    const a = r1(LAST[2]), b = r1(PREV[2]);
+    const trend = a === b
+      ? ("전체 비율은 30일 전인 " + korDate(PREV[0]) + "과 같은 " + f1(a) + "%입니다.")
+      : ("전체 비율은 30일 전인 " + korDate(PREV[0]) + " " + f1(b) + "%에서 " + korDate(LAST[0]) + " " + f1(a) + "%로 " + (a < b ? "내려왔습니다." : "올라왔습니다."));
+
+    const miss = DATA.missing.slice().sort(function (x, y) { return x[1] - y[1]; });
+    const foot = {
+      first: ROWS[0][0], last: LAST[0], days: N, uasof: DATA.uasof,
+      universe: COV.tot, counted: LAST[7],
+      missN: miss.length, missList: miss.map(function (m) { return m[0] + "(" + m[1] + "위)"; }).join(", "),
+      lateN: LATE.length, lateList: LATE.map(function (l) { return l.t + "(" + l.r + "위) " + korDate(l.d) + "부터"; }).join(", "),
+      n0: ROWS[0][7], n1: LAST[7]
+    };
+
+    const ui = {
+      asof: DATA.asof, first: ROWS[i0][0], last: LAST[0], days: days,
+      lastK: korDate(LAST[0]), prevK: korDate(PREV[0]),
+      showChart: !table, table: table, hasTip: cur !== null && !table,
+      hasPin: valid(st.pin), pinDate: valid(st.pin) ? korDate(ROWS[st.pin][0]) : "",
+      noneOn: visible.length === 0, halfGutter: halfGutter, halfInside: !halfGutter,
+      tableLabel: ROWS[i0][0] + "부터 " + LAST[0] + "까지 날짜별 순위 구간 비율과 BTC 종가"
+    };
+
+    return {
+      ui: ui,
+      h: { n: LAST[7], k: kOf(LAST, 0), trend: trend },
+      how: { n1: LAST[8], step1: f1(100 / LAST[8]), early: early },
+      ranges: ranges, tiles: tiles, legend: legend,
+      ln: ln, hd: hd, ld: ld, cr: cr, elabs: elabs, xt: xt, bticks: bticks, btc: btc, tip: tip, hv: hv,
+      cov: COV.rows, trows: trows, foot: foot,
+      toggleTable: function () { self.setState({ table: !getSt().table, hover: null, kb: null }); },
+      unpin: function () { self.setState({ pin: null, kb: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

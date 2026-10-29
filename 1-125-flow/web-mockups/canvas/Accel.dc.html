@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>가속</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0d0d0d; }
+    body { color: #f0efec; font-family: "IBM Plex Sans KR", system-ui, sans-serif; font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .small { font-size: 12px; line-height: 18px; }
+    .muted { color: #898781; }
+    .sec { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec; }
+    .card { background: #1a1a19; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 24px; box-sizing: border-box; }
+    .tab { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: #c3c2b7; text-decoration: none; border-bottom: 2px solid transparent; font-size: 14px; line-height: 22px; white-space: nowrap; }
+    .tab:hover { color: #f0efec; }
+    .tab[aria-current="page"] { color: #f0efec; font-weight: 600; border-bottom-color: #3987e5; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: transparent; color: #c3c2b7; font-family: inherit; font-size: 14px; line-height: 22px; cursor: pointer; box-sizing: border-box; white-space: nowrap; }
+    .chip:hover { background: #222220; color: #f0efec; }
+    .chip[aria-pressed="true"] { border-color: #3987e5; background: rgba(57,135,229,0.16); color: #f0efec; }
+    .chip[aria-expanded="true"] { border-color: #3987e5; color: #f0efec; }
+    .chip-static, .chip-static:hover { cursor: default; background: transparent; color: #c3c2b7; }
+    .chip-n { font-size: 12px; line-height: 18px; color: #898781; }
+    .chip[aria-pressed="true"] .chip-n, .chip:hover .chip-n { color: #c3c2b7; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #3987e5; outline-offset: 2px; }
+    a { color: #6da7ec; text-underline-offset: 2px; }
+    a:hover { color: #f0efec; }
+    .live { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid rgba(255,255,255,0.10); border-radius: 999px; color: #c3c2b7; white-space: nowrap; box-sizing: border-box; }
+    .live-dot { display: block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #3987e5; }
+    .field { min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.10); background: #222220; color: #f0efec; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 14px; line-height: 22px; color-scheme: dark; box-sizing: border-box; }
+    .tk { position: absolute; height: 14px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; line-height: 14px; font-variant-numeric: tabular-nums; color: #c3c2b7; pointer-events: none; white-space: nowrap; }
+    .tk0 { color: #f0efec; }
+    .gl { position: absolute; background: #2c2c2a; pointer-events: none; }
+    .ql { position: absolute; font-size: 14px; line-height: 22px; font-weight: 600; color: #898781; pointer-events: none; }
+    .tailbox { position: absolute; left: 0; top: 0; width: 752px; height: 564px; overflow: hidden; pointer-events: none; z-index: 1; }
+    .dot { position: absolute; width: 24px; height: 24px; padding: 0; margin: 0; border: 0; border-radius: 50%; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .dot:focus-visible { outline: 2px solid #3987e5; outline-offset: 0; }
+    .mark { display: block; flex: none; box-sizing: border-box; border-radius: 50%; border: 2px solid #1a1a19; transition: transform 120ms ease-out; }
+    .k-base { width: 12px; height: 12px; background: #6b6a65; }
+    .k-all { width: 12px; height: 12px; background: #3987e5; }
+    .k-tier { width: 14px; height: 14px; background: #3987e5; }
+    .k-hov { width: 16px; height: 16px; background: #3987e5; border-color: #c3c2b7; outline: 2px solid #1a1a19; }
+    .k-pin { width: 16px; height: 16px; background: #3987e5; border-color: #f0efec; outline: 2px solid #1a1a19; }
+    .dot:hover .k-base { background: #898781; }
+    .tri { display: block; flex: none; }
+    .lbl { position: absolute; height: 18px; padding: 0 4px; border-radius: 4px; background: rgba(26,26,25,0.86); color: #f0efec; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; line-height: 18px; font-weight: 500; white-space: nowrap; pointer-events: none; z-index: 8; box-sizing: border-box; }
+    .tip { position: absolute; width: 256px; box-sizing: border-box; padding: 12px 14px; background: #222220; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; pointer-events: none; z-index: 20; }
+    .tiprow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 20px; }
+    .tipk { font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .tipv { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; font-weight: 500; color: #f0efec; white-space: nowrap; }
+    .lg { display: inline-flex; align-items: center; gap: 8px; color: #c3c2b7; }
+    .prow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 4px 10px; border: 0; border-radius: 8px; background: transparent; color: #f0efec; font-family: inherit; font-size: 14px; line-height: 22px; text-align: left; cursor: pointer; box-sizing: border-box; }
+    .prow:hover { background: #222220; }
+    .ptick { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; line-height: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pname { font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pv1 { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; font-weight: 500; color: #f0efec; white-space: nowrap; }
+    .pval { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; }
+    .ptable { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 18px; }
+    .ptable caption { text-align: left; color: #c3c2b7; padding-bottom: 6px; }
+    .ptable th { text-align: right; font-weight: 500; color: #898781; padding: 6px 0; border-bottom: 1px solid #2c2c2a; }
+    .ptable td { text-align: right; padding: 6px 0; border-bottom: 1px solid #2c2c2a; color: #c3c2b7; }
+    .ptable th:first-child, .ptable td:first-child { text-align: left; }
+    .ptable .pq { text-align: left; padding-left: 10px; white-space: nowrap; }
+    .ptable tr.last td { color: #f0efec; font-weight: 500; }
+    .thead, .trow { display: grid; grid-template-columns: 52px 112px minmax(150px, 1fr) 80px 96px 128px 128px; align-items: center; column-gap: 8px; padding: 0 12px; min-width: 818px; box-sizing: border-box; }
+    .thg { position: sticky; top: 0; z-index: 1; }
+    .thead { min-height: 40px; background: #222220; font-size: 12px; line-height: 18px; color: #c3c2b7; }
+    .trow { min-height: 44px; border-top: 1px solid #2c2c2a; font-size: 13px; line-height: 20px; color: #f0efec; }
+    .trow-on { background: rgba(57,135,229,0.16); }
+    .num { text-align: right; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .linkbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: #6da7ec; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; font-weight: 500; }
+    .linkbtn:hover { color: #f0efec; }
+    .ftitle { margin: 0 0 6px; font-size: 12px; line-height: 18px; font-weight: 600; color: #f0efec; }
+    .fblock p { margin: 0 0 6px; }
+    @media (prefers-reduced-motion: reduce) { .mark { transition: none; } }
+  </style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 2.5vw, 32px) 48px; box-sizing: border-box; background: #0d0d0d; color: #f0efec;">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 64px; border-bottom: 1px solid rgba(255,255,255,0.10);">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#f0efec" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M 2 14 A 4 4 0 0 1 6 18"></path>
+        <path d="M 2 10 A 8 8 0 0 1 10 18"></path>
+        <path d="M 2 6 A 12 12 0 0 1 14 18"></path>
+        <path d="M 2 2 A 16 16 0 0 1 18 18"></path>
+      </svg>
+      <span style="font-size: 16px; line-height: 24px; font-weight: 600; white-space: nowrap;">1-125 Flow</span>
+    </div>
+    <nav aria-label="화면" style="display: flex; flex-wrap: wrap; align-self: stretch; gap: 4px;">
+      <a class="tab" href="Live.dc.html">순위·선 비교</a>
+      <a class="tab" href="Accel.dc.html" aria-current="page">가속</a>
+      <a class="tab" href="Mood.dc.html">시장 분위기</a>
+      <a class="tab" href="ShortHeat.dc.html">히트맵</a>
+    </nav>
+    <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+      <span class="chip chip-static">기준 BTC</span>
+      <span class="small" style="color: #c3c2b7; white-space: nowrap;">{{ui.asof}} KST 스냅숏</span>
+      <span class="live small"><span class="live-dot" aria-hidden="true"></span>실제 화면은 1분마다 갱신</span>
+    </div>
+  </header>
+
+  <section style="padding: 32px 0 24px; display: flex; flex-direction: column; gap: 8px;">
+    <h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; text-wrap: balance;">최근 1시간 동안 새로 강해진 코인 {{h.newN}}개</h1>
+    <p style="margin: 0; max-width: 780px; color: #c3c2b7; text-wrap: pretty;">기준 시각 {{h.aTime}} 이후로는 BTC보다 약했지만 최근 1시간 수익률은 BTC보다 높은 코인이 {{h.total}}개 중 {{h.newN}}개입니다. 그래프에서 왼쪽 위 칸에 있는 점이 이런 코인이고, 위로 갈수록 최근 1시간에 BTC보다 더 강합니다. 꼬리는 지난 2시간을 15분 간격으로 이은 경로라서, 아래에서 위로 올라온 꼬리는 막 힘이 붙기 시작한 흐름으로 읽으면 됩니다.</p>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;">
+    <div role="group" aria-label="기준 시각" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <span class="small muted" style="margin-right: 4px;">기준 시각</span>
+      <sc-for list="{{anchors}}" as="a" hint-placeholder-count="3">
+        <button type="button" class="chip" aria-pressed="{{a.on}}" onClick="{{a.pick}}">{{a.label}}<span class="mono chip-n">{{a.time}}</span></button>
+      </sc-for>
+      <button type="button" class="chip" aria-expanded="{{ui.custom}}" onClick="{{toggleCustom}}">직접 지정</button>
+    </div>
+    <div role="group" aria-label="순위 구간" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <span class="small muted" style="margin-right: 4px;">순위 구간</span>
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+        <button type="button" class="chip" aria-pressed="{{c.on}}" onClick="{{c.pick}}">{{c.label}}<span class="mono chip-n">{{c.n}}</span></button>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ui.custom}}" hint-placeholder-val="{{ false }}">
+    <div id="anchor-custom" class="card" style="margin-top: 12px; padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;">
+      <label for="anchor-custom-input" class="small" style="color: #c3c2b7;">기준 시각 직접 입력 (KST)</label>
+      <input id="anchor-custom-input" class="field" type="datetime-local" step="300" max="{{ui.maxDt}}" value="{{ui.customVal}}" onChange="{{setCustom}}">
+      <p class="small" style="margin: 0; flex: 1 1 320px; color: #c3c2b7;">시안에서는 미리 계산한 기준 시각만 동작합니다. 실제 화면에서는 원하는 시각을 고를 수 있습니다.</p>
+    </div>
+  </sc-if>
+
+  <section aria-label="사분면별 코인 수" style="margin-top: 24px; display: flex; flex-direction: column; gap: 8px;">
+    <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.tileCaption}}</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+      <div class="card" style="flex: 2 1 360px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 6px; background: #1d2329; border-color: rgba(57,135,229,0.45);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#3987e5"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#383835"></rect></svg>
+          <span style="font-weight: 600; color: #f0efec;">새로 강해짐</span>
+          <span class="small" style="color: #c3c2b7;">왼쪽 위</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;">
+          <span style="font-size: 48px; line-height: 56px; font-weight: 600;">{{cnt.new.n}}</span>
+          <span style="color: #c3c2b7;">개</span>
+          <span class="small" style="margin-left: 6px; color: #c3c2b7;">{{cnt.new.sub}}</span>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">기준 시각 이후로는 BTC보다 약하지만, 최근 1시간은 BTC보다 강합니다. 막 힘이 붙기 시작한 코인입니다.</p>
+      </div>
+      <div class="card" style="flex: 1 1 200px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#c3c2b7"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#383835"></rect></svg>
+          <span style="font-weight: 600; color: #c3c2b7;">계속 강함</span>
+          <span class="small muted">오른쪽 위</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;">
+          <span style="font-size: 28px; line-height: 36px; font-weight: 600;">{{cnt.strong.n}}</span>
+          <span style="color: #c3c2b7;">개</span>
+          <span class="small muted" style="margin-left: 6px;">{{cnt.strong.sub}}</span>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">기준 시각 이후로도, 최근 1시간에도 BTC보다 강합니다.</p>
+      </div>
+      <div class="card" style="flex: 1 1 200px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#c3c2b7"></rect></svg>
+          <span style="font-weight: 600; color: #c3c2b7;">꺾임</span>
+          <span class="small muted">오른쪽 아래</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;">
+          <span style="font-size: 28px; line-height: 36px; font-weight: 600;">{{cnt.fading.n}}</span>
+          <span style="color: #c3c2b7;">개</span>
+          <span class="small muted" style="margin-left: 6px;">{{cnt.fading.sub}}</span>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">기준 시각 이후로는 BTC보다 강하지만, 최근 1시간은 BTC보다 약합니다.</p>
+      </div>
+      <div class="card" style="flex: 1 1 200px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#c3c2b7"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#383835"></rect></svg>
+          <span style="font-weight: 600; color: #c3c2b7;">계속 약함</span>
+          <span class="small muted">왼쪽 아래</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;">
+          <span style="font-size: 28px; line-height: 36px; font-weight: 600;">{{cnt.weak.n}}</span>
+          <span style="color: #c3c2b7;">개</span>
+          <span class="small muted" style="margin-left: 6px;">{{cnt.weak.sub}}</span>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">기준 시각 이후로도, 최근 1시간에도 BTC보다 약합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+
+    <section class="card" aria-labelledby="acc-title" style="flex: 999 1 760px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 320px;">
+          <h2 id="acc-title" class="sec">기준 시각 이후 강도와 최근 1시간 가속</h2>
+          <p class="small" style="margin: 0; color: #c3c2b7;">점은 {{ui.lastT}}의 위치이고, 꼬리는 그 전 2시간 동안 지나온 경로입니다. 점을 가리키면 값이 보이고, 누르면 오른쪽 패널에 고정됩니다.</p>
+        </div>
+        <button type="button" class="chip" onClick="{{toggleTable}}"><sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">표로 보기</sc-if><sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">그래프로 보기</sc-if></button>
+      </div>
+
+      <sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">
+      <div class="small" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px;">
+        <sc-if value="{{ui.notAll}}" hint-placeholder-val="{{ false }}">
+          <span class="lg"><svg width="30" height="14" viewBox="0 0 30 14" aria-hidden="true"><line x1="2" y1="7" x2="10" y2="7" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="0.36"></line><line x1="10" y1="7" x2="20" y2="7" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="0.7"></line><circle cx="22" cy="7" r="6" fill="#3987e5" stroke="#1a1a19" stroke-width="2"></circle></svg>{{ui.tierName}} 코인과 2시간 꼬리 (옅을수록 과거)</span>
+          <span class="lg"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#6b6a65" stroke="#1a1a19" stroke-width="2"></circle></svg>다른 구간 코인</span>
+        </sc-if>
+        <sc-if value="{{ui.isAll}}" hint-placeholder-val="{{ true }}">
+          <span class="lg"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#3987e5" stroke="#1a1a19" stroke-width="2"></circle></svg>코인 {{ui.n}}개</span>
+          <span class="lg"><svg width="30" height="14" viewBox="0 0 30 14" aria-hidden="true"><line x1="2" y1="7" x2="10" y2="7" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="0.36"></line><line x1="10" y1="7" x2="20" y2="7" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="0.7"></line><circle cx="22" cy="7" r="6" fill="#3987e5" stroke="#1a1a19" stroke-width="2"></circle></svg>{{ui.tailNote}}</span>
+        </sc-if>
+        <span class="lg"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M 2 1.5 L 13 7 L 2 12.5 Z" fill="#6b6a65" stroke="#1a1a19" stroke-width="2" stroke-linejoin="round"></path></svg>그래프 범위 밖 (테두리에 고정)</span>
+        <span class="lg"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0.5" y="0.5" width="13" height="13" rx="2" fill="#1d2329" stroke="rgba(57,135,229,0.45)" stroke-width="1"></rect></svg>새로 강해짐 칸 (왼쪽 위)</span>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ui.showChart}}" hint-placeholder-val="{{ true }}">
+        <div style="overflow-x: auto; overflow-y: hidden;">
+          <div style="width: 820px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="small" style="color: #c3c2b7; padding-left: 6px;">↑ 최근 1시간 BTC 대비 (%)</div>
+            <div style="position: relative; width: 820px; height: 620px;">
+              <sc-for list="{{yt}}" as="k" hint-placeholder-count="9">
+                <div class="tk {{k.cls}}" style="left: 0px; top: {{k.top}}px; width: 40px; text-align: right;" aria-hidden="true">{{k.s}}</div>
+              </sc-for>
+              <sc-for list="{{xt}}" as="k" hint-placeholder-count="10">
+                <div class="tk {{k.cls}}" style="left: {{k.left}}px; top: 592px; width: 56px; text-align: center;" aria-hidden="true">{{k.s}}</div>
+              </sc-for>
+
+              <div style="position: absolute; left: 48px; top: 20px; width: 752px; height: 564px;">
+                <div aria-hidden="true" style="position: absolute; left: 0px; top: 0px; width: {{cross.x}}px; height: {{cross.y}}px; background: #1d2329; pointer-events: none;"></div>
+                <sc-for list="{{gx}}" as="g" hint-placeholder-count="9">
+                  <div class="gl" style="left: {{g.l}}px; top: 0px; width: 1px; height: 564px;" aria-hidden="true"></div>
+                </sc-for>
+                <sc-for list="{{gy}}" as="g" hint-placeholder-count="8">
+                  <div class="gl" style="left: 0px; top: {{g.t}}px; width: 752px; height: 1px;" aria-hidden="true"></div>
+                </sc-for>
+                <svg width="752" height="564" viewBox="0 0 752 564" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block; pointer-events: none;">
+                  <line x1="{{cross.x}}" y1="0" x2="{{cross.x}}" y2="564" stroke="#383835" stroke-width="1.5"></line>
+                  <line x1="0" y1="{{cross.y}}" x2="752" y2="{{cross.y}}" stroke="#383835" stroke-width="1.5"></line>
+                </svg>
+
+                <div class="ql" style="left: 12px; top: 8px; color: #c3c2b7;">새로 강해짐</div>
+                <div class="ql" style="right: 12px; top: 8px;">계속 강함</div>
+                <div class="ql" style="left: 12px; bottom: 8px;">계속 약함</div>
+                <div class="ql" style="right: 12px; bottom: 8px;">꺾임</div>
+
+                <sc-for list="{{tails}}" as="tl" hint-placeholder-count="7">
+                  <div class="tailbox">
+                    <svg width="752" height="564" viewBox="0 0 752 564" aria-hidden="true" style="display: block;">
+                      <line x1="{{tl.s0.x1}}" y1="{{tl.s0.y1}}" x2="{{tl.s0.x2}}" y2="{{tl.s0.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s0.o}}"></line>
+                      <line x1="{{tl.s1.x1}}" y1="{{tl.s1.y1}}" x2="{{tl.s1.x2}}" y2="{{tl.s1.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s1.o}}"></line>
+                      <line x1="{{tl.s2.x1}}" y1="{{tl.s2.y1}}" x2="{{tl.s2.x2}}" y2="{{tl.s2.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s2.o}}"></line>
+                      <line x1="{{tl.s3.x1}}" y1="{{tl.s3.y1}}" x2="{{tl.s3.x2}}" y2="{{tl.s3.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s3.o}}"></line>
+                      <line x1="{{tl.s4.x1}}" y1="{{tl.s4.y1}}" x2="{{tl.s4.x2}}" y2="{{tl.s4.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s4.o}}"></line>
+                      <line x1="{{tl.s5.x1}}" y1="{{tl.s5.y1}}" x2="{{tl.s5.x2}}" y2="{{tl.s5.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s5.o}}"></line>
+                      <line x1="{{tl.s6.x1}}" y1="{{tl.s6.y1}}" x2="{{tl.s6.x2}}" y2="{{tl.s6.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s6.o}}"></line>
+                      <line x1="{{tl.s7.x1}}" y1="{{tl.s7.y1}}" x2="{{tl.s7.x2}}" y2="{{tl.s7.y2}}" stroke="#3987e5" stroke-width="2" stroke-linecap="round" opacity="{{tl.s7.o}}"></line>
+                      <circle cx="{{tl.p0.x}}" cy="{{tl.p0.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p0.o}}"></circle>
+                      <circle cx="{{tl.p1.x}}" cy="{{tl.p1.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p1.o}}"></circle>
+                      <circle cx="{{tl.p2.x}}" cy="{{tl.p2.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p2.o}}"></circle>
+                      <circle cx="{{tl.p3.x}}" cy="{{tl.p3.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p3.o}}"></circle>
+                      <circle cx="{{tl.p4.x}}" cy="{{tl.p4.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p4.o}}"></circle>
+                      <circle cx="{{tl.p5.x}}" cy="{{tl.p5.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p5.o}}"></circle>
+                      <circle cx="{{tl.p6.x}}" cy="{{tl.p6.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p6.o}}"></circle>
+                      <circle cx="{{tl.p7.x}}" cy="{{tl.p7.y}}" r="2.5" fill="#3987e5" opacity="{{tl.p7.o}}"></circle>
+                    </svg>
+                  </div>
+                </sc-for>
+
+                <sc-for list="{{dots}}" as="d" hint-placeholder-count="81">
+                  <button type="button" class="dot" style="left: {{d.l}}px; top: {{d.top}}px; z-index: {{d.z}};" aria-label="{{d.aria}}" aria-pressed="{{d.pressed}}" onClick="{{d.pick}}" onMouseEnter="{{d.enter}}" onMouseLeave="{{d.leave}}" onFocus="{{d.enter}}" onBlur="{{d.leave}}">
+                    <sc-if value="{{d.edge}}" hint-placeholder-val="{{ false }}">
+                      <svg class="tri" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" style="transform: rotate({{d.rot}}deg);"><path d="M 2 1.5 L 13 7 L 2 12.5 Z" fill="{{d.fill}}" stroke="#1a1a19" stroke-width="2" stroke-linejoin="round"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{d.round}}" hint-placeholder-val="{{ true }}">
+                      <span class="mark {{d.kind}}"></span>
+                    </sc-if>
+                  </button>
+                </sc-for>
+
+                <sc-for list="{{labels}}" as="lb" hint-placeholder-count="7">
+                  <div class="lbl" style="left: {{lb.x}}px; top: {{lb.y}}px;" aria-hidden="true">{{lb.t}}</div>
+                </sc-for>
+
+                <sc-if value="{{ui.hasTip}}" hint-placeholder-val="{{ false }}">
+                  <div class="tip" style="left: {{tip.l}}px; top: {{tip.top}}px;" aria-hidden="true">
+                    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                      <span class="mono" style="font-size: 14px; line-height: 22px; font-weight: 500; color: #f0efec;">{{tip.tick}}</span>
+                      <span class="mono small" style="color: #c3c2b7;">{{tip.rank}}위</span>
+                    </div>
+                    <div class="small" style="color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{tip.name}}</div>
+                    <div class="small" style="display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #f0efec;">
+                      <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="{{tip.g.tl}}"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="{{tip.g.tr}}"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="{{tip.g.bl}}"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="{{tip.g.br}}"></rect></svg>
+                      <span>{{tip.q}}</span>
+                    </div>
+                    <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 2px;">
+                      <div class="tiprow"><span class="tipk">{{tip.xk}}</span><span class="tipv">{{tip.x}}</span></div>
+                      <div class="tiprow"><span class="tipk">최근 1시간 BTC 대비</span><span class="tipv">{{tip.y}}</span></div>
+                      <div class="tiprow"><span class="tipk">꼬리 (15분 간격)</span><span class="tipv">{{tip.t0}} → {{tip.t1}}</span></div>
+                    </div>
+                    <sc-if value="{{tip.edge}}" hint-placeholder-val="{{ false }}">
+                      <div class="small" style="margin-top: 8px; color: #c3c2b7;">그래프 범위 밖이라 테두리에 표시했습니다.</div>
+                    </sc-if>
+                    <div class="small" style="margin-top: 8px; color: #c3c2b7;">{{tip.hint}}</div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div class="small" style="color: #c3c2b7; text-align: right; padding-right: 20px;">기준 시각({{ui.aTime}}) 이후 BTC 대비 (%) →</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ui.table}}" hint-placeholder-val="{{ false }}">
+        <div style="overflow: auto; max-height: 660px; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px;">
+          <div role="table" aria-label="{{ui.tableLabel}}">
+            <div role="rowgroup" class="thg">
+              <div role="row" class="thead">
+                <span role="columnheader" class="num">순위</span>
+                <span role="columnheader">티커</span>
+                <span role="columnheader">이름</span>
+                <span role="columnheader">순위 구간</span>
+                <span role="columnheader">사분면</span>
+                <span role="columnheader" class="num">{{ui.xHead}}</span>
+                <span role="columnheader" class="num">최근 1시간 BTC 대비</span>
+              </div>
+            </div>
+            <div role="rowgroup">
+              <sc-for list="{{rows}}" as="rw" hint-placeholder-count="6">
+                <div role="row" class="trow {{rw.cls}}">
+                  <span role="cell" class="num" style="color: #c3c2b7;">{{rw.r}}</span>
+                  <span role="cell"><button type="button" class="linkbtn" aria-pressed="{{rw.pressed}}" aria-label="{{rw.aria}}" onClick="{{rw.pick}}">{{rw.t}}</button></span>
+                  <span role="cell" style="color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{rw.n}}</span>
+                  <span role="cell" style="color: #c3c2b7;">{{rw.tier}}</span>
+                  <span role="cell">{{rw.q}}</span>
+                  <span role="cell" class="num">{{rw.x}}</span>
+                  <span role="cell" class="num">{{rw.y}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <p class="small" style="margin: 0; color: #c3c2b7;">최근 1시간 BTC 대비가 큰 순서로 늘어놓았습니다. 티커를 누르면 그 코인의 꼬리 값 9개가 오른쪽 패널에 나옵니다.</p>
+      </sc-if>
+    </section>
+
+    <aside class="card" aria-label="코인 상세" style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+      <sc-if value="{{ui.noPin}}" hint-placeholder-val="{{ true }}">
+        <section style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#3987e5"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#383835"></rect></svg>
+              <h2 class="sec">새로 강해지는 코인</h2>
+              <span class="small muted">{{side.newN}}개</span>
+            </div>
+            <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.scopePhrase}} 기준 시각 이후로는 BTC보다 약하지만 최근 1시간은 강한 코인입니다. {{side.newNote}}</p>
+          </div>
+          <sc-if value="{{side.newEmpty}}" hint-placeholder-val="{{ false }}">
+            <p class="small muted" style="margin: 0; padding: 4px 10px;">지금 이 구간에는 해당하는 코인이 없습니다.</p>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <sc-for list="{{side.newRows}}" as="row" hint-placeholder-count="10">
+              <button type="button" class="prow" aria-label="{{row.aria}}" onClick="{{row.pick}}">
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <span class="ptick">{{row.t}}</span>
+                  <span class="pname">{{row.n}}</span>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end;">
+                  <span class="pv1">{{row.y}}</span>
+                  <span class="pval">기준 이후 {{row.x}}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="#383835"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="#383835"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="#c3c2b7"></rect></svg>
+              <h2 class="sec">꺾이는 코인</h2>
+              <span class="small muted">{{side.fadeN}}개</span>
+            </div>
+            <p class="small" style="margin: 0; color: #c3c2b7;">{{ui.scopePhrase}} 기준 시각 이후로는 BTC보다 강하지만 최근 1시간은 약한 코인입니다. {{side.fadeNote}}</p>
+          </div>
+          <sc-if value="{{side.fadeEmpty}}" hint-placeholder-val="{{ false }}">
+            <p class="small muted" style="margin: 0; padding: 4px 10px;">지금 이 구간에는 해당하는 코인이 없습니다.</p>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <sc-for list="{{side.fadeRows}}" as="row" hint-placeholder-count="5">
+              <button type="button" class="prow" aria-label="{{row.aria}}" onClick="{{row.pick}}">
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <span class="ptick">{{row.t}}</span>
+                  <span class="pname">{{row.n}}</span>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end;">
+                  <span class="pv1">{{row.y}}</span>
+                  <span class="pval">기준 이후 {{row.x}}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+        <p class="small muted" style="margin: 0;">위 숫자는 최근 1시간 BTC 대비, 아래 숫자는 기준 시각 이후 BTC 대비입니다. 줄을 누르면 그래프에 고정되고 꼬리 값이 이 자리에 나옵니다.</p>
+      </sc-if>
+
+      <sc-if value="{{ui.hasPin}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+              <span class="small muted">고정한 코인</span>
+              <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;">
+                <h2 class="mono" style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 500; color: #f0efec; overflow-wrap: anywhere;">{{pd.t}}</h2>
+                <span style="color: #c3c2b7;">{{pd.n}}</span>
+              </div>
+              <span class="small" style="color: #c3c2b7;">{{pd.rank}}위 · {{pd.tier}}위 구간</span>
+            </div>
+            <button type="button" class="chip" onClick="{{unpin}}">고정 해제</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="0" y="0" width="6" height="6" rx="1" fill="{{pd.g.tl}}"></rect><rect x="8" y="0" width="6" height="6" rx="1" fill="{{pd.g.tr}}"></rect><rect x="0" y="8" width="6" height="6" rx="1" fill="{{pd.g.bl}}"></rect><rect x="8" y="8" width="6" height="6" rx="1" fill="{{pd.g.br}}"></rect></svg>
+            <span style="font-weight: 600;">지금 {{pd.q}} 칸에 있습니다.</span>
+          </div>
+          <p style="margin: 0; color: #f0efec;">{{pd.path}}</p>
+          <p class="small" style="margin: 0; color: #c3c2b7;">{{pd.xline}} {{pd.qline}}</p>
+          <table class="ptable">
+            <caption>꼬리 값 (15분 간격, 위가 과거). 기준 이후는 {{ui.aTime}}부터 잰 BTC 대비 값입니다.</caption>
+            <thead>
+              <tr><th scope="col">시각</th><th scope="col">기준 이후</th><th scope="col">최근 1시간</th><th scope="col" class="pq">사분면</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">{{pd.r0.t}}</td><td class="mono">{{pd.r0.x}}</td><td class="mono">{{pd.r0.y}}</td><td class="pq">{{pd.r0.q}}</td></tr>
+              <tr><td class="mono">{{pd.r1.t}}</td><td class="mono">{{pd.r1.x}}</td><td class="mono">{{pd.r1.y}}</td><td class="pq">{{pd.r1.q}}</td></tr>
+              <tr><td class="mono">{{pd.r2.t}}</td><td class="mono">{{pd.r2.x}}</td><td class="mono">{{pd.r2.y}}</td><td class="pq">{{pd.r2.q}}</td></tr>
+              <tr><td class="mono">{{pd.r3.t}}</td><td class="mono">{{pd.r3.x}}</td><td class="mono">{{pd.r3.y}}</td><td class="pq">{{pd.r3.q}}</td></tr>
+              <tr><td class="mono">{{pd.r4.t}}</td><td class="mono">{{pd.r4.x}}</td><td class="mono">{{pd.r4.y}}</td><td class="pq">{{pd.r4.q}}</td></tr>
+              <tr><td class="mono">{{pd.r5.t}}</td><td class="mono">{{pd.r5.x}}</td><td class="mono">{{pd.r5.y}}</td><td class="pq">{{pd.r5.q}}</td></tr>
+              <tr><td class="mono">{{pd.r6.t}}</td><td class="mono">{{pd.r6.x}}</td><td class="mono">{{pd.r6.y}}</td><td class="pq">{{pd.r6.q}}</td></tr>
+              <tr><td class="mono">{{pd.r7.t}}</td><td class="mono">{{pd.r7.x}}</td><td class="mono">{{pd.r7.y}}</td><td class="pq">{{pd.r7.q}}</td></tr>
+              <tr class="last"><td class="mono">{{pd.r8.t}}</td><td class="mono">{{pd.r8.x}}</td><td class="mono">{{pd.r8.y}}</td><td class="pq">{{pd.r8.q}}</td></tr>
+            </tbody>
+          </table>
+          <sc-if value="{{pd.edge}}" hint-placeholder-val="{{ false }}">
+            <p class="small" style="margin: 0; color: #c3c2b7;">현재 위치가 그래프 범위 밖이라 테두리에 삼각형으로 표시했습니다. 실제 값은 위 표에 있습니다.</p>
+          </sc-if>
+          <p class="small" style="margin: 0; color: #c3c2b7;">이 코인의 기준 시각 이후 선 모양은 <a href="Live.dc.html">순위·선 비교</a>에서, 시장 전체의 흐름은 <a href="Mood.dc.html">시장 분위기</a>에서 이어서 볼 수 있습니다.</p>
+        </div>
+      </sc-if>
+    </aside>
+  </div>
+
+  <footer style="margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.10); color: #c3c2b7; font-size: 12px; line-height: 18px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 24px 32px;">
+      <div class="fblock">
+        <h2 class="ftitle">자료</h2>
+        <p>가격은 Binance 현물 USDT 5분봉 종가이며, {{ui.asof}} KST에 끝난 봉까지 썼습니다. 시가총액 순위와 순위 구간은 TradingView 코인 스크리너(CRYPTO: 지수)의 2026-10-29 값입니다.</p>
+        <p>BTC를 뺀 {{foot.universe}}개 코인 중 Binance 현물 USDT 5분봉이 있는 {{foot.covered}}개를 그렸습니다. 스테이블코인, 금 토큰, 그리고 PI, JST, FLR, NEXO, GNO, FF, SUN, GT는 처음부터 대상에서 뺐습니다.</p>
+        <p>이 시안은 {{ui.asof}} KST에 찍어 둔 스냅숏이라 저절로 바뀌지 않습니다. 실제 화면은 사용자의 Binance 커넥터로 1분마다 새 봉을 받아 모든 값을 다시 계산합니다.</p>
+        <p>이 화면은 그래프를 읽는 법을 돕기 위한 것이며, 사고팔 시점을 알려 주지 않습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">계산 방법</h2>
+        <p>BTC 대비 값은 (1 + 코인 수익률) ÷ (1 + BTC 수익률) − 1로 계산했습니다. 0%이면 그 구간에 BTC와 똑같이 움직였다는 뜻입니다.</p>
+        <p>가로축은 기준 시각부터 각 시점까지의 BTC 대비 값이고, 세로축은 각 시점 직전 60분 동안의 BTC 대비 값입니다. 세로축 값은 기준 시각과 상관이 없어서, 기준 시각을 바꾸면 점이 옆으로만 움직입니다.</p>
+        <p>꼬리는 {{foot.t0}}부터 {{foot.t1}}까지 15분 간격으로 찍은 {{foot.pts}}개 점이며, 사분면은 마지막 점({{foot.t1}})의 두 값이 0% 이상인지로 나눴습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">그래프 범위</h2>
+        <p>그래프는 기준 시각마다 모든 꼬리 점의 하위 5%와 상위 5% 값에 여유를 더한 범위만 보여 줍니다. 지금 기준 시각({{ui.aLabel}})에서는 가로 {{foot.xlo}}에서 {{foot.xhi}}, 세로 {{foot.ylo}}에서 {{foot.yhi}}까지입니다.</p>
+        <p>이 범위를 벗어난 현재 위치({{foot.edgeList}})는 테두리에 삼각형으로 고정했고, 실제 값은 툴팁과 표에 그대로 있습니다. 범위를 벗어난 꼬리 구간은 테두리에서 잘립니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">표시하지 않은 코인 {{foot.missN}}개</h2>
+        <p>Binance 현물 USDT 5분봉이 없어서 뺀 코인입니다: {{foot.missList}}.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2400},"startAnchor":{"editor":"enum","options":["4h","12h","24h"],"default":"12h","section":"보기"},"startTier":{"editor":"enum","options":["all","1-10","11-50","51-100","101-125"],"default":"all","section":"보기"},"labelCount":{"editor":"int","default":7,"min":0,"max":10,"step":1,"section":"보기"},"allTails":{"editor":"boolean","default":false,"section":"보기"}}'>
+const DATA = {"asof":"2026-10-29 21:45","times":["19:45", "20:00", "20:15", "20:30", "20:45", "21:00", "21:15", "21:30", "21:45"],"anchors":{"4h":{"start":"17:45","prev":false},"12h":{"start":"09:45","prev":false},"24h":{"start":"21:45","prev":true}},"coins":[
+["ETH","Ethereum",2,"1-10",[0.06,0.22,0.22,0.2,0.18,-0.01,0.02,0.07,-0.06],[0.03,0.2,0.16,0.12,0.21,0.19,0.17,0.2,0.15],[-0.28,-0.11,-0.15,-0.19,-0.1,-0.12,-0.14,-0.11,-0.16],[-0.08,0.09,0.04,0.01,0.09,0.08,0.06,0.08,0.03]],
+["BNB","BNB",4,"1-10",[-1,-1.05,-0.56,-0.19,-0.22,-0.18,0.04,0.32,0.27],[-1.79,-1.78,-1.87,-2.04,-2,-1.96,-1.83,-1.73,-1.74],[-0.94,-0.93,-1.02,-1.2,-1.16,-1.11,-0.98,-0.89,-0.89],[-1,-0.98,-1.08,-1.25,-1.21,-1.17,-1.03,-0.94,-0.95]],
+["XRP","XRP",5,"1-10",[-0.02,0.03,0.15,0.17,0.17,-0.09,-0.08,0.09,0],[-0.23,-0.07,-0.17,-0.25,-0.06,-0.16,-0.25,-0.15,-0.07],[-1.23,-1.07,-1.16,-1.25,-1.06,-1.16,-1.24,-1.15,-1.07],[-1.1,-0.94,-1.04,-1.12,-0.94,-1.03,-1.12,-1.03,-0.94]],
+["SOL","Solana",7,"1-10",[0.24,0.24,0.36,0.34,0.02,-0.12,-0.2,0.06,0.23],[0.19,0.27,0.34,0.23,0.22,0.16,0.15,0.29,0.45],[-0.38,-0.3,-0.23,-0.34,-0.36,-0.42,-0.43,-0.28,-0.13],[-0.46,-0.38,-0.31,-0.42,-0.43,-0.49,-0.5,-0.36,-0.2]],
+["TRX","TRON",8,"1-10",[-0.06,-0.04,-0.03,0.1,0.09,0.14,0.08,0,0.07],[-0.3,-0.3,-0.18,-0.1,-0.2,-0.15,-0.1,-0.09,-0.13],[1.81,1.81,1.92,2.01,1.9,1.96,2.01,2.01,1.98],[0.65,0.65,0.76,0.85,0.74,0.8,0.85,0.85,0.82]],
+["ZEC","Zcash",9,"1-10",[1.36,0.93,0.87,0.62,0.15,0.78,0.19,0.17,0.31],[1.67,1.54,1.58,1.31,1.82,2.33,1.77,1.48,2.14],[-1.59,-1.72,-1.68,-1.94,-1.44,-0.96,-1.49,-1.77,-1.14],[-1.08,-1.21,-1.17,-1.43,-0.93,-0.44,-0.98,-1.26,-0.62]],
+["HYPE","Hyperliquid",10,"1-10",[5.77,7.61,9.55,8.61,3.82,3.05,1.63,1.99,1.93],[5.76,7.75,9.74,8.9,9.8,11.03,11.53,11.07,11.91],[5.38,7.36,9.34,8.51,9.4,10.63,11.12,10.67,11.5],[4.63,6.59,8.56,7.73,8.62,9.84,10.33,9.88,10.71]],
+["DOGE","Dogecoin",11,"11-50",[0.03,0.35,0.69,0.79,0.63,0.21,-0.02,0.4,0.52],[0.13,0.53,0.72,0.67,0.76,0.74,0.7,1.08,1.29],[-0.77,-0.38,-0.18,-0.24,-0.14,-0.17,-0.21,0.16,0.37],[-0.65,-0.26,-0.06,-0.12,-0.02,-0.05,-0.09,0.29,0.5]],
+["LINK","Chainlink",14,"11-50",[0.48,0.57,0.99,0.89,0.55,0.44,-0.12,0.4,0.32],[0.68,0.94,1.22,1.03,1.24,1.38,1.1,1.44,1.56],[-0.87,-0.61,-0.33,-0.52,-0.32,-0.18,-0.46,-0.12,-0.01],[0.17,0.43,0.71,0.52,0.73,0.87,0.59,0.93,1.04]],
+["ADA","Cardano",15,"11-50",[0.49,0.65,0.77,0.53,0.14,-0.01,-0.41,-0.02,0.32],[1.03,1.25,1.18,1.07,1.18,1.25,0.77,1.05,1.5],[-1.32,-1.11,-1.17,-1.28,-1.18,-1.11,-1.57,-1.3,-0.86],[-0.77,-0.55,-0.62,-0.73,-0.63,-0.56,-1.02,-0.75,-0.31]],
+["XLM","Stellar",16,"11-50",[0.29,0.49,0.74,0.81,0.45,0.08,-0.09,0.39,0.72],[0.5,0.89,1.03,1,0.95,0.98,0.94,1.39,1.68],[-0.46,-0.07,0.07,0.04,-0.01,0.01,-0.03,0.42,0.71],[0.41,0.8,0.94,0.91,0.86,0.89,0.85,1.3,1.59]],
+["NEAR","NEAR Protocol",17,"11-50",[1.04,0.98,1.4,1.01,0.27,0.21,-0.56,0.03,0.73],[1.4,1.53,1.77,1.42,1.68,1.74,1.2,1.46,2.42],[-5.11,-4.98,-4.76,-5.08,-4.85,-4.78,-5.29,-5.05,-4.15],[-3.72,-3.6,-3.37,-3.7,-3.46,-3.39,-3.91,-3.67,-2.75]],
+["BCH","Bitcoin Cash",18,"11-50",[0.55,0.4,0.52,0.16,-0.37,-0.39,-0.68,-0.36,-0.35],[0.46,0.32,0.4,0.17,0.09,-0.07,-0.28,-0.19,-0.27],[-1.36,-1.49,-1.41,-1.64,-1.72,-1.88,-2.08,-1.99,-2.07],[-4.42,-4.55,-4.47,-4.69,-4.77,-4.92,-5.12,-5.04,-5.11]],
+["LTC","Litecoin",21,"11-50",[0.88,0.62,0.84,0.75,0.34,0.28,0.45,0.62,0.51],[1.16,1.22,1.18,1.13,1.5,1.5,1.64,1.75,2.01],[-1.29,-1.23,-1.27,-1.32,-0.96,-0.95,-0.82,-0.71,-0.46],[1.5,1.56,1.52,1.47,1.84,1.84,1.98,2.1,2.35]],
+["UNI","Uniswap",22,"11-50",[1.07,1.38,1.65,1.56,1.19,0.54,0.21,0.94,0.31],[1.19,1.73,1.89,1.56,2.4,2.28,2.1,2.52,2.72],[-1.23,-0.7,-0.55,-0.87,-0.05,-0.17,-0.34,0.07,0.26],[1.9,2.44,2.6,2.27,3.11,2.99,2.81,3.24,3.43]],
+["AVAX","Avalanche",24,"11-50",[0.4,0.66,0.82,0.52,0.04,-0.15,-0.64,0.1,0.49],[0.72,1.06,0.98,0.76,0.75,0.9,0.33,0.86,1.24],[-1.29,-0.96,-1.03,-1.25,-1.25,-1.11,-1.67,-1.15,-0.77],[-0.66,-0.33,-0.4,-0.62,-0.62,-0.48,-1.05,-0.52,-0.14]],
+["SUI","Sui",26,"11-50",[0.56,0.98,0.98,0.87,0.36,-0.25,-0.56,0.01,0.45],[0.82,1.41,1.35,1.13,1.19,1.16,0.78,1.14,1.65],[-1.28,-0.71,-0.77,-0.98,-0.92,-0.95,-1.33,-0.97,-0.47],[0,0.58,0.52,0.31,0.37,0.34,-0.04,0.32,0.82]],
+["GRAM","Gram (prev. Toncoin)",27,"11-50",[0.1,0.23,0.41,0.48,0.18,0.23,0.06,0.03,0.24],[0.25,0.3,0.39,0.56,0.43,0.53,0.45,0.59,0.67],[-0.59,-0.53,-0.45,-0.28,-0.41,-0.31,-0.39,-0.25,-0.17],[-0.27,-0.22,-0.14,0.03,-0.1,0,-0.08,0.06,0.14]],
+["HBAR","Hedera",28,"11-50",[-0.06,0.13,-0.13,-0.25,-0.23,-0.65,-0.4,0.21,0.79],[0.01,0.32,0.02,-0.11,-0.22,-0.33,-0.38,0.1,0.57],[-0.88,-0.57,-0.87,-1,-1.11,-1.23,-1.27,-0.79,-0.33],[-1.53,-1.23,-1.52,-1.65,-1.76,-1.87,-1.91,-1.44,-0.98]],
+["TAO","Bittensor",32,"11-50",[0.54,0.86,1.24,1.03,0.41,0.06,-0.33,-0.09,0.15],[1,1.46,1.5,1.26,1.42,1.52,1.16,1.18,1.57],[-1.38,-0.94,-0.9,-1.13,-0.98,-0.88,-1.23,-1.21,-0.83],[-0.24,0.2,0.25,0.01,0.17,0.27,-0.09,-0.07,0.32]],
+["SHIB","Shiba Inu",33,"11-50",[-0.27,0.31,0.32,0.81,0.92,0.14,0.14,0.44,0.28],[0.09,0.88,0.76,0.64,1,1.02,0.9,1.08,1.28],[-1.31,-0.52,-0.64,-0.76,-0.4,-0.38,-0.5,-0.32,-0.12],[-1.12,-0.34,-0.46,-0.58,-0.21,-0.19,-0.32,-0.14,0.06]],
+["ENA","Ethena",35,"11-50",[2.17,2.74,3.91,2.71,0.49,-0.15,-1.86,-0.85,1.85],[1.85,2.63,3.87,2.95,2.35,2.47,1.94,2.07,4.24],[-1.93,-1.18,0.02,-0.87,-1.45,-1.33,-1.84,-1.72,0.37],[1.31,2.09,3.33,2.41,1.81,1.93,1.41,1.54,3.7]],
+["QNT","Quant",39,"11-50",[0.8,0.5,0.52,0.03,-0.26,0.03,-0.29,0.24,0.18],[0.23,0.23,0.14,-0.19,-0.04,0.26,-0.15,0.05,0.15],[-1.62,-1.61,-1.7,-2.03,-1.88,-1.58,-1.98,-1.79,-1.7],[-0.58,-0.58,-0.66,-1,-0.84,-0.55,-0.95,-0.76,-0.66]],
+["PEPE","Pepe",40,"11-50",[-3.66,-2.11,-1.5,1.43,2.38,1.38,0.55,0.24,-0.33],[-2.75,-1.97,-1.89,-1,-0.44,-0.62,-1.35,-0.76,-0.77],[-3.47,-2.7,-2.62,-1.73,-1.18,-1.36,-2.08,-1.5,-1.51],[-0.73,0.06,0.14,1.06,1.63,1.44,0.7,1.3,1.29]],
+["AAVE","Aave",41,"11-50",[1.12,1.15,1.92,2.05,0.71,0.38,-0.36,-0.16,-0.03],[1.29,1.49,1.97,1.99,2.01,1.89,1.61,1.82,1.98],[-0.23,-0.03,0.45,0.46,0.48,0.36,0.08,0.29,0.45],[0.63,0.84,1.32,1.33,1.35,1.23,0.95,1.17,1.32]],
+["ONDO","Ondo",42,"11-50",[0.38,0.68,1.09,0.94,0.6,0.02,-0.41,0.42,0.66],[0.75,1.24,1.42,1.06,1.36,1.26,1,1.49,2.03],[-1.13,-0.65,-0.48,-0.82,-0.53,-0.63,-0.89,-0.41,0.12],[-0.21,0.27,0.45,0.1,0.39,0.29,0.03,0.52,1.05]],
+["PUMP","Pump.fun",43,"11-50",[1.63,2.36,3.06,2.45,1.04,-0.25,-1.09,-0.29,0.21],[2.24,3.09,3.6,2.91,3.31,2.83,2.47,2.61,3.53],[-3.03,-2.23,-1.75,-2.4,-2.02,-2.47,-2.82,-2.68,-1.81],[2.48,3.33,3.84,3.15,3.55,3.07,2.71,2.85,3.77]],
+["ASTER","Aster",44,"11-50",[0.12,0.19,0.37,0.33,0.29,0.34,0.23,0.37,0.39],[-0.14,-0.1,0.08,0.1,0.15,0.24,0.31,0.47,0.54],[0.37,0.42,0.6,0.61,0.67,0.76,0.83,0.99,1.06],[0.17,0.21,0.39,0.41,0.46,0.55,0.62,0.78,0.85]],
+["DOT","Polkadot",46,"11-50",[0.34,0.41,0.32,-0.42,-0.11,-0.76,-0.77,0.24,0.58],[0.69,1.17,0.95,0.32,0.58,0.4,0.17,0.56,1.17],[-1.07,-0.6,-0.82,-1.43,-1.18,-1.36,-1.58,-1.2,-0.6],[-0.7,-0.22,-0.44,-1.06,-0.81,-0.99,-1.21,-0.83,-0.23]],
+["WLFI","World Liberty Financial",47,"11-50",[-0.26,-0.1,-0.09,-0.02,0.09,0.14,-0.05,-0.16,-0.12],[-0.33,-0.36,-0.27,-0.19,-0.23,-0.21,-0.33,-0.35,-0.35],[-0.23,-0.26,-0.18,-0.09,-0.14,-0.12,-0.23,-0.25,-0.26],[-1.4,-1.43,-1.35,-1.27,-1.31,-1.29,-1.4,-1.43,-1.43]],
+["WLD","Worldcoin",50,"11-50",[0.85,1.26,1.54,0.72,-0.1,-0.8,-1.16,-0.47,0.19],[0.99,1.71,1.77,1.06,0.89,0.89,0.59,0.59,1.09],[-2.35,-1.66,-1.6,-2.28,-2.44,-2.44,-2.74,-2.74,-2.25],[-1.19,-0.49,-0.43,-1.12,-1.29,-1.29,-1.59,-1.58,-1.1]],
+["SKY","Sky",51,"51-100",[0.63,0.46,0.92,0.77,0.65,0.37,-0.15,0.05,0.24],[0.73,0.9,1.23,1.15,1.38,1.28,1.08,1.19,1.62],[0.48,0.66,0.98,0.9,1.13,1.03,0.83,0.95,1.38],[0.77,0.94,1.27,1.19,1.42,1.32,1.12,1.24,1.67]],
+["ICP","Internet Computer",53,"51-100",[0.68,0.88,1.13,0.61,0.25,-0.21,-0.28,0.34,0.31],[0.97,1.33,1.29,0.95,1.22,1.12,1.01,1.3,1.53],[-1.47,-1.12,-1.15,-1.49,-1.23,-1.32,-1.43,-1.15,-0.92],[0.87,1.23,1.19,0.85,1.12,1.02,0.91,1.2,1.43]],
+["ETC","Ethereum Classic",55,"51-100",[0.61,0.44,0.59,0.39,0.09,0.01,-0.13,0.3,0.75],[0.89,0.86,0.95,0.9,0.99,0.87,0.82,1.2,1.74],[-0.73,-0.76,-0.68,-0.73,-0.64,-0.75,-0.81,-0.43,0.1],[-0.76,-0.78,-0.7,-0.75,-0.66,-0.77,-0.83,-0.45,0.08]],
+["MORPHO","Morpho",56,"51-100",[0.31,0,0.47,0.31,-0.27,-0.13,-0.45,0.35,0.81],[-1.01,-1.17,-0.96,-1.19,-1.28,-1.3,-1.4,-0.84,-0.48],[-1.18,-1.34,-1.13,-1.36,-1.45,-1.47,-1.58,-1.01,-0.65],[0.57,0.4,0.62,0.39,0.3,0.27,0.17,0.75,1.11]],
+["ARB","Arbitrum",59,"51-100",[1.33,1.96,1.91,0.95,0.09,-0.27,-0.21,0.87,1.81],[1.62,2.38,2.46,1.64,1.71,2.1,2.24,2.52,3.55],[-1.4,-0.66,-0.58,-1.38,-1.31,-0.93,-0.8,-0.52,0.47],[1.8,2.57,2.65,1.83,1.9,2.29,2.43,2.71,3.74]],
+["POL","Polygon (prev. MATIC)",63,"51-100",[0.2,0.49,0.77,0.69,0.24,-0.01,-0.06,0.6,0.9],[0.14,0.55,0.59,0.39,0.38,0.54,0.53,1,1.29],[0.56,0.97,1.01,0.81,0.8,0.96,0.94,1.42,1.71],[0.69,1.1,1.14,0.94,0.93,1.09,1.07,1.55,1.84]],
+["ALGO","Algorand",64,"51-100",[1.15,0.61,0.92,0.59,0.09,-0.06,-0.36,0.13,0.57],[0.58,0.45,0.53,0.52,0.67,0.39,0.17,0.65,1.25],[-2.47,-2.59,-2.52,-2.53,-2.38,-2.65,-2.86,-2.4,-1.82],[-1.07,-1.19,-1.11,-1.13,-0.97,-1.25,-1.47,-1,-0.41]],
+["JUP","Jupiter",65,"51-100",[0.61,0.79,0.88,0.95,0.13,-0.34,-0.59,0.11,0.59],[0.79,1.17,1.14,0.86,0.92,0.83,0.54,0.96,1.52],[-2.57,-2.21,-2.23,-2.51,-2.45,-2.53,-2.82,-2.41,-1.87],[-2.53,-2.16,-2.19,-2.47,-2.4,-2.49,-2.77,-2.36,-1.83]],
+["ATOM","Cosmos",66,"51-100",[0.19,0.83,0.72,0.73,0.46,-0.1,-0.23,0.03,0.26],[0.6,1.13,1.03,0.87,1.07,1.03,0.8,0.9,1.33],[-0.53,0,-0.11,-0.26,-0.06,-0.1,-0.33,-0.23,0.19],[0.03,0.56,0.45,0.29,0.49,0.45,0.23,0.33,0.75]],
+["RENDER","Render",68,"51-100",[0.67,0.87,1.32,0.71,0.03,-0.46,-0.64,-0.09,0.5],[1.26,1.66,1.56,1.16,1.3,1.2,0.91,1.07,1.8],[-1.49,-1.1,-1.2,-1.59,-1.46,-1.55,-1.83,-1.68,-0.96],[0.05,0.44,0.34,-0.06,0.08,-0.02,-0.3,-0.15,0.58]],
+["INJ","Injective",69,"51-100",[2.26,2.63,2.42,0.88,-0.37,-1.24,-1.47,0.12,-0.15],[2.21,3.33,3.25,1.98,1.83,2.05,1.73,2.11,1.67],[-0.24,0.85,0.77,-0.47,-0.61,-0.4,-0.71,-0.35,-0.77],[1.7,2.81,2.73,1.47,1.32,1.53,1.22,1.59,1.16]],
+["FIL","Filecoin",70,"51-100",[1.53,1.53,1.34,1.24,0.48,0.19,0.03,0.66,0.67],[1.79,2.13,2.06,1.99,2.28,2.33,2.09,2.67,2.97],[-0.15,0.19,0.11,0.04,0.33,0.37,0.14,0.71,1],[1.91,2.25,2.17,2.1,2.4,2.44,2.21,2.78,3.08]],
+["CAKE","PancakeSwap",73,"51-100",[-0.31,-0.1,0.36,0.62,0.19,0.05,0.04,0.38,0.61],[-0.67,-0.36,-0.27,-0.43,-0.48,-0.31,-0.23,-0.06,0.13],[-2.18,-1.87,-1.79,-1.94,-1.99,-1.82,-1.74,-1.57,-1.39],[-1.84,-1.53,-1.45,-1.61,-1.65,-1.49,-1.41,-1.24,-1.05]],
+["ZRO","LayerZero",74,"51-100",[1.28,2.16,2.55,1.88,0.4,-0.81,-1.77,2.32,5.61],[1.82,2.78,2.86,2.21,2.23,1.94,1.04,4.58,7.97],[-0.84,0.09,0.17,-0.46,-0.45,-0.73,-1.61,1.85,5.14],[-2.41,-1.5,-1.42,-2.04,-2.03,-2.3,-3.17,0.23,3.47]],
+["DASH","Dash",75,"51-100",[0.63,0.28,0.61,-0.02,-0.14,-0.09,-1.22,-0.92,-0.48],[-0.5,-0.69,-0.31,-0.7,-0.65,-0.78,-1.53,-1.61,-1.12],[-3.56,-3.74,-3.38,-3.75,-3.7,-3.83,-4.56,-4.64,-4.17],[-4.51,-4.68,-4.32,-4.69,-4.64,-4.77,-5.49,-5.57,-5.1]],
+["NIGHT","Midnight",76,"51-100",[-2.33,-2.07,-1.31,-1.12,-1.4,-1.15,-0.5,0.76,0.83],[-0.91,-0.97,-0.91,-1.7,-2.3,-2.1,-1.41,-0.95,-1.49],[-3.09,-3.14,-3.09,-3.85,-4.45,-4.25,-3.58,-3.12,-3.65],[-2.87,-2.92,-2.87,-3.64,-4.23,-4.04,-3.36,-2.9,-3.43]],
+["ETHFI","ether.fi",77,"51-100",[0.74,1.22,1.68,1.49,0.4,-0.22,-0.78,-0.07,1.03],[0.39,0.91,1.32,1.07,0.79,0.69,0.53,0.99,1.83],[-3.15,-2.65,-2.26,-2.5,-2.76,-2.86,-3.02,-2.57,-1.76],[0.83,1.36,1.76,1.51,1.23,1.13,0.97,1.44,2.28]],
+["AERO","Aerodrome Finance",78,"51-100",[0.64,0.76,1.43,0.85,-0.05,-0.47,-1.15,-0.19,0.22],[1.27,1.6,1.96,1.31,1.22,1.12,0.79,1.12,1.44],[-0.37,-0.05,0.31,-0.33,-0.42,-0.52,-0.85,-0.52,-0.2],[-2,-1.68,-1.33,-1.96,-2.05,-2.15,-2.47,-2.15,-1.84]],
+["APT","Aptos",79,"51-100",[1.13,1.4,1.45,1.34,0.41,-0.46,-0.84,-0.13,0.88],[1.63,2.17,2.24,2.01,2.04,1.7,1.38,1.88,2.93],[-2.68,-2.16,-2.09,-2.31,-2.28,-2.61,-2.91,-2.44,-1.43],[-1.22,-0.69,-0.62,-0.84,-0.82,-1.15,-1.45,-0.97,0.05]],
+["PYTH","Pyth Network",80,"51-100",[1.08,1,1.02,0.77,-0.76,-0.92,-1.27,-0.91,0.57],[0.4,0.41,0.08,-0.27,-0.36,-0.51,-1.19,-1.18,0.21],[-3.68,-3.67,-3.98,-4.32,-4.41,-4.55,-5.2,-5.19,-3.86],[-0.22,-0.21,-0.54,-0.89,-0.98,-1.12,-1.8,-1.79,-0.41]],
+["BIANRENSHENG","Bi An Ren Sheng",81,"51-100",[-0.1,-0.82,-0.16,0.08,-0.2,-0.21,0.09,0.26,0.22],[-0.66,-0.93,-0.7,-0.71,-0.86,-1.14,-0.61,-0.45,-0.64],[2.93,2.65,2.89,2.88,2.72,2.44,2.98,3.15,2.95],[2.48,2.21,2.44,2.44,2.27,1.99,2.53,2.7,2.5]],
+["STX","Stacks",83,"51-100",[0.21,0.53,0.68,0.36,0.06,-0.61,-0.38,0.21,1.11],[1.67,2.03,1.8,1.5,1.73,1.4,1.41,1.71,2.86],[-2.14,-1.8,-2.02,-2.31,-2.09,-2.4,-2.39,-2.11,-1],[-3,-2.66,-2.89,-3.17,-2.95,-3.26,-3.25,-2.97,-1.87]],
+["VET","VeChain",84,"51-100",[0.61,1.09,0.88,0.99,0.45,-0.02,-0.29,0.02,0.57],[1.38,1.75,1.65,1.69,1.84,1.73,1.35,1.7,2.42],[-2.27,-1.92,-2.01,-1.98,-1.83,-1.94,-2.3,-1.96,-1.27],[-2.16,-1.81,-1.9,-1.86,-1.72,-1.82,-2.19,-1.85,-1.15]],
+["CRV","Curve DAO Token",85,"51-100",[-0.12,0.33,0.59,0.47,0.09,-0.47,-0.74,-0.27,0.17],[-1.08,-0.69,-0.76,-1.07,-0.99,-1.15,-1.5,-1.34,-0.83],[-1.43,-1.04,-1.11,-1.41,-1.34,-1.5,-1.84,-1.68,-1.18],[-2.13,-1.74,-1.81,-2.12,-2.04,-2.2,-2.54,-2.39,-1.88]],
+["TIA","Celestia",87,"51-100",[1.09,0.73,1.12,1.04,-0.08,-0.12,-0.25,1.03,1.86],[2.3,2.4,2.7,2.35,2.22,2.28,2.44,3.4,4.12],[-1.49,-1.39,-1.11,-1.44,-1.56,-1.51,-1.35,-0.43,0.27],[0.88,0.98,1.27,0.93,0.8,0.86,1.02,1.96,2.68]],
+["PENGU","Pudgy Penguins",90,"51-100",[0.04,0.67,1.2,0.97,0.41,-0.08,-0.52,0.31,0.68],[0.91,1.31,1.54,1.06,1.32,1.23,1.01,1.37,2.01],[-2.05,-1.66,-1.44,-1.9,-1.65,-1.73,-1.95,-1.6,-0.98],[0.11,0.51,0.74,0.26,0.52,0.43,0.22,0.57,1.2]],
+["TRUMP","OFFICIAL TRUMP",91,"51-100",[0.47,0.8,1.05,0.88,0.87,0.26,-0.21,-0.15,-0.04],[0.75,1.26,1.28,1.25,1.62,1.52,1.07,1.1,1.58],[-1.21,-0.72,-0.69,-0.72,-0.36,-0.46,-0.9,-0.87,-0.4],[-0.47,0.03,0.05,0.02,0.39,0.29,-0.16,-0.12,0.35]],
+["RAY","Raydium",93,"51-100",[0.5,0.65,0.44,0.29,-0.2,-0.32,-0.65,-0.1,0.94],[0.5,0.58,0.43,0.15,0.31,0.25,-0.22,0.05,1.25],[-6.43,-6.36,-6.49,-6.75,-6.61,-6.66,-7.1,-6.85,-5.74],[-3.56,-3.49,-3.62,-3.89,-3.75,-3.8,-4.25,-3.99,-2.84]],
+["FET","Artificial Superintelligence Alliance",94,"51-100",[1.05,1.24,1.09,1.16,0.26,-0.3,-0.3,0.14,0.35],[1.52,2.06,1.69,1.5,1.79,1.75,1.39,1.64,2.14],[-0.52,0,-0.35,-0.54,-0.26,-0.29,-0.65,-0.4,0.09],[0.77,1.29,0.93,0.74,1.03,0.99,0.63,0.88,1.38]],
+["VIRTUAL","Virtuals Protocol",95,"51-100",[0.7,0.76,1.17,0.73,0.22,0.09,-0.36,0.2,0.52],[0.91,1.15,1.3,1.02,1.14,1.25,0.93,1.22,1.66],[-1.44,-1.21,-1.06,-1.33,-1.22,-1.11,-1.42,-1.14,-0.71],[-1.26,-1.03,-0.89,-1.16,-1.04,-0.94,-1.25,-0.96,-0.53]],
+["SEI","Sei",96,"51-100",[0.42,0.85,1.1,0.84,0.33,-0.45,-0.71,0.11,0.77],[0.57,1.28,1.19,0.79,0.9,0.82,0.47,0.9,1.67],[-2.83,-2.15,-2.24,-2.62,-2.52,-2.59,-2.93,-2.52,-1.77],[-1.03,-0.33,-0.42,-0.82,-0.71,-0.78,-1.13,-0.71,0.05]],
+["XPL","Plasma",98,"51-100",[0.67,0.59,0.97,0.16,0.08,-0.36,-0.75,-0.4,-0.08],[2.34,2.43,2.51,2.11,2.42,2.06,1.74,1.7,2.34],[2.04,2.13,2.22,1.82,2.13,1.76,1.45,1.41,2.04],[2.81,2.9,2.99,2.58,2.9,2.53,2.21,2.18,2.81]],
+["STRK","Starknet",101,"101-125",[0.59,0.4,0.41,0.33,-0.32,-0.74,-1.17,-0.51,1.62],[1.07,1.48,1.76,1.3,0.75,0.73,0.57,0.79,2.38],[0.01,0.41,0.69,0.23,-0.31,-0.33,-0.49,-0.28,1.3],[1.06,1.47,1.75,1.29,0.74,0.72,0.56,0.77,2.37]],
+["PENDLE","Pendle",102,"101-125",[1.03,0.68,1.27,0.82,-0.01,-0.58,-1.25,-0.43,-0.39],[1.45,1.26,1.55,1.22,1.44,0.68,0.29,0.79,1.04],[-1.06,-1.24,-0.95,-1.28,-1.07,-1.81,-2.19,-1.7,-1.45],[-0.57,-0.75,-0.47,-0.79,-0.58,-1.32,-1.71,-1.22,-0.97]],
+["LDO","Lido DAO",105,"101-125",[0.74,0.97,0.98,0.86,0.64,0.39,0.25,0.58,0.81],[0.36,0.99,1.01,0.86,1,1.38,1.27,1.44,1.82],[-2.23,-1.62,-1.59,-1.75,-1.61,-1.24,-1.35,-1.18,-0.81],[-0.91,-0.29,-0.27,-0.42,-0.28,0.09,-0.01,0.15,0.53]],
+["XTZ","Tezos",106,"101-125",[0.01,0.85,1.38,1.7,1.15,0.14,-0.22,-0.11,0.4],[0.11,1.07,1.33,1.42,1.26,1.21,1.11,1.31,1.67],[-1.66,-0.72,-0.46,-0.38,-0.53,-0.58,-0.68,-0.49,-0.14],[-0.52,0.43,0.69,0.78,0.62,0.57,0.47,0.67,1.02]],
+["KITE","Kite",110,"101-125",[0.12,0.35,1.52,1.59,1.25,0.59,0.14,-0.14,-0.1],[0.21,0.36,1.15,1.33,1.46,0.95,1.3,1.18,1.36],[-1.41,-1.26,-0.48,-0.31,-0.18,-0.68,-0.34,-0.45,-0.28],[-1.65,-1.5,-0.72,-0.55,-0.42,-0.92,-0.58,-0.69,-0.52]],
+["IMX","Immutable",111,"101-125",[0.83,1.68,1.99,1.84,0.9,-0.51,-0.88,-0.26,0.29],[0.94,1.94,2.18,1.97,1.85,1.42,1.28,1.7,2.14],[-2.39,-1.41,-1.18,-1.39,-1.5,-1.91,-2.05,-1.64,-1.22],[-0.61,0.39,0.62,0.41,0.29,-0.13,-0.26,0.15,0.59]],
+["BONK","Bonk",112,"101-125",[-0.06,0.56,0.57,0.97,0.42,-0.18,-0.18,0.36,0.4],[0.99,1.62,1.38,1.13,1.42,1.44,1.19,1.5,1.82],[-2.38,-1.77,-2.01,-2.24,-1.97,-1.95,-2.19,-1.89,-1.58],[0.38,1.01,0.76,0.52,0.8,0.83,0.58,0.88,1.21]],
+["DCR","Decred",113,"101-125",[0.29,0.11,-0.09,-0.09,0.37,-0.07,0,0.03,-0.07],[-0.95,-0.91,-0.97,-0.95,-0.58,-0.98,-0.97,-0.92,-0.65],[-0.68,-0.64,-0.7,-0.68,-0.31,-0.7,-0.69,-0.65,-0.37],[-0.27,-0.23,-0.29,-0.27,0.1,-0.29,-0.28,-0.24,0.04]],
+["OP","Optimism",114,"101-125",[1.04,1.09,1.1,0.53,0,-0.76,-0.94,-0.15,0.26],[1.51,1.94,1.93,1.38,1.51,1.17,0.97,1.23,1.77],[-1.37,-0.95,-0.96,-1.5,-1.37,-1.7,-1.89,-1.65,-1.12],[0.35,0.77,0.76,0.21,0.35,0.01,-0.19,0.06,0.61]],
+["LUNC","Terra Classic",115,"101-125",[0.59,0.24,0.58,0.81,0.25,0.34,-0.21,-0.15,0.12],[0.55,0.36,0.69,0.86,0.8,0.71,0.47,0.72,0.91],[0,-0.19,0.14,0.32,0.25,0.16,-0.07,0.17,0.37],[-0.09,-0.27,0.05,0.23,0.16,0.07,-0.16,0.08,0.28]],
+["CFX","Conflux",116,"101-125",[0.23,0.2,0.34,0.28,0.79,0.46,0.21,0.31,0.58],[0.87,1.16,1.26,1.33,1.67,1.62,1.47,1.64,2.25],[-0.51,-0.22,-0.12,-0.05,0.28,0.24,0.09,0.25,0.86],[-0.34,-0.06,0.05,0.11,0.45,0.4,0.25,0.42,1.03]],
+["GRT","The Graph",118,"101-125",[0.95,0.91,0.74,0.58,-0.09,-0.31,-0.41,0.17,0.67],[1.44,1.73,1.44,1.39,1.34,1.41,1.03,1.56,2.02],[-1.22,-0.93,-1.21,-1.26,-1.3,-1.24,-1.61,-1.09,-0.64],[-1.32,-1.03,-1.31,-1.36,-1.41,-1.34,-1.71,-1.19,-0.75]],
+["KMNO","Kamino",120,"101-125",[0.5,0.25,0.47,0.09,0.12,-0.15,-0.68,-0.69,-0.17],[0.18,0.1,0.53,0.35,0.3,-0.05,-0.16,-0.34,0.13],[-2.05,-2.13,-1.71,-1.89,-1.93,-2.28,-2.38,-2.56,-2.1],[-2.68,-2.76,-2.35,-2.52,-2.57,-2.91,-3.01,-3.19,-2.73]],
+["AR","Arweave",121,"101-125",[0.84,1.07,1.14,1.06,0.33,-0.06,-0.55,-0.05,0.48],[1.38,1.73,1.84,1.76,1.71,1.67,1.28,1.7,2.2],[-1.63,-1.29,-1.18,-1.27,-1.31,-1.35,-1.73,-1.32,-0.84],[-0.1,0.25,0.36,0.27,0.22,0.19,-0.2,0.22,0.7]],
+["FLOKI","FLOKI",122,"101-125",[-0.23,0.25,0.39,0.63,0.52,-0.2,-0.5,-0.01,0.03],[0.19,0.68,0.67,0.5,0.71,0.48,0.17,0.49,0.74],[-2.02,-1.54,-1.55,-1.71,-1.51,-1.74,-2.04,-1.72,-1.48],[-1.07,-0.59,-0.59,-0.76,-0.55,-0.79,-1.09,-0.77,-0.52]],
+["CVX","Convex Finance",123,"101-125",[-0.52,-0.82,-1.14,-0.98,-1.1,-0.96,-0.64,-0.89,-0.67],[-1.23,-1.53,-2.13,-2.31,-2.31,-2.47,-2.76,-3.19,-2.97],[-6.21,-6.49,-7.06,-7.23,-7.23,-7.39,-7.66,-8.06,-7.85],[-5.43,-5.72,-6.29,-6.47,-6.47,-6.62,-6.9,-7.31,-7.09]],
+["ENS","Ethereum Name Service",124,"101-125",[0.9,0.86,0.87,0.94,-0.1,-0.43,-0.43,-0.16,0.84],[1.41,1.77,1.66,1.75,1.31,1.33,1.22,1.59,2.16],[0.18,0.53,0.42,0.51,0.08,0.1,-0.01,0.35,0.92],[0.9,1.26,1.15,1.24,0.8,0.83,0.71,1.08,1.65]],
+["JTO","Jito",125,"101-125",[1.21,1.29,1.58,1.1,0.22,-0.44,-0.96,-0.12,0.81],[1.83,2.4,2.48,1.99,2.05,1.94,1.5,1.88,2.87],[-4.84,-4.3,-4.22,-4.68,-4.63,-4.73,-5.14,-4.79,-3.86],[-2.53,-1.98,-1.9,-2.37,-2.31,-2.41,-2.84,-2.48,-1.52]]],
+"missing":[["XMR", 12], ["LEO", 13], ["CC", 25], ["CRO", 34], ["M", 37], ["OKB", 38], ["MNT", 48], ["BGB", 54], ["VVV", 57], ["KCS", 60], ["KAS", 62], ["XDC", 71], ["LIT", 72], ["STABLE", 89], ["SPX", 97], ["BSV", 99], ["BTT", 100], ["PIEVERSE", 108], ["MON", 117], ["NFT", 119]]};
+
+const QK = ["new", "strong", "fading", "weak"];
+const QN = { new: "새로 강해짐", strong: "계속 강함", fading: "꺾임", weak: "계속 약함" };
+const TIERS = [["all", "전체"], ["1-10", "1-10위"], ["11-50", "11-50위"], ["51-100", "51-100위"], ["101-125", "101-125위"]];
+const ANCH = [["4h", "4시간 전"], ["12h", "12시간 전"], ["24h", "24시간 전"]];
+const PW = 752, PH = 564, STEP = 15;
+const T = DATA.times, NT = T.length, LAST = NT - 1;
+const SPANH = (LAST * STEP) / 60;
+const GON = "#c3c2b7", GOFF = "#383835", BLUE = "#3987e5", GRAY = "#6b6a65";
+
+function r1(v) { return Math.round(v * 10) / 10; }
+function r2(v) { return Math.round(v * 100) / 100; }
+function sp(v) { const r = Math.round(v * 100) / 100; return r === 0 ? "0.00%" : (r > 0 ? "+" : "") + r.toFixed(2) + "%"; }
+function share(n, m) { return m ? (n / m * 100).toFixed(1) + "%" : "0.0%"; }
+function quadOf(x, y) { return x >= 0 ? (y >= 0 ? "strong" : "fading") : (y >= 0 ? "new" : "weak"); }
+function glyph(q, on) {
+  const c = on || GON;
+  return { tl: q === "new" ? c : GOFF, tr: q === "strong" ? c : GOFF, bl: q === "weak" ? c : GOFF, br: q === "fading" ? c : GOFF };
+}
+function pctl(v, p) {
+  const s = v.slice().sort(function (a, b) { return a - b; });
+  const k = (s.length - 1) * p, f = Math.floor(k), c = Math.min(f + 1, s.length - 1);
+  return s[f] + (s[c] - s[f]) * (k - f);
+}
+function niceRange(vals) {
+  const p5 = pctl(vals, 0.05), p95 = pctl(vals, 0.95), pad = 0.2 * (p95 - p5);
+  const lo = Math.min(p5 - pad, 0), hi = Math.max(p95 + pad, 0);
+  const steps = [0.25, 0.5, 1, 2, 5];
+  let st = 5;
+  for (let i = 0; i < steps.length; i++) {
+    if (Math.ceil(hi / steps[i]) - Math.floor(lo / steps[i]) <= 9) { st = steps[i]; break; }
+  }
+  return { lo: r2(Math.floor(lo / st) * st), hi: r2(Math.ceil(hi / st) * st), step: st };
+}
+function decOf(R) { return R.step < 0.5 ? 2 : (R.step < 1 ? 1 : 0); }
+function tickFmt(v, dec) { return Math.abs(v) < 1e-9 ? "0%" : (v > 0 ? "+" : "") + v.toFixed(dec) + "%"; }
+function ticksFor(R, scale) {
+  const dec = decOf(R), out = [], n = Math.round((R.hi - R.lo) / R.step);
+  for (let i = 0; i <= n; i++) {
+    const v = r2(R.lo + i * R.step);
+    out.push({ v: v, px: scale(v), s: tickFmt(v, dec), zero: Math.abs(v) < 1e-9 });
+  }
+  return out;
+}
+function anchorTime(an) { const m = DATA.anchors[an]; return (m.prev ? "전날 " : "") + m.start; }
+function anchorDt(an) {
+  const m = DATA.anchors[an];
+  let day = DATA.asof.slice(0, 10);
+  if (m.prev) {
+    const d = new Date(Date.UTC(Number(day.slice(0, 4)), Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10))) - 86400000);
+    day = d.toISOString().slice(0, 10);
+  }
+  return day + "T" + m.start;
+}
+function overlaps(b, arr) {
+  for (let i = 0; i < arr.length; i++) {
+    const o = arr[i];
+    if (b.x < o.x + o.w + 2 && b.x + b.w + 2 > o.x && b.y < o.y + o.h + 2 && b.y + b.h + 2 > o.y) return true;
+  }
+  return false;
+}
+function inside(b) { return b.x >= 0 && b.y >= 0 && b.x + b.w <= PW && b.y + b.h <= PH; }
+
+const COINS = DATA.coins.map(function (a) {
+  return { t: a[0], n: a[1], r: a[2], tier: a[3], y: a[4], x: { "4h": a[5], "12h": a[6], "24h": a[7] } };
+});
+const N = COINS.length;
+const BYT = {};
+COINS.forEach(function (c) { BYT[c.t] = c; });
+const YR = niceRange([].concat.apply([], COINS.map(function (c) { return c.y; })));
+const SY = function (v) { return r1((YR.hi - v) / (YR.hi - YR.lo) * PH); };
+const YT = ticksFor(YR, SY);
+const GEO = {};
+ANCH.forEach(function (a) {
+  const an = a[0];
+  const XR = niceRange([].concat.apply([], COINS.map(function (c) { return c.x[an]; })));
+  const sx = function (v) { return r1((v - XR.lo) / (XR.hi - XR.lo) * PW); };
+  const pos = {}, tail = {}, quad = {};
+  COINS.forEach(function (c) {
+    const x = c.x[an][LAST], y = c.y[LAST];
+    let px = sx(x), py = SY(y);
+    const ox = x < XR.lo ? -1 : (x > XR.hi ? 1 : 0);
+    const oy = y < YR.lo ? 1 : (y > YR.hi ? -1 : 0);
+    if (ox) px = ox < 0 ? 7 : PW - 7;
+    if (oy) py = oy > 0 ? PH - 7 : 7;
+    pos[c.t] = { px: px, py: py, ox: ox, oy: oy, edge: !!(ox || oy) };
+    tail[c.t] = c.x[an].map(function (v, i) { return [sx(v), SY(c.y[i])]; });
+    quad[c.t] = quadOf(x, y);
+  });
+  GEO[an] = { XR: XR, pos: pos, tail: tail, quad: quad, cx: sx(0), cy: SY(0), xt: ticksFor(XR, sx) };
+});
+const QBOX = [
+  { x: 6, y: 4, w: 88, h: 30 }, { x: PW - 80, y: 4, w: 74, h: 30 },
+  { x: 6, y: PH - 34, w: 74, h: 30 }, { x: PW - 48, y: PH - 34, w: 42, h: 30 }
+];
+const EMPTY_ROW = { t: "", x: "", y: "", q: "" };
+
+function pickNotable(scoped, Q, max) {
+  const cur = function (c) { return c.y[LAST]; };
+  const nw = scoped.filter(function (c) { return Q[c.t] === "new"; }).sort(function (a, b) { return cur(b) - cur(a); }).slice(0, 5);
+  const fd = scoped.filter(function (c) { return Q[c.t] === "fading"; }).sort(function (a, b) { return cur(a) - cur(b); }).slice(0, 2);
+  const first = nw.concat(fd);
+  const rest = scoped.filter(function (c) { return first.indexOf(c) < 0; }).sort(function (a, b) { return Math.abs(cur(b)) - Math.abs(cur(a)); });
+  return first.concat(rest).slice(0, max).map(function (c) { return c.t; });
+}
+
+function describePath(c, an) {
+  const ys = c.y, xs = c.x[an];
+  const up = ys.map(function (v) { return v >= 0; });
+  const last = up[LAST];
+  let k = LAST;
+  while (k > 0 && up[k - 1] === last) k--;
+  let flips = 0;
+  for (let i = 1; i < NT; i++) if (up[i] !== up[i - 1]) flips++;
+  const mins = (LAST - k) * STEP;
+  let path;
+  if (k === 0) {
+    path = "지난 " + SPANH + "시간 동안 15분마다 찍은 " + NT + "개 점 모두에서 최근 1시간 수익률이 BTC보다 " + (last ? "높았습니다." : "낮았습니다.");
+  } else if (mins === 0) {
+    path = last
+      ? "최근 1시간 수익률로 보면 BTC보다 약했다가, 마지막 점인 " + T[LAST] + "에 막 BTC보다 강해졌습니다."
+      : "최근 1시간 수익률로 보면 BTC보다 강했다가, 마지막 점인 " + T[LAST] + "에 막 BTC보다 약해졌습니다.";
+  } else {
+    path = last
+      ? "최근 1시간 수익률로 보면 BTC보다 약했다가, " + T[k] + "부터 최근 " + mins + "분 동안 BTC보다 강해졌습니다."
+      : "최근 1시간 수익률로 보면 BTC보다 강했다가, " + T[k] + "부터 최근 " + mins + "분 동안 BTC보다 약해졌습니다.";
+  }
+  if (flips >= 2) path += " " + SPANH + "시간 동안 BTC보다 강한 쪽과 약한 쪽을 " + flips + "번 오갔습니다.";
+  const dx = xs[LAST] - xs[0];
+  const xline = "기준 시각 " + anchorTime(an) + " 이후 BTC 대비 값은 " + SPANH + "시간 전(" + T[0] + ") " + sp(xs[0]) + "에서 지금 " + sp(xs[LAST]) + "로 " +
+    (Math.abs(dx) < 0.05 ? "거의 그대로입니다." : Math.abs(dx).toFixed(2) + "%p " + (dx > 0 ? "올라왔습니다." : "내려왔습니다."));
+  const qs = xs.map(function (v, i) { return quadOf(v, ys[i]); });
+  const seq = qs.filter(function (q, i) { return i === 0 || q !== qs[i - 1]; });
+  let qline;
+  if (seq.length === 1) qline = NT + "개 점이 모두 " + QN[seq[0]] + " 칸에 있었습니다.";
+  else if (seq.length <= 4) qline = "사분면은 " + seq.map(function (q) { return QN[q]; }).join(" → ") + " 순서로 옮겨 왔습니다.";
+  else qline = "사분면이 " + (seq.length - 1) + "번 바뀌었고, 지금은 " + QN[qs[LAST]] + " 칸에 있습니다.";
+  return { path: path, xline: xline, qline: qline, qs: qs };
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const P = this.props || {};
+    const anIds = ANCH.map(function (a) { return a[0]; });
+    const tierIds = TIERS.map(function (t) { return t[0]; });
+    const anchor = st.anchor || (anIds.indexOf(P.startAnchor) >= 0 ? P.startAnchor : "12h");
+    const tier = st.tier || (tierIds.indexOf(P.startTier) >= 0 ? P.startTier : "all");
+    const isAll = tier === "all";
+    const pin = st.pin || null;
+    const hover = st.hover || null;
+    const table = !!st.table;
+    const custom = !!st.custom;
+    const rawLabels = Number(P.labelCount ?? 7);
+    const labelMax = Math.max(0, Math.min(10, Math.round(isNaN(rawLabels) ? 7 : rawLabels)));
+    const allTails = P.allTails === true;
+    const G = GEO[anchor];
+    const Q = G.quad;
+    const aLabel = (ANCH.find(function (a) { return a[0] === anchor; }) || ANCH[1])[1];
+    const aTime = anchorTime(anchor);
+    const tierName = (TIERS.find(function (t) { return t[0] === tier; }) || TIERS[0])[1];
+    const scoped = COINS.filter(function (c) { return isAll || c.tier === tier; });
+    const self = this;
+    const getSt = function () { return self.state || {}; };
+    const togglePin = function (t) { return function () { self.setState({ pin: getSt().pin === t ? null : t }); }; };
+    const enter = function (t) { return function () { if (getSt().hover !== t) self.setState({ hover: t }); }; };
+    const leave = function (t) { return function () { if (getSt().hover === t) self.setState({ hover: null }); }; };
+
+    const anchors = ANCH.map(function (a) {
+      return { id: a[0], label: a[1], time: anchorTime(a[0]), on: a[0] === anchor, pick: function () { self.setState({ anchor: a[0], hover: null }); } };
+    });
+    const chips = TIERS.map(function (row) {
+      const id = row[0];
+      return {
+        id: id, label: row[1], on: id === tier,
+        n: id === "all" ? N : COINS.filter(function (c) { return c.tier === id; }).length,
+        pick: function () { self.setState({ tier: id, hover: null }); }
+      };
+    });
+
+    const cnt = {};
+    QK.forEach(function (q) {
+      const n = scoped.filter(function (c) { return Q[c.t] === q; }).length;
+      cnt[q] = { n: n, sub: (isAll ? N + "개 중 " : tierName + " " + scoped.length + "개 중 ") + share(n, scoped.length) };
+    });
+    const newAll = COINS.filter(function (c) { return Q[c.t] === "new"; }).length;
+
+    const emph = [pin, hover].filter(function (t, i, a) { return t && a.indexOf(t) === i; });
+    const isSel = function (c) { return isAll || c.tier === tier; };
+    const notable = pickNotable(scoped, Q, labelMax);
+
+    const dots = COINS.map(function (c) {
+      const p = G.pos[c.t];
+      const sel = isSel(c);
+      const isPin = c.t === pin, isHov = c.t === hover;
+      const nb = notable.indexOf(c.t) >= 0;
+      return {
+        t: c.t,
+        l: r1(p.px - 12), top: r1(p.py - 12),
+        z: isHov ? 7 : (isPin ? 6 : (nb ? 4 : (sel ? 3 : 2))),
+        kind: isPin ? "k-pin" : (isHov ? "k-hov" : (sel ? (isAll ? "k-all" : "k-tier") : "k-base")),
+        edge: p.edge, round: !p.edge,
+        fill: (sel || isPin || isHov) ? BLUE : GRAY,
+        rot: Math.round(Math.atan2(p.oy, p.ox) * 180 / Math.PI),
+        aria: c.t + " " + c.n + ", " + c.r + "위, " + QN[Q[c.t]] + ", " + aTime + " 이후 BTC 대비 " + sp(c.x[anchor][LAST]) + ", 최근 1시간 BTC 대비 " + sp(c.y[LAST]),
+        pressed: isPin,
+        pick: togglePin(c.t), enter: enter(c.t), leave: leave(c.t)
+      };
+    });
+
+    const tailCoins = COINS.filter(function (c) {
+      if (emph.indexOf(c.t) >= 0) return true;
+      if (!isAll) return c.tier === tier;
+      return allTails || notable.indexOf(c.t) >= 0;
+    });
+    tailCoins.sort(function (a, b) { return (emph.indexOf(a.t) >= 0 ? 1 : 0) - (emph.indexOf(b.t) >= 0 ? 1 : 0); });
+    const base = isAll && allTails ? 0.5 : 1;
+    const tails = tailCoins.map(function (c) {
+      const isE = emph.indexOf(c.t) >= 0;
+      const dim = isE ? 1 : ((emph.length ? 0.3 : 1) * base);
+      const pts = G.tail[c.t];
+      const o = { t: c.t };
+      for (let i = 0; i < LAST; i++) {
+        o["s" + i] = { x1: pts[i][0], y1: pts[i][1], x2: pts[i + 1][0], y2: pts[i + 1][1], o: r2((0.15 + 0.1 * (i + 1)) * dim) };
+        o["p" + i] = { x: pts[i][0], y: pts[i][1], o: r2((0.15 + 0.1 * i) * dim) };
+      }
+      return o;
+    });
+
+    const order = emph.concat(notable.filter(function (t) { return emph.indexOf(t) < 0; }));
+    const placed = QBOX.slice();
+    const allMarks = COINS.map(function (c) { return { k: c.t, x: G.pos[c.t].px - 7, y: G.pos[c.t].py - 7, w: 14, h: 14 }; });
+    const tailMarks = allMarks.filter(function (m) { return tailCoins.some(function (c) { return c.t === m.k; }); });
+    const labels = [];
+    order.forEach(function (t) {
+      const p = G.pos[t];
+      const w = Math.round(t.length * 7.2 + 8), h = 18;
+      const cands = [
+        { x: p.px + 10, y: p.py - 9 }, { x: p.px - 10 - w, y: p.py - 9 },
+        { x: p.px - w / 2, y: p.py - 28 }, { x: p.px - w / 2, y: p.py + 10 },
+        { x: p.px + 8, y: p.py - 24 }, { x: p.px - 8 - w, y: p.py - 24 },
+        { x: p.px + 8, y: p.py + 6 }, { x: p.px - 8 - w, y: p.py + 6 }
+      ];
+      const notMe = function (m) { return m.k !== t; };
+      const passes = [allMarks.filter(notMe), tailMarks.filter(notMe)];
+      let got = null;
+      for (let s = 0; s < passes.length && !got; s++) {
+        for (let i = 0; i < cands.length && !got; i++) {
+          const b = { x: cands[i].x, y: cands[i].y, w: w, h: h };
+          if (inside(b) && !overlaps(b, placed) && !overlaps(b, passes[s])) got = b;
+        }
+      }
+      if (!got && emph.indexOf(t) >= 0) {
+        const placedLabels = placed.slice(QBOX.length);
+        const ownMark = [{ x: p.px - 7, y: p.py - 7, w: 14, h: 14 }];
+        const far = cands.concat([
+          { x: p.px - 10 - w, y: p.py + 30 }, { x: p.px + 10, y: p.py + 30 },
+          { x: p.px - 10 - w, y: p.py - 48 }, { x: p.px + 10, y: p.py - 48 }
+        ]);
+        const avoid = [placed, placedLabels];
+        for (let s = 0; s < avoid.length && !got; s++) {
+          for (let i = 0; i < far.length && !got; i++) {
+            const b = { x: Math.max(0, Math.min(PW - w, far[i].x)), y: Math.max(0, Math.min(PH - h, far[i].y)), w: w, h: h };
+            if (!overlaps(b, avoid[s]) && !overlaps(b, ownMark)) got = b;
+          }
+        }
+      }
+      if (got) { placed.push(got); labels.push({ t: t, x: r1(got.x), y: r1(got.y) }); }
+    });
+
+    let tip = { l: 0, top: 0, tick: "", name: "", rank: "", q: "", g: glyph(""), xk: "", x: "", y: "", t0: T[0], t1: T[LAST], edge: false, hint: "" };
+    const hc = hover ? BYT[hover] : null;
+    if (hc) {
+      const p = G.pos[hc.t];
+      const tw = 256, th = p.edge ? 240 : 196;
+      let tx = p.px + 18;
+      if (tx + tw > PW) tx = p.px - 18 - tw;
+      if (tx < 0) tx = Math.max(0, Math.min(PW - tw, p.px - tw / 2));
+      let ty = p.py - 28;
+      if (ty + th > PH) ty = PH - th;
+      if (ty < 0) ty = 0;
+      tip = {
+        l: r1(tx), top: r1(ty), tick: hc.t, name: hc.n, rank: hc.r, q: QN[Q[hc.t]], g: glyph(Q[hc.t]),
+        xk: aTime + " 이후 BTC 대비", x: sp(hc.x[anchor][LAST]), y: sp(hc.y[LAST]), t0: T[0], t1: T[LAST], edge: p.edge,
+        hint: hc.t === pin ? "다시 누르면 고정이 풀립니다." : "누르면 오른쪽 패널에 고정됩니다."
+      };
+    }
+
+    const mkRow = function (c) {
+      return {
+        t: c.t, n: c.n, y: sp(c.y[LAST]), x: sp(c.x[anchor][LAST]), pick: togglePin(c.t),
+        aria: c.t + " " + c.n + " 고정하기, 최근 1시간 BTC 대비 " + sp(c.y[LAST]) + ", " + aTime + " 이후 BTC 대비 " + sp(c.x[anchor][LAST])
+      };
+    };
+    const newList = scoped.filter(function (c) { return Q[c.t] === "new"; }).sort(function (a, b) { return b.y[LAST] - a.y[LAST]; });
+    const fadeList = scoped.filter(function (c) { return Q[c.t] === "fading"; }).sort(function (a, b) { return a.y[LAST] - b.y[LAST]; });
+    const side = {
+      newN: newList.length, fadeN: fadeList.length,
+      newEmpty: newList.length === 0, fadeEmpty: fadeList.length === 0,
+      newRows: newList.slice(0, 10).map(mkRow), fadeRows: fadeList.slice(0, 5).map(mkRow),
+      newNote: newList.length === 0 ? "" : (newList.length > 10 ? "최근 1시간 값이 큰 순서로 10개를 보여 줍니다." : "모두 " + newList.length + "개를 최근 1시간 값이 큰 순서로 보여 줍니다."),
+      fadeNote: fadeList.length === 0 ? "" : (fadeList.length > 5 ? "최근 1시간 값이 낮은 순서로 5개를 보여 줍니다." : "모두 " + fadeList.length + "개를 최근 1시간 값이 낮은 순서로 보여 줍니다.")
+    };
+
+    const pc = pin ? BYT[pin] : null;
+    const pd = { t: "", n: "", rank: "", tier: "", q: "", g: glyph(""), path: "", xline: "", qline: "", edge: false };
+    for (let i = 0; i < NT; i++) pd["r" + i] = EMPTY_ROW;
+    if (pc) {
+      const dp = describePath(pc, anchor);
+      pd.t = pc.t; pd.n = pc.n; pd.rank = pc.r; pd.tier = pc.tier; pd.q = QN[Q[pc.t]]; pd.g = glyph(Q[pc.t]);
+      pd.path = dp.path; pd.xline = dp.xline; pd.qline = dp.qline; pd.edge = G.pos[pc.t].edge;
+      for (let i = 0; i < NT; i++) pd["r" + i] = { t: T[i], x: sp(pc.x[anchor][i]), y: sp(pc.y[i]), q: QN[dp.qs[i]] };
+    }
+
+    const rows = scoped.slice().sort(function (a, b) { return b.y[LAST] - a.y[LAST]; }).map(function (c) {
+      return {
+        r: c.r, t: c.t, n: c.n, tier: c.tier + "위", q: QN[Q[c.t]], x: sp(c.x[anchor][LAST]), y: sp(c.y[LAST]),
+        pressed: c.t === pin, cls: c.t === pin ? "trow-on" : "", pick: togglePin(c.t),
+        aria: c.t + " 꼬리 값을 패널에 고정하기"
+      };
+    });
+
+    const xt = G.xt.map(function (k) { return { s: k.s, cls: k.zero ? "tk0" : "", left: r1(48 + k.px - 28) }; });
+    const yt = YT.map(function (k) { return { s: k.s, cls: k.zero ? "tk0" : "", top: r1(20 + k.px - 7) }; });
+    const gx = G.xt.filter(function (k) { return !k.zero; }).map(function (k) { return { l: Math.min(PW - 1, Math.round(k.px)) }; });
+    const gy = YT.filter(function (k) { return !k.zero; }).map(function (k) { return { t: Math.min(PH - 1, Math.round(k.px)) }; });
+
+    const foot = {
+      covered: N, universe: N + DATA.missing.length, missN: DATA.missing.length,
+      missList: DATA.missing.map(function (a) { return a[0] + "(" + a[1] + "위)"; }).join(", "),
+      t0: T[0], t1: T[LAST], pts: NT,
+      xlo: tickFmt(G.XR.lo, decOf(G.XR)), xhi: tickFmt(G.XR.hi, decOf(G.XR)),
+      ylo: tickFmt(YR.lo, decOf(YR)), yhi: tickFmt(YR.hi, decOf(YR)),
+      edgeList: COINS.filter(function (c) { return G.pos[c.t].edge; }).map(function (c) { return c.t; }).join(", ") || "지금은 없음"
+    };
+
+    const scopeWord = isAll ? ("전체 " + N + "개") : (tierName + " " + scoped.length + "개");
+    const ui = {
+      asof: DATA.asof, lastT: T[LAST], aLabel: aLabel, aTime: aTime, tierName: tierName,
+      isAll: isAll, notAll: !isAll, n: scoped.length,
+      table: table, showChart: !table, hasTip: !!hc, hasPin: !!pc, noPin: !pc,
+      custom: custom, maxDt: DATA.asof.replace(" ", "T"),
+      customVal: typeof st.customVal === "string" ? st.customVal : anchorDt(anchor),
+      tileCaption: scopeWord + " 코인이 " + T[LAST] + "에 어느 칸에 있는지 셌습니다. 기준 시각은 " + aLabel + "(" + aTime + ")입니다.",
+      scopePhrase: scopeWord + " 코인 중에서",
+      tailNote: allTails ? ("모든 코인의 " + SPANH + "시간 꼬리 (옅을수록 과거)") : ("이름을 붙인 코인과 가리키거나 고정한 코인의 " + SPANH + "시간 꼬리"),
+      xHead: aTime + " 이후 BTC 대비",
+      tableLabel: scopeWord + " 코인의 기준 시각 이후 BTC 대비와 최근 1시간 BTC 대비"
+    };
+
+    return {
+      ui: ui,
+      h: { newN: newAll, total: N, aTime: aTime },
+      anchors: anchors, chips: chips, cnt: cnt,
+      cross: { x: G.cx, y: G.cy },
+      xt: xt, yt: yt, gx: gx, gy: gy,
+      dots: dots, tails: tails, labels: labels, tip: tip,
+      side: side, pd: pd, rows: rows, foot: foot,
+      toggleTable: function () { self.setState({ table: !getSt().table, hover: null }); },
+      toggleCustom: function () { self.setState({ custom: !getSt().custom }); },
+      setCustom: function (e) { self.setState({ customVal: e && e.target ? String(e.target.value) : "" }); },
+      unpin: function () { self.setState({ pin: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

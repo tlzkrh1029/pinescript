@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>히트맵</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0d0d0d; }
+    body { color: #f0efec; font-family: "IBM Plex Sans KR", system-ui, sans-serif; font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+    *, *::before, *::after { box-sizing: border-box; }
+    h1, h2, h3, p, ul { margin: 0; }
+    a { color: inherit; }
+    .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    button:focus-visible, a:focus-visible { outline: 2px solid #3987e5; outline-offset: 2px; }
+
+    .small { font-size: 12px; line-height: 18px; }
+    .tab { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: #c3c2b7; text-decoration: none; border-bottom: 2px solid transparent; font-size: 14px; line-height: 22px; white-space: nowrap; }
+    .tab:hover { color: #f0efec; }
+    .tab[aria-current="page"] { color: #f0efec; font-weight: 600; border-bottom-color: #3987e5; }
+
+    .chip { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; margin: 0; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: transparent; color: #c3c2b7; font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; white-space: nowrap; }
+    .chip:hover { background: #222220; color: #f0efec; }
+    .chip[aria-pressed="true"] { border-color: #3987e5; background: rgba(57,135,229,0.16); color: #f0efec; }
+    .chip-static, .chip-static:hover { cursor: default; background: transparent; color: #c3c2b7; }
+
+    .cell { position: absolute; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; margin: 0; border: 0; border-radius: 2px; font: inherit; text-align: left; cursor: pointer; }
+    .cell:hover { outline: 2px solid rgba(240,239,236,0.55); outline-offset: -2px; z-index: 2; }
+    .cell.is-pin { outline: 2px solid #f0efec; outline-offset: -2px; z-index: 3; }
+    .cell:focus-visible { outline: 2px solid #3987e5; outline-offset: 1px; z-index: 4; }
+    .cell span { display: block; white-space: nowrap; pointer-events: none; }
+    .cell .tk { font-weight: 600; }
+    .cell .vl { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+    .tip { position: absolute; z-index: 10; width: 240px; padding: 12px; background: #222220; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; pointer-events: none; }
+    .tip .lab { font-size: 12px; line-height: 22px; color: #c3c2b7; }
+    .tip .val { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 14px; line-height: 22px; font-weight: 500; color: #f0efec; text-align: right; }
+
+    .lrow { display: grid; grid-template-columns: 10px 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 4px 8px; margin: 0; border: 0; border-top: 1px solid rgba(255,255,255,0.10); border-radius: 0; background: transparent; color: #f0efec; font: inherit; text-align: left; cursor: pointer; }
+    .lrow:hover { background: #222220; }
+    .lrow[aria-pressed="true"] { background: rgba(57,135,229,0.16); }
+    .sw { display: block; width: 10px; height: 10px; border-radius: 2px; }
+
+    .mini { width: 100%; border-collapse: collapse; }
+    .mini th, .mini td { font-size: 12px; line-height: 18px; padding: 5px 8px; border-bottom: 1px solid #2c2c2a; text-align: right; font-weight: 400; }
+    .mini thead th { color: #898781; }
+    .mini th:first-child { text-align: left; }
+    .mini tbody th { color: #c3c2b7; }
+    .mini td { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #f0efec; }
+    .mini tr.on th, .mini tr.on td { background: #222220; color: #f0efec; font-weight: 500; }
+
+    .dt { min-width: 880px; }
+    .dt-head { position: sticky; top: 0; z-index: 1; background: #1a1a19; }
+    .dt-row { display: grid; grid-template-columns: 56px 112px minmax(160px, 1fr) 88px 136px 128px 128px; column-gap: 12px; align-items: center; min-height: 36px; padding: 0 12px; border-bottom: 1px solid #2c2c2a; }
+    .dt-row span { font-size: 14px; line-height: 22px; color: #f0efec; }
+    .dt-head .dt-row span { font-size: 12px; line-height: 18px; color: #898781; }
+    .dt-row .r { text-align: right; }
+    .dt-row .sub { color: #c3c2b7; }
+    .dt-row.is-pin { background: rgba(57,135,229,0.16); }
+
+    .ftitle { margin: 0 0 6px; font-size: 12px; line-height: 18px; font-weight: 600; color: #f0efec; }
+    .fblock p { margin: 0 0 6px; }
+  </style>
+</helmet>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(16px, 2.5vw, 32px) 48px; box-sizing: border-box; background: #0d0d0d; color: #f0efec;">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 64px; border-bottom: 1px solid rgba(255,255,255,0.10);">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#f0efec" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M 2 14 A 4 4 0 0 1 6 18"></path>
+        <path d="M 2 10 A 8 8 0 0 1 10 18"></path>
+        <path d="M 2 6 A 12 12 0 0 1 14 18"></path>
+        <path d="M 2 2 A 16 16 0 0 1 18 18"></path>
+      </svg>
+      <span style="font-size: 16px; line-height: 24px; font-weight: 600; white-space: nowrap;">1-125 Flow</span>
+    </div>
+    <nav aria-label="화면" style="display: flex; flex-wrap: wrap; align-self: stretch; gap: 4px;">
+      <a class="tab" href="Main.dc.html">회전 그래프</a>
+      <a class="tab" href="Heatmap.dc.html" aria-current="page">히트맵</a>
+      <a class="tab" href="RankFlow.dc.html">순위 흐름</a>
+      <a class="tab" href="Breadth.dc.html">시장 폭</a>
+    </nav>
+    <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+      <span class="chip chip-static">기준 BTC</span>
+      <span class="small" style="color: #c3c2b7; white-space: nowrap;">2026-10-29 조회 기준</span>
+    </div>
+  </header>
+
+  <main style="padding: 32px 0 0; display: flex; flex-direction: column; gap: 24px;">
+
+    <section aria-labelledby="page-title" style="display: flex; flex-direction: column; gap: 8px; max-width: 880px;">
+      <h1 id="page-title" style="font-size: 28px; line-height: 36px; font-weight: 600; color: #f0efec; text-wrap: balance;">히트맵: {{claim}}</h1>
+      <p style="font-size: 14px; line-height: 22px; color: #c3c2b7; text-wrap: pretty;">칸 하나가 코인 하나이고, 칸의 넓이는 시가총액의 제곱근에 비례합니다. 파란 칸은 고른 기간에 BTC보다 더 오르거나 덜 내린 코인이고 빨간 칸은 그 반대이며, 색이 밝을수록 BTC와의 차이가 큽니다. 기준을 달러 기준으로 바꾸면 파란 칸은 달러 가격이 오른 코인, 빨간 칸은 내린 코인을 뜻합니다.</p>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <div role="group" aria-label="기간" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; line-height: 18px; color: #898781; padding-right: 4px;">기간</span>
+        <button type="button" class="chip" aria-pressed="{{pr1d}}" onClick="{{set1d}}">1일</button>
+        <button type="button" class="chip" aria-pressed="{{pr7d}}" onClick="{{set7d}}">7일</button>
+        <button type="button" class="chip" aria-pressed="{{pr30d}}" onClick="{{set30d}}">30일</button>
+        <button type="button" class="chip" aria-pressed="{{pr90d}}" onClick="{{set90d}}">90일</button>
+      </div>
+      <span aria-hidden="true" style="display: block; width: 1px; height: 24px; margin: 0 8px; background: rgba(255,255,255,0.10);"></span>
+      <div role="group" aria-label="기준" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; line-height: 18px; color: #898781; padding-right: 4px;">기준</span>
+        <button type="button" class="chip" aria-pressed="{{prBtc}}" onClick="{{setBtc}}">BTC 대비</button>
+        <button type="button" class="chip" aria-pressed="{{prUsd}}" onClick="{{setUsd}}">달러 기준</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+
+      <section aria-labelledby="map-title" style="flex: 999 1 760px; min-width: min(100%, 1216px); background: #1a1a19; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px;">
+          <div style="display: flex; flex-direction: column; min-width: 0;">
+            <h2 id="map-title" style="font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec;">시가총액 1-125위 트리맵</h2>
+            <p style="font-size: 12px; line-height: 18px; color: #898781;">{{mapNote}}</p>
+          </div>
+          <button type="button" class="chip" aria-pressed="{{prTable}}" onClick="{{toggleTable}}">표로 보기</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px;">
+            <span style="font-size: 12px; line-height: 12px; color: #c3c2b7; white-space: nowrap;">{{legLo}}</span>
+            <div style="max-width: 100%; overflow-x: auto; overflow-y: hidden;">
+            <div role="img" aria-label="{{legAria}}" style="position: relative; width: 416px; height: 30px; flex: none;">
+              <div style="display: flex; gap: 2px;">
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #e66767;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #c94d4d;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #9c3838;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #6e2c2d;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #4a2526;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #383835;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #1d3550;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #1f4a7a;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #2563a8;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #3987e5;"></span>
+                <span style="display: block; width: 36px; height: 12px; border-radius: 2px; background: #6da7ec;"></span>
+              </div>
+              <sc-for list="{{legTicks}}" as="tk" hint-placeholder-count="10">
+                <span class="num" style="position: absolute; top: 16px; left: {{tk.l}}px; transform: translateX(-50%); font-size: 11px; line-height: 14px; color: #c3c2b7; white-space: nowrap;">{{tk.t}}</span>
+              </sc-for>
+            </div>
+            </div>
+            <span style="font-size: 12px; line-height: 12px; color: #c3c2b7; white-space: nowrap;">{{legHi}}</span>
+          </div>
+
+          <sc-if value="{{showMap}}" hint-placeholder-val="{{ true }}">
+            <div style="overflow-x: auto; overflow-y: hidden;">
+              <div onMouseLeave="{{clearHover}}" style="position: relative; width: 1174px; height: 595px;">
+                <sc-for list="{{caps}}" as="cp" hint-placeholder-count="4">
+                  <div style="position: absolute; left: {{cp.l}}px; top: {{cp.t}}px; width: {{cp.w}}px; height: 18px; font-size: 12px; line-height: 18px; font-weight: 600; color: #c3c2b7; white-space: nowrap;">{{cp.text}}</div>
+                </sc-for>
+                <sc-for list="{{cells}}" as="c" hint-placeholder-count="24">
+                  <button type="button" class="{{c.cls}}" aria-pressed="{{c.pressed}}" aria-label="{{c.aria}}" onClick="{{c.pick}}" onMouseEnter="{{c.enter}}" onFocus="{{c.enter}}" onBlur="{{c.blur}}" style="left: {{c.l}}px; top: {{c.t}}px; width: {{c.w}}px; height: {{c.h}}px; padding: {{c.py}}px {{c.px}}px; background: {{c.bg}}; color: {{c.fg}};">
+                    <span class="tk" style="font-size: {{c.fs}}px; line-height: {{c.lh}}px;">{{c.tickText}}</span>
+                    <span class="vl" style="font-size: {{c.vfs}}px; line-height: {{c.vlh}}px;">{{c.valText}}</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{tip.show}}" hint-placeholder-val="{{ false }}">
+                  <div class="tip" style="left: {{tip.l}}px; top: {{tip.t}}px;">
+                    <div style="display: flex; align-items: baseline; gap: 8px; min-width: 0;">
+                      <span style="font-size: 14px; line-height: 22px; font-weight: 600; color: #f0efec;">{{tip.tick}}</span>
+                      <span style="font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{{tip.name}}</span>
+                    </div>
+                    <div style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{tip.meta}}</div>
+                    <div style="height: 1px; margin: 8px 0; background: rgba(255,255,255,0.10);"></div>
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline;">
+                      <span class="lab">시가총액</span><span class="val">{{tip.mcap}}</span>
+                      <span class="lab">{{tip.pl}} 달러 기준</span><span class="val">{{tip.usd}}</span>
+                      <span class="lab">{{tip.pl}} BTC 대비</span><span class="val">{{tip.vs}}</span>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{showTable}}" hint-placeholder-val="{{ false }}">
+            <div style="height: 595px; overflow: auto; border-top: 1px solid rgba(255,255,255,0.10);">
+              <div role="table" aria-label="{{tableLabel}}" class="dt">
+                <div role="rowgroup" class="dt-head">
+                  <div role="row" class="dt-row">
+                    <span role="columnheader">순위</span>
+                    <span role="columnheader">티커</span>
+                    <span role="columnheader">이름</span>
+                    <span role="columnheader">구간</span>
+                    <span role="columnheader" class="r">시가총액 (B USD)</span>
+                    <span role="columnheader" class="r">{{pl}} 달러 기준</span>
+                    <span role="columnheader" class="r">{{pl}} BTC 대비</span>
+                  </div>
+                </div>
+                <div role="rowgroup">
+                  <sc-for list="{{rows}}" as="row" hint-placeholder-count="12">
+                    <div role="row" class="{{row.cls}}">
+                      <span role="cell" class="num sub">{{row.rank}}</span>
+                      <span role="rowheader" style="font-weight: 600;">{{row.tick}}</span>
+                      <span role="cell" class="sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{row.name}}</span>
+                      <span role="cell" class="sub">{{row.tier}}</span>
+                      <span role="cell" class="num r">{{row.mcap}}</span>
+                      <span role="cell" class="num r">{{row.usd}}</span>
+                      <span role="cell" class="num r">{{row.vs}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </section>
+
+      <aside aria-label="요약 패널" style="flex: 1 1 300px; min-width: 0; background: #1a1a19; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 32px;">
+
+        <section aria-labelledby="btc-title" style="display: flex; flex-direction: column; min-width: 0;">
+          <h2 id="btc-title" style="font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec;">BTC 기준선</h2>
+          <p style="margin-top: 8px; font-size: 12px; line-height: 18px; color: #898781;">BTC {{pl}} 달러 수익률</p>
+          <p style="font-size: 48px; line-height: 56px; font-weight: 600; color: #f0efec; letter-spacing: -0.01em;">{{btcHero}}</p>
+          <p style="margin-top: 4px; font-size: 12px; line-height: 18px; color: #c3c2b7; text-wrap: pretty;">히트맵의 BTC 대비 값은 모두 이 수익률을 0으로 놓고 잰 값입니다.</p>
+
+          <h3 style="margin-top: 24px; font-size: 14px; line-height: 22px; font-weight: 600; color: #f0efec;">구간별 중앙값</h3>
+          <p style="font-size: 12px; line-height: 18px; color: #898781;">{{pl}} · {{basisWord}}</p>
+          <div style="margin-top: 8px; display: flex; flex-direction: column;">
+            <sc-for list="{{medians}}" as="m" hint-placeholder-count="4">
+              <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr) 72px; gap: 8px; align-items: center; min-height: 30px;">
+                <span style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{m.label}}</span>
+                <div style="position: relative; height: 12px;">
+                  <div style="position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: #383835;"></div>
+                  <div style="position: absolute; top: 0; height: 12px; left: {{m.left}}%; width: {{m.width}}%; border-radius: {{m.radius}}; background: {{m.color}};"></div>
+                </div>
+                <span class="num" style="font-size: 12px; line-height: 18px; color: #f0efec; text-align: right;">{{m.text}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin-top: 8px; font-size: 12px; line-height: 18px; color: #898781; text-wrap: pretty;">{{medNote}}</p>
+        </section>
+
+        <section aria-labelledby="pin-title" style="display: flex; flex-direction: column; min-width: 0;">
+          <h2 id="pin-title" style="font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec;">고정한 코인</h2>
+          <p style="font-size: 12px; line-height: 18px; color: #898781;">히트맵의 칸이나 목록의 행을 누르면 바뀝니다.</p>
+          <sc-if value="{{pinned.has}}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; flex-direction: column;">
+                <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;">
+                  <span style="font-size: 20px; line-height: 28px; font-weight: 600; color: #f0efec;">{{pinned.tick}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{pinned.name}}</span>
+                </div>
+                <span style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{pinned.meta}}</span>
+              </div>
+              <table class="mini">
+                <thead>
+                  <tr><th scope="col">기간</th><th scope="col">달러 기준</th><th scope="col">BTC 대비</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="{{pinned.d1.cls}}"><th scope="row">1일</th><td>{{pinned.d1.usd}}</td><td>{{pinned.d1.vs}}</td></tr>
+                  <tr class="{{pinned.d7.cls}}"><th scope="row">7일</th><td>{{pinned.d7.usd}}</td><td>{{pinned.d7.vs}}</td></tr>
+                  <tr class="{{pinned.d30.cls}}"><th scope="row">30일</th><td>{{pinned.d30.usd}}</td><td>{{pinned.d30.vs}}</td></tr>
+                  <tr class="{{pinned.d90.cls}}"><th scope="row">90일</th><td>{{pinned.d90.usd}}</td><td>{{pinned.d90.vs}}</td></tr>
+                </tbody>
+              </table>
+              <div style="display: flex;">
+                <button type="button" class="chip" onClick="{{unpin}}">고정 해제</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{pinned.none}}" hint-placeholder-val="{{ false }}">
+            <p style="margin-top: 12px; font-size: 14px; line-height: 22px; color: #c3c2b7; text-wrap: pretty;">아직 고정한 코인이 없습니다. 히트맵에서 칸을 누르면 그 코인의 기간별 수익률이 여기에 나타납니다.</p>
+          </sc-if>
+        </section>
+
+        <section aria-labelledby="strong-title" style="display: flex; flex-direction: column; min-width: 0;">
+          <h2 id="strong-title" style="font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec;">{{strongTitle}}</h2>
+          <p style="font-size: 12px; line-height: 18px; color: #898781;">{{listNote}}</p>
+          <div style="margin-top: 8px; display: flex; flex-direction: column;">
+            <sc-for list="{{strong}}" as="r" hint-placeholder-count="5">
+              <button type="button" class="lrow" aria-pressed="{{r.pressed}}" onClick="{{r.pick}}">
+                <span class="sw" style="background: {{r.sw}};"></span>
+                <span class="num" style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{r.rank}}</span>
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 14px; line-height: 22px; font-weight: 600; color: #f0efec; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.tick}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
+                </span>
+                <span class="num" style="font-size: 14px; line-height: 22px; color: #f0efec; text-align: right;">{{r.value}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+        <section aria-labelledby="weak-title" style="display: flex; flex-direction: column; min-width: 0;">
+          <h2 id="weak-title" style="font-size: 16px; line-height: 24px; font-weight: 600; color: #f0efec;">{{weakTitle}}</h2>
+          <p style="font-size: 12px; line-height: 18px; color: #898781;">{{listNote}}</p>
+          <div style="margin-top: 8px; display: flex; flex-direction: column;">
+            <sc-for list="{{weak}}" as="r" hint-placeholder-count="5">
+              <button type="button" class="lrow" aria-pressed="{{r.pressed}}" onClick="{{r.pick}}">
+                <span class="sw" style="background: {{r.sw}};"></span>
+                <span class="num" style="font-size: 12px; line-height: 18px; color: #c3c2b7;">{{r.rank}}</span>
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 14px; line-height: 22px; font-weight: 600; color: #f0efec; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.tick}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #c3c2b7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
+                </span>
+                <span class="num" style="font-size: 14px; line-height: 22px; color: #f0efec; text-align: right;">{{r.value}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+
+  <footer style="margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.10); color: #c3c2b7; font-size: 12px; line-height: 18px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 24px 32px;">
+      <div class="fblock">
+        <h2 class="ftitle">칸의 크기와 배치</h2>
+        <p>칸의 면적은 시가총액의 제곱근에 비례합니다. 시가총액을 그대로 면적으로 쓰면 BTC 한 칸이 전체의 {{shareRaw}}를 차지해 하위 구간의 코인이 보이지 않을 만큼 작아지므로, 제곱근을 써서 BTC의 몫을 {{shareSqrt}}로 줄였습니다.</p>
+        <p>구간 이름을 적은 띠와 칸 사이의 틈은 작은 구간과 작은 칸에서 더 큰 몫을 차지하므로, 그런 칸은 같은 시가총액이라도 조금 작게 그려집니다.</p>
+        <p>칸의 크기와 배치는 조회 시점의 시가총액으로 한 번 계산했습니다. 기간이나 기준을 바꾸면 칸의 색과 수치만 달라집니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">수익률과 색</h2>
+        <p>BTC 대비 수익률은 (1 + 코인 수익률) ÷ (1 + BTC 수익률) − 1로 계산했습니다. 0%는 그 기간에 BTC와 똑같이 움직였다는 뜻입니다.</p>
+        <p>색 단계의 간격은 기간마다 다릅니다. 1일은 1%, 7일은 3%, 30일은 6%, 90일은 12% 간격으로 양쪽에 다섯 단계씩 두었고, 첫 간격보다 작은 값은 회색으로 칠했습니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">자료</h2>
+        <p>출처는 TradingView 코인 스크리너(CRYPTO: 지수)이며, 2026-10-29에 조회했습니다. 1일과 7일 수익률은 스크리너의 1일, 1주 변화율이고, 30일과 90일 수익률은 1개월, 3개월 변화율입니다.</p>
+        <p>이 화면은 시장을 읽는 방법을 보여 줄 뿐이며, 특정 코인을 사거나 팔라는 권유가 아닙니다.</p>
+      </div>
+      <div class="fblock">
+        <h2 class="ftitle">대상</h2>
+        <p>표시한 코인은 {{coverage}}입니다. 1-125위 가운데 스테이블코인 13개(USDT, USDC, DAI, USDE, USD1, USDG, PYUSD, RLUSD, U, USDD, TUSD, EURC, FDUSD)와 토큰화 금 2개(XAUT, PAXG)는 BTC와 견줄 자산이 아니어서 뺐고, PI, JST, FLR, NEXO, GNO, FF, SUN, GT 8개는 이 제품의 집계 범위에서 제외했습니다. 순위는 다시 매기지 않았으므로 순위 번호 사이에 빈자리가 있습니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1920},"cellValues":{"editor":"boolean","default":true,"section":"표시","tsType":"boolean"}}'>
+const DATA = {
+  btc: {"1d": -1.45, "7d": -4.7, "30d": -4.09, "90d": 23.75},
+  tiers: [[0,0,570.7,600,8],[570.7,0,347.6,600,31],[918.3,0,265.7,460.1,42],[918.3,460.1,265.7,139.9,21]],
+  cells: [
+["BTC","Bitcoin",1,0,1609.59,3,21,397.7,333.2,-1.45,-4.7,-4.09,23.75,0,0,0,0],
+["ETH","Ethereum",2,0,283.77,400.7,21,167,333.2,-1.46,-6.01,-13.59,21.23,-0.01,-1.37,-9.9,-2.04],
+["BNB","BNB",4,0,97.04,3,354.2,134,242.8,-2.77,-1.02,-3.39,24.76,-1.34,3.86,0.73,0.82],
+["XRP","XRP",5,0,81.82,137,354.2,123,242.8,-2.45,-5.32,-13.68,19.42,-1.02,-0.64,-10,-3.5],
+["SOL","Solana",7,0,59.2,260,354.2,181,140.4,-1.91,-6.09,-15.57,34.84,-0.47,-1.46,-11.96,8.97],
+["TRX","TRON",8,0,31.48,260,494.6,181,102.4,0.6,0.22,-1.25,0.93,2.08,5.17,2.97,-18.44],
+["ZEC","Zcash",9,0,21.4,441,476.3,126.6,120.7,-3.46,-3.88,-14.82,168.97,-2.05,0.86,-11.18,117.36],
+["HYPE","Hyperliquid",10,0,21.93,441,354.2,126.6,122.1,7.26,7.23,-1.2,54.9,8.84,12.52,3.02,25.18],
+["DOGE","Dogecoin",11,1,12.29,573.7,21,122,94.3,-1.47,-4.11,-16.41,11.35,-0.02,0.62,-12.84,-10.02],
+["XMR","Monero",12,1,11.31,695.7,21,117,94.3,0.5,-3.35,11.02,67.05,1.97,1.41,15.76,34.99],
+["LEO","UNUS SED LEO",13,1,8.69,812.7,21,102.6,94.3,0.36,4.16,3.96,-3.45,1.83,9.3,8.4,-21.98],
+["LINK","Chainlink",14,1,8.65,573.7,115.3,95.6,100.9,-1.97,-7.34,-25.08,37.03,-0.53,-2.77,-21.88,10.74],
+["ADA","Cardano",15,1,7.38,669.3,115.3,88.3,100.9,-2.57,-10.9,-18.91,18.23,-1.13,-6.5,-15.44,-4.46],
+["XLM","Stellar",16,1,5.98,757.6,115.3,79.5,100.9,-1.55,-7.62,-27.02,-1.26,-0.1,-3.06,-23.91,-20.21],
+["NEAR","NEAR Protocol",17,1,5.78,837.1,115.3,78.2,100.9,-6.67,-16.07,-8.5,163.29,-5.3,-11.93,-4.59,112.77],
+["BCH","Bitcoin Cash",18,1,5.62,573.7,216.1,94.3,82.5,-3.13,-2.22,-9.87,29.01,-1.71,2.61,-6.02,4.26],
+["LTC","Litecoin",21,1,4.5,667.9,216.1,84.3,82.5,-2.25,-6.01,-16.47,27,-0.81,-1.37,-12.91,2.63],
+["UNI","Uniswap",22,1,4.47,752.2,216.1,84,82.5,-1.08,-3.84,-18.67,61.68,0.37,0.91,-15.2,30.66],
+["AVAX","Avalanche",24,1,3.89,573.7,298.7,83.4,77.6,-2.67,-9.28,-17.51,36.19,-1.24,-4.81,-13.99,10.06],
+["CC","Canton",25,1,3.95,836.2,216.1,79,82.5,-1.39,-11.24,-24.51,-18.16,0.06,-6.86,-21.29,-33.86],
+["SUI","Sui",26,1,3.79,573.7,376.2,83.4,76.7,-2.17,-10.37,-21.06,33.26,-0.73,-5.95,-17.69,7.69],
+["GRAM","Gram (prev. Toncoin)",27,1,3.45,573.7,452.9,83.4,73.1,-2.02,-10.41,-22.72,-14.87,-0.58,-5.99,-19.42,-31.21],
+["HBAR","Hedera",28,1,3.26,573.7,526,83.4,71,-1.8,-12.32,-39.72,7.61,-0.36,-7.99,-37.14,-13.04],
+["TAO","Bittensor",32,1,2.93,657,298.7,65.9,85.2,-2.32,-7.56,-18.52,30.55,-0.88,-3,-15.04,5.5],
+["SHIB","Shiba Inu",33,1,2.88,722.9,298.7,65.3,85.2,-1.6,-5.25,-14.04,3.51,-0.15,-0.58,-10.37,-16.36],
+["CRO","Cronos",34,1,2.73,788.2,298.7,63.7,85.2,0.94,-7.44,-22.61,-2.35,2.42,-2.87,-19.3,-21.09],
+["ENA","Ethena",35,1,2.7,851.9,298.7,63.3,85.2,-3.68,-5.51,-21.36,148.86,-2.27,-0.85,-18,101.11],
+["M","MemeCore",37,1,2.43,657,383.9,71,72.1,2.86,42.4,-7.41,8.94,4.37,49.42,-3.46,-11.97],
+["OKB","OKB",38,1,2.33,657,526.5,71,70.5,-0.69,-4.32,-6.71,28.37,0.77,0.4,-2.72,3.73],
+["QNT","Quant",39,1,2.33,657,455.9,71,70.6,-4.08,-5.48,-16.13,218.92,-2.67,-0.82,-12.56,157.72],
+["PEPE","Pepe",40,1,2.02,790.9,383.9,62.3,74.8,-3,5.29,15.73,76.48,-1.57,10.48,20.67,42.62],
+["AAVE","Aave",41,1,2.05,728,383.9,62.8,74.8,-0.62,-14.03,-10.96,33.84,0.84,-9.79,-7.16,8.16],
+["ONDO","Ondo",42,1,2.01,853.1,383.9,62.1,74.8,-2.18,-10.39,-20.66,-0.79,-0.74,-5.96,-17.27,-19.82],
+["PUMP","Pump.fun",43,1,2.01,728,458.7,66.2,70.1,-3.78,-14.93,-11.55,119.8,-2.36,-10.73,-7.77,77.62],
+["ASTER","Aster",44,1,1.9,728,528.8,66.2,68.2,-0.82,-2.15,-0.94,15.42,0.63,2.68,3.29,-6.73],
+["DOT","Polkadot",46,1,1.68,794.3,458.7,60.9,69.8,-2.61,-13.95,-16.81,28.14,-1.18,-9.71,-13.25,3.55],
+["WLFI","World Liberty Financial",47,1,1.63,794.3,528.5,61.1,68.5,-1.51,-9.03,-9.96,-6.52,-0.06,-4.54,-6.11,-24.46],
+["MNT","Mantle",48,1,1.64,855.2,458.7,60.1,69.8,-2.21,-11.01,-25.54,24.86,-0.77,-6.62,-22.36,0.9],
+["WLD","Worldcoin",50,1,1.56,855.4,528.5,59.8,68.5,-4.08,-28.13,-14.66,36.89,-2.67,-24.58,-11.01,10.62],
+["SKY","Sky",51,2,1.53,921.3,21,69,57.8,-0.04,-13.3,-17.05,13.71,1.43,-9.02,-13.51,-8.11],
+["ICP","Internet Computer",53,2,1.43,990.2,21,66.8,57.8,-2.85,-10.95,-17.96,24.41,-1.43,-6.56,-14.46,0.53],
+["BGB","Bitget Token",54,2,1.3,1057,21,63.5,57.8,-1.31,-4.05,-7.42,13.42,0.14,0.68,-3.47,-8.35],
+["ETC","Ethereum Classic",55,2,1.18,1120.4,21,60.6,57.8,-2.02,-7.95,-19.88,9.96,-0.58,-3.41,-16.46,-11.14],
+["MORPHO","Morpho",56,2,1.16,921.3,78.8,65.9,52.6,-3.73,-7.51,-14.58,7.37,-2.32,-2.94,-10.93,-13.24],
+["VVV","Venice Token",57,2,1.15,1052.8,78.8,65.7,52.6,-2.91,-12.77,-15.57,90.17,-1.48,-8.47,-11.97,53.68],
+["ARB","Arbitrum",59,2,1.15,987.1,78.8,65.7,52.6,-2.87,-11.06,-17.31,115.82,-1.44,-6.67,-13.78,74.41],
+["KCS","KuCoin Token",60,2,1.04,1118.5,78.8,62.5,52.6,-1.42,0.69,0.26,11.5,0.03,5.66,4.54,-9.9],
+["KAS","Kaspa",62,2,0.99,921.3,131.4,53.7,59.7,-4.5,-7.51,-21.57,28.82,-3.1,-2.95,-18.22,4.1],
+["POL","Polygon (prev. MATIC)",63,2,0.97,974.9,131.4,53.2,59.7,-0.52,-3.33,-21.82,27.68,0.94,1.44,-18.48,3.18],
+["ALGO","Algorand",64,2,0.91,1028.2,131.4,51.3,59.7,-4.02,-11.75,-26.57,26.55,-2.61,-7.4,-23.43,2.26],
+["JUP","Jupiter",65,2,0.9,1079.5,131.4,51.1,59.7,-4.14,-17.21,-17.54,38.81,-2.73,-13.12,-14.02,12.18],
+["ATOM","Cosmos",66,2,0.87,1130.6,131.4,50.4,59.7,-1.34,-7.29,-6.6,26.73,0.11,-2.72,-2.61,2.41],
+["RENDER","Render",68,2,0.85,921.3,191.1,54.8,54.4,-3.24,-13.66,-15.42,16.43,-1.81,-9.4,-11.81,-5.91],
+["INJ","Injective",69,2,0.79,976,191.1,52.6,54.4,-3.16,-8.42,6.34,57.28,-1.73,-3.9,10.88,27.1],
+["FIL","Filecoin",70,2,0.76,1028.6,191.1,51.6,54.4,-0.93,-13.97,-14.84,27.01,0.52,-9.72,-11.21,2.64],
+["XDC","XDC Network",71,2,0.71,1131.2,191.1,49.8,54.4,0.74,-5.32,-4.82,25.31,2.22,-0.65,-0.76,1.26],
+["LIT","Lighter",72,2,0.74,1080.2,191.1,51,54.4,1.07,-21.13,-33.25,30.13,2.55,-17.23,-30.4,5.16],
+["CAKE","PancakeSwap",73,2,0.7,921.3,245.5,49.6,54.3,-3.52,-8.75,-21.4,40.35,-2.1,-4.25,-18.05,13.42],
+["ZRO","LayerZero",74,2,0.67,921.3,299.8,49.6,53.2,-2.35,-14.98,6.24,116.48,-0.91,-10.78,10.78,74.94],
+["DASH","Dash",75,2,0.65,921.3,353,49.6,52.4,-5.93,-2.25,-23.01,66.87,-4.55,2.57,-19.72,34.85],
+["NIGHT","Midnight",76,2,0.63,921.3,405.3,49.6,51.8,-5.08,-8.21,33.21,103.8,-3.68,-3.68,38.9,64.69],
+["ETHFI","ether.fi",77,2,0.63,970.8,245.5,54.3,47.3,-3.72,-7.53,-7.38,64.34,-2.3,-2.97,-3.43,32.81],
+["AERO","Aerodrome Finance",78,2,0.6,1025.1,245.5,52.8,47.3,-2.34,-16.56,-17.34,57.62,-0.9,-12.44,-13.81,27.38],
+["APT","Aptos",79,2,0.59,1078,245.5,52.5,47.3,-4.01,-18.09,-19.06,18.07,-2.6,-14.04,-15.6,-4.59],
+["PYTH","Pyth Network",80,2,0.55,1130.4,245.5,50.6,47.3,-5.07,-11.4,-13.89,71.57,-3.68,-7.03,-10.22,38.65],
+["BIANRENSHENG","Bi An Ren Sheng",81,2,0.54,970.8,347.8,43.1,54.7,1.33,5.29,8.45,-17.05,2.82,10.49,13.08,-32.97],
+["STX","Stacks",83,2,0.54,970.8,292.8,43.1,55.1,-3.74,-20.97,-8.13,106.33,-2.33,-17.07,-4.21,66.74],
+["VET","VeChain",84,2,0.53,970.8,402.6,43.1,54.5,-3.55,-18.95,-30.43,31.5,-2.13,-14.95,-27.46,6.27],
+["CRV","Curve DAO Token",85,2,0.52,1013.9,348.2,42.1,55,-3.11,-18.8,-13.86,54.16,-1.69,-14.79,-10.18,24.58],
+["TIA","Celestia",87,2,0.52,1013.9,292.8,42.1,55.5,-3.71,-11.28,18.55,62.43,-2.3,-6.91,23.62,31.26],
+["STABLE","Stable",89,2,0.5,1013.9,403.2,42.1,53.9,1,4.97,-5.48,-19.3,2.48,10.15,-1.44,-34.78],
+["PENGU","Pudgy Penguins",90,2,0.48,1056,292.8,42.3,52.9,-3.3,-5.3,-18.84,27.12,-1.88,-0.62,-15.38,2.73],
+["TRUMP","OFFICIAL TRUMP",91,2,0.48,1098.3,292.8,42,52.9,-1.97,-8.24,-15.76,16.24,-0.53,-3.71,-12.16,-6.06],
+["RAY","Raydium",93,2,0.45,1140.4,292.8,40.6,52.9,-8.8,-15.93,-13,170.2,-7.46,-11.78,-9.28,118.35],
+["FET","Artificial Superintelligence Alliance",94,2,0.43,1056,345.7,37.4,56.8,-1.82,-7.23,-19.52,25.56,-0.38,-2.65,-16.08,1.47],
+["VIRTUAL","Virtuals Protocol",95,2,0.4,1056,402.5,37.4,54.6,-2.65,-11.43,-26.36,6.58,-1.22,-7.06,-23.22,-13.87],
+["SEI","Sei",96,2,0.4,1093.4,345.7,44.6,45.5,-3.7,-17.04,-33.23,21.7,-2.28,-12.95,-30.38,-1.65],
+["SPX","SPX6900",97,2,0.37,1138,345.7,43,45.5,-1.59,4.99,-5.39,19.4,-0.15,10.17,-1.35,-3.51],
+["XPL","Plasma",98,2,0.37,1093.4,391.2,58.8,33.2,0.48,-6.01,-21.64,-1.27,1.96,-1.38,-18.29,-20.21],
+["BSV","Bitcoin SV",99,2,0.36,1093.4,424.4,58.8,32.7,-2.37,-4.72,-13.6,40.51,-0.93,-0.02,-9.91,13.55],
+["BTT","BitTorrent-New",100,2,0.35,1152.1,391.2,28.9,65.9,-0.95,-5.99,-2.92,36.4,0.5,-1.35,1.23,10.23],
+["STRK","Starknet",101,3,0.35,921.3,481.1,41.9,39.8,-2.08,-19.69,10.06,79.36,-0.64,-15.73,14.75,44.94],
+["PENDLE","Pendle",102,3,0.34,921.3,520.8,41.9,39,-2.85,-10.14,-18.79,35,-1.42,-5.71,-15.32,9.09],
+["LDO","Lido DAO",105,3,0.31,921.3,559.9,41.9,37.1,-3.32,-9.14,-16.87,-0.38,-1.9,-4.65,-13.32,-19.5],
+["XTZ","Tezos",106,3,0.3,963.1,481.1,39.9,39,-1.73,-12.22,-11.62,34.82,-0.28,-7.89,-7.85,8.95],
+["PIEVERSE","Pieverse",108,3,0.3,963.1,520,39.9,38.9,-2.32,-6.03,-31.38,52.14,-0.89,-1.4,-28.46,22.95],
+["KITE","Kite",110,3,0.29,963.1,558.9,39.9,38.1,-2.55,-7.18,-17.41,18.61,-1.12,-2.6,-13.89,-4.15],
+["IMX","Immutable",111,3,0.27,1003,481.1,37.5,39.3,-2.99,-12.32,-21.75,25.58,-1.56,-8,-18.41,1.48],
+["BONK","Bonk",112,3,0.27,1003,520.3,37.5,39,-3.05,-4.88,-12.5,5.42,-1.62,-0.18,-8.76,-14.81],
+["DCR","Decred",113,3,0.25,1040.5,481.1,36.4,38.8,-1.65,-7.31,-20.25,4.56,-0.21,-2.74,-16.84,-15.51],
+["OP","Optimism",114,3,0.25,1003,559.3,37.5,37.7,-2.64,-14.5,-18.04,25.21,-1.21,-10.28,-14.54,1.19],
+["LUNC","Terra Classic",115,3,0.25,1040.5,558.5,36.4,38.5,-1.23,-3.84,-15.72,-9.8,0.22,0.91,-12.12,-27.11],
+["CFX","Conflux",116,3,0.25,1040.5,519.9,36.4,38.6,-1.38,-13.49,-11.74,15.97,0.07,-9.23,-7.97,-6.28],
+["MON","Monad",117,3,0.24,1076.9,481.1,35,39.7,-3.25,-6.57,-27.73,-4.88,-1.82,-1.96,-24.65,-23.13],
+["GRT","The Graph",118,3,0.24,1111.9,481.1,34.8,39.7,-2.76,-12.74,-28.69,45.59,-1.33,-8.44,-25.65,17.66],
+["NFT","AINFT",119,3,0.23,1146.7,481.1,34.3,39.7,0.66,-0.15,-1.27,-11.9,2.14,4.77,2.94,-28.8],
+["KMNO","Kamino",120,3,0.22,1146.5,520.8,34.5,38.3,-2.73,-10.62,-12.63,108.16,-1.3,-6.21,-8.9,68.22],
+["AR","Arweave",121,3,0.23,1076.9,520.8,35,38.3,-2.62,-9.79,-20.12,99.74,-1.19,-5.33,-16.71,61.41],
+["FLOKI","FLOKI",122,3,0.22,1076.9,559.1,35,37.9,-2.69,-5.02,-13.39,13.93,-1.26,-0.34,-9.7,-7.93],
+["CVX","Convex Finance",123,3,0.22,1146.6,559,34.4,38,-8.81,-17.57,-3.01,62.63,-7.47,-13.51,1.13,31.42],
+["ENS","Ethereum Name Service",124,3,0.22,1111.9,520.8,34.6,38.3,-1.27,-9.29,-22.51,21.8,0.19,-4.81,-19.2,-1.57],
+["JTO","Jito",125,3,0.22,1111.9,559,34.7,38,-5.69,-14.58,-27.89,-18.7,-4.31,-10.37,-24.81,-34.3]
+  ]
+};
+
+const TIERS = ['1-10', '11-50', '51-100', '101-125'];
+const PLABEL = { '1d': '1일', '7d': '7일', '30d': '30일', '90d': '90일' };
+const STEP = { '1d': 1, '7d': 3, '30d': 6, '90d': 12 };
+const MID = '#383835';
+const POS = ['#1d3550', '#1f4a7a', '#2563a8', '#3987e5', '#6da7ec'];
+const NEG = ['#4a2526', '#6e2c2d', '#9c3838', '#c94d4d', '#e66767'];
+const ON_STEP = ['#ffffff', '#ffffff', '#ffffff', '#000000', '#000000'];
+const MINUS = '−';
+// The layout in DATA was computed for a 1184 x 600 box; it is drawn at 1174 px wide so the
+// chart card fits the shared 32 px page gutter at 1280. Uniform scale keeps the areas proportional.
+const K = 1174 / 1184;
+const BOX_W = 1174;
+const BOX_H = 595;
+const TIP_W = 240;
+const TIP_H = 156;
+
+const CELLS = DATA.cells.map(function (r) {
+  return {
+    tick: r[0], name: r[1], rank: r[2], tier: TIERS[r[3]], mcap: r[4],
+    x: r[5] * K, y: r[6] * K, w: r[7] * K, h: r[8] * K,
+    chg: { '1d': r[9], '7d': r[10], '30d': r[11], '90d': r[12] },
+    vs: { '1d': r[13], '7d': r[14], '30d': r[15], '90d': r[16] }
+  };
+}).sort(function (a, b) { return a.rank - b.rank; });
+const BY = {};
+CELLS.forEach(function (c) { BY[c.tick] = c; });
+const OTHERS = CELLS.filter(function (c) { return c.tick !== 'BTC'; });
+
+function r1(v) { return Math.round(v * 10) / 10; }
+function pct(v, dp) {
+  const s = Math.abs(v).toFixed(dp);
+  if (Number(s) === 0) return s + '%';
+  return (v > 0 ? '+' : MINUS) + s + '%';
+}
+function stepOf(v, step) {
+  const k = Math.min(5, Math.floor(Math.abs(v) / step + 1e-9));
+  if (k === 0) return 0;
+  return v > 0 ? k : -k;
+}
+function fillOf(k) { return k === 0 ? MID : (k > 0 ? POS[k - 1] : NEG[-k - 1]); }
+function inkOf(k) { return k === 0 ? '#ffffff' : ON_STEP[Math.abs(k) - 1]; }
+function median(xs) {
+  const s = xs.slice().sort(function (a, b) { return a - b; });
+  const n = s.length;
+  if (!n) return 0;
+  return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+}
+function bil(v) { return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'B'; }
+
+const SIZES = [
+  { minW: 300, minH: 200, fs: 28, lh: 36, vfs: 16, vlh: 24, px: 12, py: 10 },
+  { minW: 110, minH: 80, fs: 16, lh: 24, vfs: 12, vlh: 18, px: 8, py: 6 },
+  { minW: 64, minH: 40, fs: 12, lh: 16, vfs: 11, vlh: 14, px: 6, py: 4 }
+];
+const SMALL = [
+  { minW: 36, minH: 24, fs: 12, lh: 16, vfs: 11, vlh: 14, px: 6, py: 4 },
+  { minW: 36, minH: 24, fs: 11, lh: 14, vfs: 11, vlh: 14, px: 4, py: 4 }
+];
+function fitLabel(c, valText, withValues) {
+  const W = c.w - 2;
+  const H = c.h - 2;
+  const tw = function (fs) { return c.tick.length * fs * 0.68; };
+  const vw = function (fs) { return valText.length * fs * 0.6; };
+  for (let i = 0; i < SIZES.length; i++) {
+    const s = SIZES[i];
+    if (c.w < s.minW || c.h < s.minH) continue;
+    const iw = W - 2 * s.px;
+    const ih = H - 2 * s.py;
+    if (tw(s.fs) > iw) continue;
+    if (withValues && vw(s.vfs) <= iw && s.lh + s.vlh <= ih) return { tick: true, val: true, s: s };
+    if (!withValues && s.lh <= ih) return { tick: true, val: false, s: s };
+  }
+  for (let j = 0; j < SMALL.length; j++) {
+    const s = SMALL[j];
+    if (c.w < s.minW || c.h < s.minH) continue;
+    if (tw(s.fs) <= W - 2 * s.px && s.lh <= H - 2 * s.py) return { tick: true, val: false, s: s };
+  }
+  return { tick: false, val: false, s: SMALL[1] };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { period: '7d', basis: 'btc', pin: 'ETH', hover: null, table: false };
+  }
+
+  renderVals() {
+    const self = this;
+    const st = this.state || {};
+    const p = PLABEL[st.period] ? st.period : '7d';
+    const isBtc = st.basis !== 'usd';
+    const showTable = st.table === true;
+    const pin = st.pin === undefined ? 'ETH' : st.pin;
+    const hover = showTable ? null : (st.hover || null);
+    const withValues = this.props.cellValues ?? true;
+    const step = STEP[p];
+    const pl = PLABEL[p];
+    const basisWord = isBtc ? 'BTC 대비' : '달러 기준';
+    const valOf = function (c) { return isBtc ? c.vs[p] : c.chg[p]; };
+    const togglePin = function (tick) {
+      return function () { self.setState({ pin: (self.state && self.state.pin) === tick ? null : tick }); };
+    };
+
+    const cells = CELLS.map(function (c) {
+      const v = valOf(c);
+      const k = stepOf(v, step);
+      const valText = pct(v, 1);
+      const f = fitLabel(c, valText, withValues);
+      const on = pin === c.tick;
+      return {
+        l: r1(c.x + 1), t: r1(c.y + 1), w: r1(c.w - 2), h: r1(c.h - 2),
+        bg: fillOf(k), fg: inkOf(k),
+        px: f.s.px, py: f.s.py, fs: f.s.fs, lh: f.s.lh, vfs: f.s.vfs, vlh: f.s.vlh,
+        tickText: f.tick ? c.tick : '',
+        valText: f.val ? valText : '',
+        cls: on ? 'cell is-pin' : 'cell',
+        pressed: on ? 'true' : 'false',
+        aria: c.tick + ' ' + c.name + ', ' + c.rank + '위, ' + pl + ' BTC 대비 ' + pct(c.vs[p], 2) + ', 달러 기준 ' + pct(c.chg[p], 2),
+        pick: togglePin(c.tick),
+        enter: function () { if (!self.state || self.state.hover !== c.tick) self.setState({ hover: c.tick }); },
+        blur: function () { if (self.state && self.state.hover === c.tick) self.setState({ hover: null }); }
+      };
+    });
+
+    const caps = DATA.tiers.map(function (t, i) {
+      return { l: r1(t[0] * K + 4), t: r1(t[1] * K + 3), w: r1(t[2] * K - 8), text: TIERS[i] + '위 · ' + t[4] + '개' };
+    });
+
+    let tip = { show: false, l: 0, t: 0, tick: '', name: '', meta: '', mcap: '', usd: '', vs: '', pl: pl };
+    const hc = hover ? BY[hover] : null;
+    if (hc) {
+      let l = hc.x + hc.w + 8;
+      if (l + TIP_W > BOX_W) l = hc.x - 8 - TIP_W;
+      if (l < 0) l = Math.max(0, Math.min(BOX_W - TIP_W, hc.x + 12));
+      const t = Math.max(0, Math.min(BOX_H - TIP_H, hc.y));
+      tip = {
+        show: true, l: r1(l), t: r1(t), tick: hc.tick, name: hc.name,
+        meta: hc.rank + '위 · ' + hc.tier + '위 구간',
+        mcap: bil(hc.mcap) + ' USD', usd: pct(hc.chg[p], 2), vs: pct(hc.vs[p], 2), pl: pl
+      };
+    }
+
+    const sorted = OTHERS.slice().sort(function (a, b) { return (b.vs[p] - a.vs[p]) || (a.rank - b.rank); });
+    const listRow = function (c) {
+      const v = valOf(c);
+      return {
+        tick: c.tick, name: c.name, rank: c.rank + '위', value: pct(v, 2),
+        sw: fillOf(stepOf(v, step)),
+        pressed: pin === c.tick ? 'true' : 'false',
+        pick: togglePin(c.tick)
+      };
+    };
+    const strong = sorted.slice(0, 5).map(listRow);
+    const weak = sorted.slice(-5).reverse().map(listRow);
+
+    const meds = TIERS.map(function (t) {
+      const xs = OTHERS.filter(function (c) { return c.tier === t; }).map(valOf);
+      return { t: t, m: median(xs), n: xs.length };
+    });
+    const maxAbs = Math.max(0.0001, Math.max.apply(null, meds.map(function (d) { return Math.abs(d.m); })));
+    const medians = meds.map(function (d) {
+      const wpc = Math.abs(d.m) / maxAbs * 50;
+      const up = d.m >= 0;
+      return {
+        label: d.t + '위', text: pct(d.m, 2),
+        left: r1(up ? 50 : 50 - wpc), width: r1(wpc),
+        color: up ? '#3987e5' : '#e66767',
+        radius: up ? '0 4px 4px 0' : '4px 0 0 4px'
+      };
+    });
+
+    const pc = pin ? BY[pin] : null;
+    const prow = function (q) {
+      return { usd: pc ? pct(pc.chg[q], 2) : '', vs: pc ? pct(pc.vs[q], 2) : '', cls: q === p ? 'on' : '' };
+    };
+    const pinned = {
+      has: !!pc, none: !pc,
+      tick: pc ? pc.tick : '', name: pc ? pc.name : '',
+      meta: pc ? (pc.rank + '위 · ' + pc.tier + '위 구간 · 시가총액 ' + bil(pc.mcap) + ' USD') : '',
+      d1: prow('1d'), d7: prow('7d'), d30: prow('30d'), d90: prow('90d')
+    };
+
+    const rows = showTable ? CELLS.map(function (c) {
+      return {
+        rank: c.rank, tick: c.tick, name: c.name, tier: c.tier + '위', mcap: bil(c.mcap),
+        usd: pct(c.chg[p], 2), vs: pct(c.vs[p], 2),
+        cls: pin === c.tick ? 'dt-row is-pin' : 'dt-row'
+      };
+    }) : [];
+
+    const legTicks = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5].map(function (m, i) {
+      return { t: (m > 0 ? '+' : MINUS) + Math.abs(m * step) + '%', l: (i + 1) * 38 - 1 };
+    });
+
+    const stronger = OTHERS.filter(function (c) { return c.vs[p] > 0; }).length;
+    const totalM = CELLS.reduce(function (s, c) { return s + c.mcap; }, 0);
+    const totalS = CELLS.reduce(function (s, c) { return s + Math.sqrt(c.mcap); }, 0);
+    const btc = BY.BTC;
+    const n110 = meds[0].n;
+    const coverage = CELLS.length + '개(' + DATA.tiers.map(function (t, i) { return TIERS[i] + '위 ' + t[4] + '개'; }).join(', ') + ')';
+
+    return {
+      claim: pl + ' 동안 BTC보다 강했던 코인은 ' + OTHERS.length + '개 중 ' + stronger + '개입니다',
+      pl: pl,
+      basisWord: basisWord,
+      pr1d: p === '1d' ? 'true' : 'false',
+      pr7d: p === '7d' ? 'true' : 'false',
+      pr30d: p === '30d' ? 'true' : 'false',
+      pr90d: p === '90d' ? 'true' : 'false',
+      set1d: function () { self.setState({ period: '1d' }); },
+      set7d: function () { self.setState({ period: '7d' }); },
+      set30d: function () { self.setState({ period: '30d' }); },
+      set90d: function () { self.setState({ period: '90d' }); },
+      prBtc: isBtc ? 'true' : 'false',
+      prUsd: isBtc ? 'false' : 'true',
+      setBtc: function () { self.setState({ basis: 'btc' }); },
+      setUsd: function () { self.setState({ basis: 'usd' }); },
+      prTable: showTable ? 'true' : 'false',
+      toggleTable: function () { self.setState({ table: !(self.state && self.state.table), hover: null }); },
+      showMap: !showTable,
+      showTable: showTable,
+      clearHover: function () { if (self.state && self.state.hover) self.setState({ hover: null }); },
+      unpin: function () { self.setState({ pin: null }); },
+      mapNote: showTable
+        ? pl + ' 수익률을 달러 기준과 BTC 대비로 함께 보여 줍니다. 행은 시가총액 순위 순서입니다.'
+        : pl + ' 수익률을 ' + basisWord + ' 값으로 칠했습니다. 칸에 포인터를 올리면 자세한 값이 보이고, 누르면 아래 패널에 고정됩니다.',
+      legLo: isBtc ? 'BTC보다 약함' : '하락',
+      legHi: isBtc ? 'BTC보다 강함' : '상승',
+      legAria: '색 범례: 가운데 회색은 ' + basisWord + ' ' + step + '% 미만의 변화이고, ' + step + '%마다 한 단계씩 밝아지며 양 끝은 ' + (5 * step) + '% 이상입니다. 왼쪽 빨강은 ' + (isBtc ? 'BTC보다 약함' : '하락') + ', 오른쪽 파랑은 ' + (isBtc ? 'BTC보다 강함' : '상승') + '을 뜻합니다.',
+      legTicks: legTicks,
+      caps: caps,
+      cells: cells,
+      tip: tip,
+      tableLabel: pl + ' 수익률 표, ' + CELLS.length + '개 코인, 시가총액 순위 순서',
+      rows: rows,
+      btcHero: pct(DATA.btc[p], 2),
+      medians: medians,
+      medNote: '1-10위 중앙값은 BTC를 뺀 ' + n110 + '개로 계산했습니다.',
+      pinned: pinned,
+      strongTitle: isBtc ? 'BTC 대비 가장 강한 5개' : '달러 기준 상위 5개',
+      weakTitle: isBtc ? 'BTC 대비 가장 약한 5개' : '달러 기준 하위 5개',
+      listNote: pl + ' ' + basisWord + ' 수익률입니다. 행을 누르면 그 코인이 고정됩니다.',
+      strong: strong,
+      weak: weak,
+      shareRaw: Math.round(btc.mcap / totalM * 100) + '%',
+      shareSqrt: Math.round(Math.sqrt(btc.mcap) / totalS * 100) + '%',
+      coverage: coverage
+    };
+  }
+}
+</script>
+</body>
+</html>
