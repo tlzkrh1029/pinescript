@@ -2,31 +2,31 @@
 // Crypto Flow v2.0.0. Original four indicators are preserved in ../1-125-flow/.
 // Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
 // One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
-indicator("Crypto Flow v2 �� Group Board", shorttitle="Flow v2", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
+indicator("Crypto Flow v2 · Group Board", shorttitle="Flow v2", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
 
-string groupChoice = input.string("1-10", "���� ����", options=["1-10", "11-50", "51-100", "101-125"], group="1. ��")
-string anchorMode = input.string("ȭ�� ����", "����", options=["ȭ�� ����", "�ð� ����"], group="1. ��")
-int anchorTime = input.time(timestamp("2026-10-31T00:00:00+09:00"), "���� �ð�", group="1. ��", tooltip="�ð� ���� ��忡���� ����մϴ�. �Է� �ð��� �����ų� �� �� ó�� ������ ���� ������ �����Դϴ�.")
-int recentMinutes = input.int(60, "�ֱ� ����: ��", minval=1, maxval=10080, group="1. ��", tooltip="��Ʈ �ð� �������� ª���� �� ������ ����մϴ�. ����������� ������ �ø��ϸ�, ���� ����� �ð��� ǥ�� ǥ���մϴ�.")
-bool includeOpen = input.bool(true, "���� ���� �� ����", group="1. ��", tooltip="�Ѹ� ���� ���� �ü� ��ȭ�� ���� ���ŵ˴ϴ�. ���� ������ �������� ǥ���մϴ�.")
-string sortMode = input.string("���� ����", "ǥ ����", options=["���� ����", "�ֱ� ����", "�� ���� �켱", "���� ����"], group="1. ��")
+string groupChoice = input.string("1-10", "순위 구간", options=["1-10", "11-50", "51-100", "101-125"], group="1. 비교")
+string anchorMode = input.string("화면 왼쪽", "기준", options=["화면 왼쪽", "시각 고정"], group="1. 비교")
+int anchorTime = input.time(timestamp("2026-10-31T00:00:00+09:00"), "고정 시각", group="1. 비교", tooltip="시각 고정 모드에서만 사용합니다. 입력 시각에 닫히거나 그 뒤 처음 닫히는 봉의 종가가 기준입니다.")
+int recentMinutes = input.int(60, "최근 강도: 분", minval=1, maxval=10080, group="1. 비교", tooltip="차트 시간 단위보다 짧으면 한 봉으로 계산합니다. 나누어떨어지지 않으면 올림하며, 실제 사용한 시간을 표에 표시합니다.")
+bool includeOpen = input.bool(true, "진행 중인 봉 포함", group="1. 비교", tooltip="켜면 현재 봉의 시세 변화에 따라 갱신됩니다. 끄면 마감한 봉까지만 표시합니다.")
+string sortMode = input.string("기준 이후", "표 정렬", options=["기준 이후", "최근 강도", "새 강세 우선", "시총 순위"], group="1. 비교")
 
-bool showLines = input.bool(true, "�� �� ǥ��", group="2. ���� ��")
-string lineMode = input.string("������ + ���� ����", "ǥ���� ��", options=["��ü", "������ + ���� ����", "���� ���ø�"], group="2. ���� ��")
-int edgeCount = input.int(3, "���������� �� ����", minval=1, maxval=10, group="2. ���� ��")
-string pinsInput = input.string("", "���� ���� ƼĿ (��ǥ ����)", group="2. ���� ��", tooltip="��: XMR,HYPE,ETH. �� �ν��Ͻ��� ���� ������ ���Ե� ƼĿ�� �׸��ϴ�.")
-int lineWidth = input.int(1, "�� �β�", minval=1, maxval=4, group="2. ���� ��")
-int pointLimit = input.int(1500, "������ ������ �ֱ� �ִ� ��", minval=100, maxval=3000, group="2. ���� ��", tooltip="ǥ�� ���� ����� �����ϸ� ���� �ֱ� �� �� ������ �׸��ϴ�. 12~24�ð��� 1�к������� �⺻������ ���ϴ�.")
-bool showLabels = input.bool(true, "���� ���� �� ��", group="2. ���� ��", tooltip="�� �ν��Ͻ����� �ִ� 10���Դϴ�. �� ���ڿ� ǥ�� ��� ȣ��Ʈ ��� ��� ���ͷ��Դϴ�.")
+bool showLines = input.bool(true, "비교 선 표시", group="2. 선과 라벨")
+string lineMode = input.string("상하위 + 직접 선택", "표시할 선", options=["전체", "상하위 + 직접 선택", "직접 선택만"], group="2. 선과 라벨")
+int edgeCount = input.int(3, "상위·하위 선 각각", minval=1, maxval=10, group="2. 선과 라벨")
+string pinsInput = input.string("", "직접 선택 티커 (쉼표 구분)", group="2. 선과 라벨", tooltip="예: XMR,HYPE,ETH. 이 인스턴스의 순위 구간에 포함된 티커만 그립니다.")
+int lineWidth = input.int(1, "선 두께", minval=1, maxval=4, group="2. 선과 라벨")
+int pointLimit = input.int(1500, "선마다 보관할 최근 최대 봉", minval=100, maxval=3000, group="2. 선과 라벨", tooltip="표의 기준 계산은 유지하며 선만 최근 이 봉 수까지 그립니다. 12~24시간은 1분봉에서도 기본값으로 들어갑니다.")
+bool showLabels = input.bool(true, "강조 선의 끝 라벨", group="2. 선과 라벨", tooltip="각 인스턴스에서 최대 10개입니다. 라벨 숫자와 표는 모두 호스트 대비 상대 수익률입니다.")
 
-bool showBoard = input.bool(true, "����ǥ ǥ��", group="3. ǥ ��ġ")
-string layoutMode = input.string("������ 4����", "ǥ ��ġ", options=["������ 4����", "�ܵ� ǥ"], group="3. ǥ ��ġ")
-int rowsLimit = input.int(12, "�� ���� �ִ� ���� ��", minval=6, maxval=20, group="3. ǥ ��ġ")
-float rowPct = input.float(1.65, "�� ����: ��Ʈ ������ %", minval=0.5, maxval=5, step=0.05, group="3. ǥ ��ġ", tooltip="�� �ν��Ͻ����� ���� ���߼���. �۲� ũ��� ���̸� �������� �ʰ� ��� �࿡ �� ���̸� �����մϴ�.")
-float topPct = input.float(3, "�� ����: %", minval=0, maxval=20, step=0.5, group="3. ǥ ��ġ")
-float widthPct = input.float(46, "ǥ ��ü �ʺ�: %", minval=20, maxval=90, step=1, group="3. ǥ ��ġ")
-int fontPt = input.int(11, "ǥ ���� ũ��: pt", minval=8, maxval=24, group="3. ǥ ��ġ")
-string standalonePos = input.string(position.top_right, "�ܵ� ǥ ��ġ", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. ǥ ��ġ")
+bool showBoard = input.bool(true, "순위표 표시", group="3. 표 배치")
+string layoutMode = input.string("오른쪽 4구간", "표 배치", options=["오른쪽 4구간", "단독 표"], group="3. 표 배치")
+int rowsLimit = input.int(12, "한 묶음 최대 코인 행", minval=6, maxval=20, group="3. 표 배치")
+float rowPct = input.float(1.65, "행 높이: 차트 높이의 %", minval=0.5, maxval=5, step=0.05, group="3. 표 배치", tooltip="네 인스턴스에서 같게 맞추세요. 글꼴 크기로 높이를 추정하지 않고 모든 행에 이 높이를 지정합니다.")
+float topPct = input.float(3, "위 여백: %", minval=0, maxval=20, step=0.5, group="3. 표 배치")
+float widthPct = input.float(46, "표 전체 너비: %", minval=20, maxval=90, step=1, group="3. 표 배치")
+int fontPt = input.int(11, "표 글자 크기: pt", minval=8, maxval=24, group="3. 표 배치")
+string standalonePos = input.string(position.top_right, "단독 표 위치", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. 표 배치")
 
 int groupId = groupChoice == "1-10" ? 0 : groupChoice == "11-50" ? 1 : groupChoice == "51-100" ? 2 : 3
 var array<string> symbols = array.new<string>()
@@ -75,12 +75,12 @@ if barstate.isfirst
 float seconds = timeframe.in_seconds()
 int recentBars = math.max(1, int(math.ceil(recentMinutes * 60.0 / seconds)))
 if barstate.isfirst and (not timeframe.isintraday or recentBars > 1000)
-    runtime.error("�к����ð��� �����Դϴ�. �ֱ� ���� ������ ��Ʈ 1000�� �̳��� �����ϼ���.")
+    runtime.error("분봉·시간봉 전용입니다. 최근 강도 구간은 차트 1000봉 이내로 설정하세요.")
 if barstate.isfirst and syminfo.currency != "USD" and syminfo.currency != "USDT" and syminfo.currency != "USDC"
-    runtime.error("USD��USDT��USDC ���� ��Ʈ���� ����ϼ���. CRYPTO: USD ������ ���� ���� ������ ���ؾ� �մϴ�.")
+    runtime.error("USD·USDT·USDC 가격 차트에서 사용하세요. CRYPTO: USD 지수와 같은 가격 단위로 비교해야 합니다.")
 if barstate.isfirst and not chart.is_standard
-    runtime.error("�Ϲ� ĵ�顤�� ��Ʈ���� ����ϼ���. ����Ų �ƽ� �� �ռ� ������ ��� ���ͷ� �������� ������� �ʽ��ϴ�.")
-bool atAnchor = anchorMode == "�ð� ����" ? time_close >= anchorTime : time >= chart.left_visible_bar_time
+    runtime.error("일반 캔들·바 차트에서 사용하세요. 하이킨 아시 등 합성 가격은 상대 수익률 기준으로 사용하지 않습니다.")
+bool atAnchor = anchorMode == "시각 고정" ? time_close >= anchorTime : time >= chart.left_visible_bar_time
 var int anchorBar = na
 var int anchorRead = na
 var float hostBase = na
@@ -105,7 +105,7 @@ f_self(string tick) =>
     b == tick or b == "1000" + tick or b == "1000000" + tick or b == "1M" + tick or b == "K" + tick
 
 f_pct(float value) =>
-    na(value) ? "?" : (value > 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
+    na(value) ? "—" : (value > 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
 
 f_linear(float c) =>
     float s = c / 255.0
@@ -148,12 +148,12 @@ f_eligible(int i) =>
     fresh.get(i) and not late.get(i) and not selfCoin.get(i) and not na(rels.get(i))
 
 f_state(int i) =>
-    not fresh.get(i) ? "�ڷ� ����/����" : late.get(i) ? "���� �ڷ� ����*" : selfCoin.get(i) ? "���� ����" : na(recents.get(i)) ? "�ֱ� �ڷ� ����" : rels.get(i) >= 0 ? (recents.get(i) >= 0 ? "���� ����" : "���� ��ȭ") : (recents.get(i) >= 0 ? "�ֱ� ����" : "�༼ ����")
+    not fresh.get(i) ? "자료 없음/지연" : late.get(i) ? "기준 자료 부족*" : selfCoin.get(i) ? "기준 코인" : na(recents.get(i)) ? "최근 자료 부족" : rels.get(i) >= 0 ? (recents.get(i) >= 0 ? "강세 유지" : "강세 둔화") : (recents.get(i) >= 0 ? "최근 우위" : "약세 유지")
 
 f_tip(int i) =>
-    string start = na(baseTimes.get(i)) ? "����" : str.format_time(baseTimes.get(i), "yyyy-MM-dd HH:mm", "Asia/Seoul")
-    string src = na(sourceTimes.get(i)) ? "����" : str.format_time(sourceTimes.get(i), "MM-dd HH:mm", "Asia/Seoul")
-    symbols.get(i) + " | ������ ���� " + str.tostring(ranks.get(i)) + "��\n" + f_state(i) + "\n���� �� ���� KST " + start + "\n�ü� �� ���� KST " + src + "\n�޷� ���� " + f_pct(dollars.get(i)) + "\nȣ��Ʈ ��� " + f_pct(rels.get(i)) + "\n�ֱ� " + str.tostring(recentBars * seconds / 60, "#.##") + "�� ��� " + f_pct(recents.get(i))
+    string start = na(baseTimes.get(i)) ? "없음" : str.format_time(baseTimes.get(i), "yyyy-MM-dd HH:mm", "Asia/Seoul")
+    string src = na(sourceTimes.get(i)) ? "없음" : str.format_time(sourceTimes.get(i), "MM-dd HH:mm", "Asia/Seoul")
+    symbols.get(i) + " | 스냅샷 시총 " + str.tostring(ranks.get(i)) + "위\n" + f_state(i) + "\n기준 봉 시작 KST " + start + "\n시세 봉 마감 KST " + src + "\n달러 기준 " + f_pct(dollars.get(i)) + "\n호스트 대비 " + f_pct(rels.get(i)) + "\n최근 " + str.tostring(recentBars * seconds / 60, "#.##") + "분 대비 " + f_pct(recents.get(i))
 
 // Rank at the current visible endpoint, then draw the entire retained path with that emphasis.
 array<float> keys = array.new<float>(count, -1e20)
@@ -168,13 +168,13 @@ if barstate.islast
     selected.fill(false)
     for i = 0 to count - 1
         bool ok = f_eligible(i)
-        float key = sortMode == "���� ����" ? -ranks.get(i) : sortMode == "�ֱ� ����" ? recents.get(i) : rels.get(i)
-        if sortMode == "�� ���� �켱" and ok and not na(recents.get(i))
+        float key = sortMode == "시총 순위" ? -ranks.get(i) : sortMode == "최근 강도" ? recents.get(i) : rels.get(i)
+        if sortMode == "새 강세 우선" and ok and not na(recents.get(i))
             // Category first, recent relative strength second; no mixing of units in the category.
             key := recents.get(i)
         keys.set(i, ok and not na(key) ? key : -1e20 - i)
     orderIndex := keys.sort_indices(order.descending)
-    if sortMode == "�� ���� �켱"
+    if sortMode == "새 강세 우선"
         array<int> priority = array.new<int>()
         for i in orderIndex
             if f_eligible(i) and rels.get(i) < 0 and recents.get(i) >= 0
@@ -196,11 +196,11 @@ if barstate.islast
     int labelN = 0
     for i in orderIndex
         bool pin = str.contains(pins, "," + ticks.get(i) + ",")
-        bool highlight = pin or (lineMode != "���� ���ø�" and selected.get(i))
+        bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
         Trail trace = trails.get(i)
-        if showLines and trace.points.size() > 1 and (lineMode != "���� ���ø�" or pin)
+        if showLines and trace.points.size() > 1 and (lineMode != "직접 선택만" or pin)
             color ink = palette.get(i)
-            bool strongLine = lineMode == "��ü" or highlight
+            bool strongLine = lineMode == "전체" or highlight
             paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=color.new(ink, strongLine ? 0 : 82), line_width=strongLine ? math.min(4, lineWidth + 1) : 1))
         if showLabels and showLines and highlight and fresh.get(i) and labelN < 10
             color c = palette.get(i)
@@ -226,7 +226,7 @@ for g = 0 to 3
     totalRows += h
     if g < groupId
         before += h
-bool stacked = layoutMode == "������ 4����"
+bool stacked = layoutMode == "오른쪽 4구간"
 float startPct = topPct + (stacked ? before * rowPct : 0)
 bool overflows = stacked and topPct + totalRows * rowPct > 99
 // One exact-height spacer replaces dozens of automatic-height phantom text rows.
@@ -263,30 +263,30 @@ if barstate.islast
                     recentPeers += 1
                     recentBeat += recents.get(i) > 0 ? 1 : 0
         string title = "Flow " + groupChoice
-        string status = overflows ? "���� �հ� >99%: �� ���̸� ���̼���" : na(hostEnd) ? "���� ���� ȭ�� ���Դϴ�" : "���� " + str.tostring(beat) + "/" + str.tostring(peers) + " �� �ֱ� " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)
-        string details = "�ڷ� ����/���� " + str.tostring(missing) + " �� ���� ����* " + str.tostring(lateN) + " �� ȣ��Ʈ " + f_pct(na(hostEnd) ? na : (hostEnd / hostBase - 1) * 100)
-        string anchorLabel = na(anchorRead) ? "���� ����" : str.format_time(anchorRead, "MM-dd HH:mm", "Asia/Seoul") + " KST"
+        string status = overflows ? "높이 합계 >99%: 행 높이를 줄이세요" : na(hostEnd) ? "기준 봉이 화면 뒤입니다" : "강함 " + str.tostring(beat) + "/" + str.tostring(peers) + " · 최근 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)
+        string details = "자료 지연/없음 " + str.tostring(missing) + " · 별도 기준* " + str.tostring(lateN) + " · 호스트 " + f_pct(na(hostEnd) ? na : (hostEnd / hostBase - 1) * 100)
+        string anchorLabel = na(anchorRead) ? "기준 없음" : str.format_time(anchorRead, "MM-dd HH:mm", "Asia/Seoul") + " KST"
         for c = 0 to 3 * groups - 1
-            f_cell(c, 1, c == 0 ? title : c == 1 ? "����" : c == 2 ? str.tostring(beat) + "/" + str.tostring(peers) : "", fg, bg, status + "\n" + details)
-            f_cell(c, 2, c == 0 ? anchorLabel : c == 1 ? "�ֱ�" : c == 2 ? str.tostring(recentBars * seconds / 60, "#.##") + "��" : "", overflows ? bad : muted, bg, status + "\n" + details + "\nǥ���� ���ڴ� ��� ȣ��Ʈ ����Դϴ�. ���� ����/���� �� �� ������ �����ϴ�.")
+            f_cell(c, 1, c == 0 ? title : c == 1 ? "강함" : c == 2 ? str.tostring(beat) + "/" + str.tostring(peers) : "", fg, bg, status + "\n" + details)
+            f_cell(c, 2, c == 0 ? anchorLabel : c == 1 ? "최근" : c == 2 ? str.tostring(recentBars * seconds / 60, "#.##") + "분" : "", overflows ? bad : muted, bg, status + "\n" + details + "\n표·라벨 숫자는 모두 호스트 대비입니다. 현재 마감/진행 중 봉 설정을 따릅니다.")
         for g = 0 to groups - 1
-            f_cell(g * 3, 3, "����", muted, bg, "ƼĿ �� ��ȣ: ���ֱ� ����, �鰭�� ��ȭ. * ���� �ð��� �ڷᰡ ���� ������ ������ �����Դϴ�.")
-            f_cell(g * 3 + 1, 3, "���� ����", muted, bg, "���� �ð� ���� ȣ��Ʈ ��� ��� ���ͷ�")
-            f_cell(g * 3 + 2, 3, "�ֱ�", muted, bg, "�ֱ� ������ �ð� ������ ȣ��Ʈ ��� ��� ���ͷ�. ���ӵ��� �ƴմϴ�.")
+            f_cell(g * 3, 3, "코인", muted, bg, "티커 앞 기호: ↑최근 우위, ↓강세 둔화. * 기준 시각의 자료가 없어 별도로 시작한 코인입니다.")
+            f_cell(g * 3 + 1, 3, "기준 이후", muted, bg, "기준 시각 이후 호스트 대비 상대 수익률")
+            f_cell(g * 3 + 2, 3, "최근", muted, bg, "최근 지정한 시간 동안의 호스트 대비 상대 수익률. 가속도가 아닙니다.")
         for k = 0 to groups * rows - 1
             int c = int(math.floor(k / rows)) * 3
             int r = 4 + k % rows
             if k < count
                 int i = orderIndex.get(k)
                 string state = f_state(i)
-                string mark = state == "�ֱ� ����" ? "��" : state == "���� ��ȭ" ? "��" : ""
+                string mark = state == "최근 우위" ? "↑" : state == "강세 둔화" ? "↓" : ""
                 string tick = mark + ticks.get(i) + (late.get(i) ? "*" : "")
                 color ink = palette.get(i)
                 string tip = f_tip(i) + "\n" + details
                 bool ok = fresh.get(i)
                 f_cell(c, r, tick, ok ? f_ink(ink) : muted, ok ? ink : bg, tip)
-                f_cell(c + 1, r, ok ? f_pct(rels.get(i)) : "?", ok ? (rels.get(i) >= 0 ? good : bad) : muted, bg, tip)
-                f_cell(c + 2, r, ok ? f_pct(recents.get(i)) : "?", ok ? (recents.get(i) >= 0 ? good : bad) : muted, bg, tip)
+                f_cell(c + 1, r, ok ? f_pct(rels.get(i)) : "—", ok ? (rels.get(i) >= 0 ? good : bad) : muted, bg, tip)
+                f_cell(c + 2, r, ok ? f_pct(recents.get(i)) : "—", ok ? (recents.get(i) >= 0 ? good : bad) : muted, bg, tip)
             else
                 for j = 0 to 2
                     f_cell(c + j, r, "", muted, bg, "")
