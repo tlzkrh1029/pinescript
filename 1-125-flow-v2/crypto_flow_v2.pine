@@ -23,7 +23,7 @@ bool showBoard = input.bool(true, "순위표 표시", group="3. 표 배치")
 string layoutMode = input.string("오른쪽 4구간", "표 배치", options=["오른쪽 4구간", "단독 표"], group="3. 표 배치")
 int rowsLimit = input.int(12, "한 묶음 최대 코인 행", minval=6, maxval=20, group="3. 표 배치")
 float rowPct = input.float(1.65, "행 높이: 차트 높이의 %", minval=0.5, maxval=5, step=0.05, group="3. 표 배치", tooltip="네 인스턴스에서 같게 맞추세요. 글꼴 크기로 높이를 추정하지 않고 모든 행에 이 높이를 지정합니다.")
-float topPct = input.float(3, "위 여백: %", minval=0, maxval=20, step=0.5, group="3. 표 배치")
+float topPct = input.float(3, "위 여백: %", minval=0.5, maxval=20, step=0.5, group="3. 표 배치")
 float widthPct = input.float(46, "표 전체 너비: %", minval=20, maxval=90, step=1, group="3. 표 배치")
 int fontPt = input.int(11, "표 글자 크기: pt", minval=8, maxval=24, group="3. 표 배치")
 string standalonePos = input.string(position.top_right, "단독 표 위치", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. 표 배치")
@@ -32,23 +32,24 @@ int groupId = groupChoice == "1-10" ? 0 : groupChoice == "11-50" ? 1 : groupChoi
 var array<string> symbols = array.new<string>()
 var array<string> ticks = array.new<string>()
 var array<int> ranks = array.new<int>()
-switch groupId
-    0 =>
-        symbols := array.from("CRYPTO:BTCUSD", "CRYPTO:ETHUSD", "CRYPTO:BNBUSD", "CRYPTO:XRPUSD", "CRYPTO:SOLUSD", "CRYPTO:TRXUSD", "CRYPTO:ZECUSD", "CRYPTO:HYPEHUSD")
-        ticks := array.from("BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "ZEC", "HYPE")
-        ranks := array.from(1, 2, 4, 5, 7, 8, 9, 10)
-    1 =>
-        symbols := array.from("CRYPTO:DOGEUSD", "CRYPTO:XMRUSD", "CRYPTO:LINKUSD", "CRYPTO:ADAUSD", "CRYPTO:LEOUSD", "CRYPTO:XLMUSD", "CRYPTO:NEARUSD", "CRYPTO:UNIUSD", "CRYPTO:BCHUSD", "CRYPTO:AVAXUSD", "CRYPTO:LTCUSD", "CRYPTO:CCCAUSD", "CRYPTO:SUIUSD", "CRYPTO:GRAMUSD", "CRYPTO:HBARUSD", "CRYPTO:MEMECOREUSD", "CRYPTO:SHIBUSD", "CRYPTO:TAOBUSD", "CRYPTO:CROUSD", "CRYPTO:OKBUSD", "CRYPTO:ENAUSD", "CRYPTO:AAVEUSD", "CRYPTO:ONDOUSD", "CRYPTO:PUMPFUSD", "CRYPTO:ASTER2USD", "CRYPTO:MNTUSD", "CRYPTO:DOTUSD", "CRYPTO:WLFIOUSD", "CRYPTO:PEPEUSD", "CRYPTO:SKY2USD", "CRYPTO:WLDWUSD", "CRYPTO:ICPUSD")
-        ticks := array.from("DOGE", "XMR", "LINK", "ADA", "LEO", "XLM", "NEAR", "UNI", "BCH", "AVAX", "LTC", "CC", "SUI", "GRAM", "HBAR", "M", "SHIB", "TAO", "CRO", "OKB", "ENA", "AAVE", "ONDO", "PUMP", "ASTER", "MNT", "DOT", "WLFI", "PEPE", "SKY", "WLD", "ICP")
-        ranks := array.from(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24, 26, 27, 28, 29, 30, 32, 33, 36, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50)
-    2 =>
-        symbols := array.from("CRYPTO:VVVUSD", "CRYPTO:MORPHOUSD", "CRYPTO:ARBIUSD", "CRYPTO:BGBUSD", "CRYPTO:ETCUSD", "CRYPTO:LITLUSD", "CRYPTO:POLYGUSD", "CRYPTO:KASUSD", "CRYPTO:JUPIUSD", "CRYPTO:ALGOUSD", "CRYPTO:KCSUSD", "CRYPTO:ATOMUSD", "CRYPTO:CAKEUSD", "CRYPTO:RENDERUSD", "CRYPTO:FILUSD", "CRYPTO:QNTUSD", "CRYPTO:INJUSD", "CRYPTO:DASHUSD", "CRYPTO:VETUSD", "CRYPTO:ETHFIUSD", "CRYPTO:STABLE3USD", "CRYPTO:APTOUSD", "CRYPTO:AERODUSD", "CRYPTO:XDCUSD", "CRYPTO:TRUMPOFUSD", "CRYPTO:STXSUSD", "CRYPTO:CRVUSD", "CRYPTO:PIEVERSEUSD", "CRYPTO:PENGUPUDUSD", "CRYPTO:BIANRENSHENGUSD", "CRYPTO:PYTHUSD", "CRYPTO:PENDLEUSD", "CRYPTO:VIRTUALUSD", "CRYPTO:SPX6USD", "CRYPTO:RAYUSD", "CRYPTO:ZROLUSD", "CRYPTO:SEIUSD", "CRYPTO:FETUSD", "CRYPTO:PONS2USD", "CRYPTO:NIGHTMIUSD")
-        ticks := array.from("VVV", "MORPHO", "ARB", "BGB", "ETC", "LIT", "POL", "KAS", "JUP", "ALGO", "KCS", "ATOM", "CAKE", "RENDER", "FIL", "QNT", "INJ", "DASH", "VET", "ETHFI", "STABLE", "APT", "AERO", "XDC", "TRUMP", "STX", "CRV", "PIEVERSE", "PENGU", "BIANRENSHENG", "PYTH", "PENDLE", "VIRTUAL", "SPX", "RAY", "ZRO", "SEI", "FET", "PONS", "NIGHT")
-        ranks := array.from(51, 53, 54, 55, 57, 58, 60, 61, 62, 63, 64, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 84, 85, 86, 87, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99)
-    3 =>
-        symbols := array.from("CRYPTO:TIA2USD", "CRYPTO:XTZUSD", "CRYPTO:LDOUSD", "CRYPTO:STRKSUSD", "CRYPTO:BSVUSD", "CRYPTO:BTTUSD", "CRYPTO:ARUSD", "CRYPTO:DCRUSD", "CRYPTO:LUNCUSD", "CRYPTO:MONADUSD", "CRYPTO:KITEUSD", "CRYPTO:OPUSD", "CRYPTO:IMXUSD", "CRYPTO:CFXUSD", "CRYPTO:ENSUSD", "CRYPTO:SYRUPUSD", "CRYPTO:BONKUSD", "CRYPTO:XPLUSD", "CRYPTO:JTOUSD", "CRYPTO:FLOKIUSD", "CRYPTO:TWTUSD", "CRYPTO:GRTUSD")
-        ticks := array.from("TIA", "XTZ", "LDO", "STRK", "BSV", "BTT", "AR", "DCR", "LUNC", "MON", "KITE", "OP", "IMX", "CFX", "ENS", "SYRUP", "BONK", "XPL", "JTO", "FLOKI", "TWT", "GRT")
-        ranks := array.from(101, 102, 103, 104, 105, 106, 108, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125)
+if barstate.isfirst
+    switch groupId
+        0 =>
+            symbols := array.from("CRYPTO:BTCUSD", "CRYPTO:ETHUSD", "CRYPTO:BNBUSD", "CRYPTO:XRPUSD", "CRYPTO:SOLUSD", "CRYPTO:TRXUSD", "CRYPTO:ZECUSD", "CRYPTO:HYPEHUSD")
+            ticks := array.from("BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "ZEC", "HYPE")
+            ranks := array.from(1, 2, 4, 5, 7, 8, 9, 10)
+        1 =>
+            symbols := array.from("CRYPTO:DOGEUSD", "CRYPTO:XMRUSD", "CRYPTO:LINKUSD", "CRYPTO:ADAUSD", "CRYPTO:LEOUSD", "CRYPTO:XLMUSD", "CRYPTO:NEARUSD", "CRYPTO:UNIUSD", "CRYPTO:BCHUSD", "CRYPTO:AVAXUSD", "CRYPTO:LTCUSD", "CRYPTO:CCCAUSD", "CRYPTO:SUIUSD", "CRYPTO:GRAMUSD", "CRYPTO:HBARUSD", "CRYPTO:MEMECOREUSD", "CRYPTO:SHIBUSD", "CRYPTO:TAOBUSD", "CRYPTO:CROUSD", "CRYPTO:OKBUSD", "CRYPTO:ENAUSD", "CRYPTO:AAVEUSD", "CRYPTO:ONDOUSD", "CRYPTO:PUMPFUSD", "CRYPTO:ASTER2USD", "CRYPTO:MNTUSD", "CRYPTO:DOTUSD", "CRYPTO:WLFIOUSD", "CRYPTO:PEPEUSD", "CRYPTO:SKY2USD", "CRYPTO:WLDWUSD", "CRYPTO:ICPUSD")
+            ticks := array.from("DOGE", "XMR", "LINK", "ADA", "LEO", "XLM", "NEAR", "UNI", "BCH", "AVAX", "LTC", "CC", "SUI", "GRAM", "HBAR", "M", "SHIB", "TAO", "CRO", "OKB", "ENA", "AAVE", "ONDO", "PUMP", "ASTER", "MNT", "DOT", "WLFI", "PEPE", "SKY", "WLD", "ICP")
+            ranks := array.from(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24, 26, 27, 28, 29, 30, 32, 33, 36, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50)
+        2 =>
+            symbols := array.from("CRYPTO:VVVUSD", "CRYPTO:MORPHOUSD", "CRYPTO:ARBIUSD", "CRYPTO:BGBUSD", "CRYPTO:ETCUSD", "CRYPTO:LITLUSD", "CRYPTO:POLYGUSD", "CRYPTO:KASUSD", "CRYPTO:JUPIUSD", "CRYPTO:ALGOUSD", "CRYPTO:KCSUSD", "CRYPTO:ATOMUSD", "CRYPTO:CAKEUSD", "CRYPTO:RENDERUSD", "CRYPTO:FILUSD", "CRYPTO:QNTUSD", "CRYPTO:INJUSD", "CRYPTO:DASHUSD", "CRYPTO:VETUSD", "CRYPTO:ETHFIUSD", "CRYPTO:STABLE3USD", "CRYPTO:APTOUSD", "CRYPTO:AERODUSD", "CRYPTO:XDCUSD", "CRYPTO:TRUMPOFUSD", "CRYPTO:STXSUSD", "CRYPTO:CRVUSD", "CRYPTO:PIEVERSEUSD", "CRYPTO:PENGUPUDUSD", "CRYPTO:BIANRENSHENGUSD", "CRYPTO:PYTHUSD", "CRYPTO:PENDLEUSD", "CRYPTO:VIRTUALUSD", "CRYPTO:SPX6USD", "CRYPTO:RAYUSD", "CRYPTO:ZROLUSD", "CRYPTO:SEIUSD", "CRYPTO:FETUSD", "CRYPTO:PONS2USD", "CRYPTO:NIGHTMIUSD")
+            ticks := array.from("VVV", "MORPHO", "ARB", "BGB", "ETC", "LIT", "POL", "KAS", "JUP", "ALGO", "KCS", "ATOM", "CAKE", "RENDER", "FIL", "QNT", "INJ", "DASH", "VET", "ETHFI", "STABLE", "APT", "AERO", "XDC", "TRUMP", "STX", "CRV", "PIEVERSE", "PENGU", "BIANRENSHENG", "PYTH", "PENDLE", "VIRTUAL", "SPX", "RAY", "ZRO", "SEI", "FET", "PONS", "NIGHT")
+            ranks := array.from(51, 53, 54, 55, 57, 58, 60, 61, 62, 63, 64, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 84, 85, 86, 87, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99)
+        3 =>
+            symbols := array.from("CRYPTO:TIA2USD", "CRYPTO:XTZUSD", "CRYPTO:LDOUSD", "CRYPTO:STRKSUSD", "CRYPTO:BSVUSD", "CRYPTO:BTTUSD", "CRYPTO:ARUSD", "CRYPTO:DCRUSD", "CRYPTO:LUNCUSD", "CRYPTO:MONADUSD", "CRYPTO:KITEUSD", "CRYPTO:OPUSD", "CRYPTO:IMXUSD", "CRYPTO:CFXUSD", "CRYPTO:ENSUSD", "CRYPTO:SYRUPUSD", "CRYPTO:BONKUSD", "CRYPTO:XPLUSD", "CRYPTO:JTOUSD", "CRYPTO:FLOKIUSD", "CRYPTO:TWTUSD", "CRYPTO:GRTUSD")
+            ticks := array.from("TIA", "XTZ", "LDO", "STRK", "BSV", "BTT", "AR", "DCR", "LUNC", "MON", "KITE", "OP", "IMX", "CFX", "ENS", "SYRUP", "BONK", "XPL", "JTO", "FLOKI", "TWT", "GRT")
+            ranks := array.from(101, 102, 103, 104, 105, 106, 108, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125)
 int count = symbols.size()
 var array<color> palette = array.from(#56B4E9, #E69F00, #009E73, #CC79A7, #F0E442, #D55E00, #0072B2, #AAEEAA, #F28E8E, #B59AE8, #64D8CB, #E6C290, #829BFF, #E878B5, #9DC76A, #DBA8F0, #77A8A8, #EE9966, #D4CC77, #88C0D0, #C58D5E, #88AAFF, #B9D5A0, #F7B7A3, #CCB9EC, #B4C77E, #50C8A0, #CBA16C, #E9AAC4, #7CAAB5, #E0BC63, #AFB1D9, #E5C4A5, #8ECCDD, #DB9C85, #9BB486, #C4A9CC, #6DB4E8, #D4B28C, #A1C8BE)
 var array<float> bases = array.new<float>(40, na)
@@ -97,7 +98,7 @@ if inRange and atAnchor and acceptedBar
     hostEnd := close
     endRead := time_close
     endBarTime := time
-float hostRecentRatio = close / close[recentBars]
+float hostRecentRatio = time_close - time_close[recentBars] == recentBars * seconds * 1000 ? close / close[recentBars] : na
 string pins = "," + str.replace_all(str.upper(pinsInput), " ", "") + ","
 
 f_self(string tick) =>
@@ -118,7 +119,7 @@ f_ink(color c) =>
 // Each slot owns its base and readouts. There is no function-local var shared across coins.
 for i = 0 to count - 1
     string sym = symbols.get(i)
-    [price, recentRatio, sourceTime] = request.security(sym, timeframe.period, [close, close / close[recentBars], time_close], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off, ignore_invalid_symbol=true)
+    [price, recentRatio, sourceTime] = request.security(sym, timeframe.period, [close, time_close - time_close[recentBars] == recentBars * seconds * 1000 ? close / close[recentBars] : na, time_close], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off, ignore_invalid_symbol=true)
     bool valid = not na(price) and price > 0 and sourceTime == time_close
     if atAnchor and valid and na(bases.get(i))
         bases.set(i, price)
@@ -129,11 +130,16 @@ for i = 0 to count - 1
     float relative = not na(base) ? ((price / base) / (close / hostBases.get(i)) - 1) * 100 : na
     float recent = valid and hostRecentRatio > 0 ? (recentRatio / hostRecentRatio - 1) * 100 : na
     float y = valid and not na(base) ? hostBases.get(i) * (1 + coinReturn) : na
-    if showLines and inRange and acceptedBar and time >= chart.left_visible_bar_time and not na(y)
+    if showLines and inRange and acceptedBar and time >= chart.left_visible_bar_time
         Trail trace = trails.get(i)
-        trace.points.push(chart.point.from_time(time, y))
-        if trace.points.size() > pointLimit
-            trace.points.shift()
+        if na(y)
+            // Never bridge a missing-data interval with a fabricated straight segment.
+            // Keep the original return base, but restart this coin's visual trail after the gap.
+            trace.points.clear()
+        else
+            trace.points.push(chart.point.from_time(time, y))
+            if trace.points.size() > pointLimit
+                trace.points.shift()
     if inRange and acceptedBar
         values.set(i, y)
         rels.set(i, relative)
@@ -146,6 +152,9 @@ for i = 0 to count - 1
 
 f_eligible(int i) =>
     fresh.get(i) and not late.get(i) and not selfCoin.get(i) and not na(rels.get(i))
+
+f_rankable(int i) =>
+    f_eligible(i) and ((sortMode != "최근 강도" and sortMode != "새 강세 우선") or not na(recents.get(i)))
 
 f_state(int i) =>
     not fresh.get(i) ? "자료 없음/지연" : late.get(i) ? "기준 자료 부족*" : selfCoin.get(i) ? "기준 코인" : na(recents.get(i)) ? "최근 자료 부족" : rels.get(i) >= 0 ? (recents.get(i) >= 0 ? "강세 유지" : "강세 둔화") : (recents.get(i) >= 0 ? "최근 우위" : "약세 유지")
@@ -167,25 +176,32 @@ if barstate.islast
     paths.clear()
     selected.fill(false)
     for i = 0 to count - 1
-        bool ok = f_eligible(i)
+        bool ok = f_rankable(i)
         float key = sortMode == "시총 순위" ? -ranks.get(i) : sortMode == "최근 강도" ? recents.get(i) : rels.get(i)
         if sortMode == "새 강세 우선" and ok and not na(recents.get(i))
             // Category first, recent relative strength second; no mixing of units in the category.
             key := recents.get(i)
         keys.set(i, ok and not na(key) ? key : -1e20 - i)
-    orderIndex := keys.sort_indices(order.descending)
+    array<int> sorted = keys.sort_indices(order.descending)
+    for i in sorted
+        if f_rankable(i)
+            orderIndex.push(i)
+    // Missing, late and self rows are always at the end in snapshot market-cap order.
+    for i = 0 to count - 1
+        if not f_rankable(i)
+            orderIndex.push(i)
     if sortMode == "새 강세 우선"
         array<int> priority = array.new<int>()
         for i in orderIndex
-            if f_eligible(i) and rels.get(i) < 0 and recents.get(i) >= 0
+            if f_rankable(i) and rels.get(i) < 0 and recents.get(i) >= 0
                 priority.push(i)
         for i in orderIndex
-            if not (f_eligible(i) and rels.get(i) < 0 and recents.get(i) >= 0)
+            if not (f_rankable(i) and rels.get(i) < 0 and recents.get(i) >= 0)
                 priority.push(i)
         orderIndex := priority
     array<int> validOrder = array.new<int>()
     for i in orderIndex
-        if f_eligible(i)
+        if f_rankable(i)
             validOrder.push(i)
     int vn = validOrder.size()
     if vn > 0
@@ -194,19 +210,25 @@ if barstate.islast
             if k < edgeCount or k >= vn - edgeCount
                 selected.set(i, true)
     int labelN = 0
-    for i in orderIndex
-        bool pin = str.contains(pins, "," + ticks.get(i) + ",")
-        bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
-        Trail trace = trails.get(i)
-        if showLines and trace.points.size() > 1 and (lineMode != "직접 선택만" or pin)
-            color ink = palette.get(i)
-            bool strongLine = lineMode == "전체" or highlight
-            paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=color.new(ink, strongLine ? 0 : 82), line_width=strongLine ? math.min(4, lineWidth + 1) : 1))
-        if showLabels and showLines and highlight and fresh.get(i) and labelN < 10
-            color c = palette.get(i)
-            string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
-            labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=f_ink(c), size=size.small, tooltip=f_tip(i)))
-            labelN += 1
+    // Draw context first and foreground second. Pins get their label allocation first.
+    for pass = 0 to 1
+        for i in orderIndex
+            bool pin = str.contains(pins, "," + ticks.get(i) + ",")
+            bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
+            bool foreground = lineMode == "전체" or highlight
+            Trail trace = trails.get(i)
+            if showLines and trace.points.size() > 1 and (lineMode != "직접 선택만" or pin) and foreground == (pass == 1)
+                color ink = palette.get(i)
+                paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=color.new(ink, foreground ? 0 : 82), line_width=foreground ? lineWidth : 1))
+    for pass = 0 to 1
+        for i in orderIndex
+            bool pin = str.contains(pins, "," + ticks.get(i) + ",")
+            bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
+            if showLabels and showLines and highlight and fresh.get(i) and labelN < 10 and pin == (pass == 0)
+                color c = palette.get(i)
+                string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
+                labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=f_ink(c), size=size.small, tooltip=f_tip(i)))
+                labelN += 1
 
 f_groupCount(int i) =>
     i == 0 ? 8 : i == 1 ? 32 : i == 2 ? 40 : 22
@@ -237,16 +259,17 @@ color fg = chart.fg_color
 color muted = color.new(fg, 40)
 color good = #46BFA4
 color bad = #EB7979
-float colWidth = widthPct / (3 * groups)
+f_width(int c) =>
+    widthPct / groups * (c % 3 == 0 ? 0.44 : 0.28)
 
 f_cell(int c, int r, string text, color ink, color back, string tip) =>
-    board.cell(c, r, text, width=colWidth, height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
+    board.cell(c, r, text, width=f_width(c), height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
 
 if barstate.islast
     board.clear(0, 0, 3 * groups - 1, rows + 3)
     if showBoard
         for c = 0 to 3 * groups - 1
-            board.cell(c, 0, "", width=colWidth, height=startPct, bgcolor=color.new(bg, 100))
+            board.cell(c, 0, "", width=f_width(c), height=startPct, bgcolor=color.new(bg, 100))
         int peers = 0
         int beat = 0
         int recentPeers = 0
@@ -265,10 +288,10 @@ if barstate.islast
         string title = "Flow " + groupChoice
         string status = overflows ? "높이 합계 >99%: 행 높이를 줄이세요" : na(hostEnd) ? "기준 봉이 화면 뒤입니다" : "강함 " + str.tostring(beat) + "/" + str.tostring(peers) + " · 최근 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)
         string details = "자료 지연/없음 " + str.tostring(missing) + " · 별도 기준* " + str.tostring(lateN) + " · 호스트 " + f_pct(na(hostEnd) ? na : (hostEnd / hostBase - 1) * 100)
-        string anchorLabel = na(anchorRead) ? "기준 없음" : str.format_time(anchorRead, "MM-dd HH:mm", "Asia/Seoul") + " KST"
+        string anchorLabel = na(anchorRead) ? "기준 없음" : str.format_time(anchorRead, "HH:mm", "Asia/Seoul")
         for c = 0 to 3 * groups - 1
-            f_cell(c, 1, c == 0 ? title : c == 1 ? "강함" : c == 2 ? str.tostring(beat) + "/" + str.tostring(peers) : "", fg, bg, status + "\n" + details)
-            f_cell(c, 2, c == 0 ? anchorLabel : c == 1 ? "최근" : c == 2 ? str.tostring(recentBars * seconds / 60, "#.##") + "분" : "", overflows ? bad : muted, bg, status + "\n" + details + "\n표·라벨 숫자는 모두 호스트 대비입니다. 현재 마감/진행 중 봉 설정을 따릅니다.")
+            f_cell(c, 1, c == 0 ? title : c == 1 ? "강함" : c == 2 ? str.tostring(beat) + "/" + str.tostring(peers) : c == 3 ? "최근 강함" : c == 4 ? str.tostring(recentBeat) + "/" + str.tostring(recentPeers) : "", fg, bg, status + "\n" + details)
+            f_cell(c, 2, c == 0 ? anchorLabel + " KST" : c == 1 ? "최근" : c == 2 ? str.tostring(recentBars * seconds / 60, "#.##") + "분" : "", overflows ? bad : muted, bg, status + "\n" + details + "\n기준 " + (na(anchorRead) ? "없음" : str.format_time(anchorRead, "yyyy-MM-dd HH:mm", "Asia/Seoul")) + " KST\n표·라벨 숫자는 모두 호스트 대비입니다. 현재 마감/진행 중 봉 설정을 따릅니다.")
         for g = 0 to groups - 1
             f_cell(g * 3, 3, "코인", muted, bg, "티커 앞 기호: ↑최근 우위, ↓강세 둔화. * 기준 시각의 자료가 없어 별도로 시작한 코인입니다.")
             f_cell(g * 3 + 1, 3, "기준 이후", muted, bg, "기준 시각 이후 호스트 대비 상대 수익률")
