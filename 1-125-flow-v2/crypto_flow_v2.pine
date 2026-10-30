@@ -1,0 +1,292 @@
+//@version=6
+// Crypto Flow v2.0.0. Original four indicators are preserved in ../1-125-flow/.
+// Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
+// One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
+indicator("Crypto Flow v2 �� Group Board", shorttitle="Flow v2", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
+
+string groupChoice = input.string("1-10", "���� ����", options=["1-10", "11-50", "51-100", "101-125"], group="1. ��")
+string anchorMode = input.string("ȭ�� ����", "����", options=["ȭ�� ����", "�ð� ����"], group="1. ��")
+int anchorTime = input.time(timestamp("2026-10-31T00:00:00+09:00"), "���� �ð�", group="1. ��", tooltip="�ð� ���� ��忡���� ����մϴ�. �Է� �ð��� �����ų� �� �� ó�� ������ ���� ������ �����Դϴ�.")
+int recentMinutes = input.int(60, "�ֱ� ����: ��", minval=1, maxval=10080, group="1. ��", tooltip="��Ʈ �ð� �������� ª���� �� ������ ����մϴ�. ����������� ������ �ø��ϸ�, ���� ����� �ð��� ǥ�� ǥ���մϴ�.")
+bool includeOpen = input.bool(true, "���� ���� �� ����", group="1. ��", tooltip="�Ѹ� ���� ���� �ü� ��ȭ�� ���� ���ŵ˴ϴ�. ���� ������ �������� ǥ���մϴ�.")
+string sortMode = input.string("���� ����", "ǥ ����", options=["���� ����", "�ֱ� ����", "�� ���� �켱", "���� ����"], group="1. ��")
+
+bool showLines = input.bool(true, "�� �� ǥ��", group="2. ���� ��")
+string lineMode = input.string("������ + ���� ����", "ǥ���� ��", options=["��ü", "������ + ���� ����", "���� ���ø�"], group="2. ���� ��")
+int edgeCount = input.int(3, "���������� �� ����", minval=1, maxval=10, group="2. ���� ��")
+string pinsInput = input.string("", "���� ���� ƼĿ (��ǥ ����)", group="2. ���� ��", tooltip="��: XMR,HYPE,ETH. �� �ν��Ͻ��� ���� ������ ���Ե� ƼĿ�� �׸��ϴ�.")
+int lineWidth = input.int(1, "�� �β�", minval=1, maxval=4, group="2. ���� ��")
+int pointLimit = input.int(1500, "������ ������ �ֱ� �ִ� ��", minval=100, maxval=3000, group="2. ���� ��", tooltip="ǥ�� ���� ����� �����ϸ� ���� �ֱ� �� �� ������ �׸��ϴ�. 12~24�ð��� 1�к������� �⺻������ ���ϴ�.")
+bool showLabels = input.bool(true, "���� ���� �� ��", group="2. ���� ��", tooltip="�� �ν��Ͻ����� �ִ� 10���Դϴ�. �� ���ڿ� ǥ�� ��� ȣ��Ʈ ��� ��� ���ͷ��Դϴ�.")
+
+bool showBoard = input.bool(true, "����ǥ ǥ��", group="3. ǥ ��ġ")
+string layoutMode = input.string("������ 4����", "ǥ ��ġ", options=["������ 4����", "�ܵ� ǥ"], group="3. ǥ ��ġ")
+int rowsLimit = input.int(12, "�� ���� �ִ� ���� ��", minval=6, maxval=20, group="3. ǥ ��ġ")
+float rowPct = input.float(1.65, "�� ����: ��Ʈ ������ %", minval=0.5, maxval=5, step=0.05, group="3. ǥ ��ġ", tooltip="�� �ν��Ͻ����� ���� ���߼���. �۲� ũ��� ���̸� �������� �ʰ� ��� �࿡ �� ���̸� �����մϴ�.")
+float topPct = input.float(3, "�� ����: %", minval=0, maxval=20, step=0.5, group="3. ǥ ��ġ")
+float widthPct = input.float(46, "ǥ ��ü �ʺ�: %", minval=20, maxval=90, step=1, group="3. ǥ ��ġ")
+int fontPt = input.int(11, "ǥ ���� ũ��: pt", minval=8, maxval=24, group="3. ǥ ��ġ")
+string standalonePos = input.string(position.top_right, "�ܵ� ǥ ��ġ", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. ǥ ��ġ")
+
+int groupId = groupChoice == "1-10" ? 0 : groupChoice == "11-50" ? 1 : groupChoice == "51-100" ? 2 : 3
+var array<string> symbols = array.new<string>()
+var array<string> ticks = array.new<string>()
+var array<int> ranks = array.new<int>()
+switch groupId
+    0 =>
+        symbols := array.from("CRYPTO:BTCUSD", "CRYPTO:ETHUSD", "CRYPTO:BNBUSD", "CRYPTO:XRPUSD", "CRYPTO:SOLUSD", "CRYPTO:TRXUSD", "CRYPTO:ZECUSD", "CRYPTO:HYPEHUSD")
+        ticks := array.from("BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "ZEC", "HYPE")
+        ranks := array.from(1, 2, 4, 5, 7, 8, 9, 10)
+    1 =>
+        symbols := array.from("CRYPTO:DOGEUSD", "CRYPTO:XMRUSD", "CRYPTO:LINKUSD", "CRYPTO:ADAUSD", "CRYPTO:LEOUSD", "CRYPTO:XLMUSD", "CRYPTO:NEARUSD", "CRYPTO:UNIUSD", "CRYPTO:BCHUSD", "CRYPTO:AVAXUSD", "CRYPTO:LTCUSD", "CRYPTO:CCCAUSD", "CRYPTO:SUIUSD", "CRYPTO:GRAMUSD", "CRYPTO:HBARUSD", "CRYPTO:MEMECOREUSD", "CRYPTO:SHIBUSD", "CRYPTO:TAOBUSD", "CRYPTO:CROUSD", "CRYPTO:OKBUSD", "CRYPTO:ENAUSD", "CRYPTO:AAVEUSD", "CRYPTO:ONDOUSD", "CRYPTO:PUMPFUSD", "CRYPTO:ASTER2USD", "CRYPTO:MNTUSD", "CRYPTO:DOTUSD", "CRYPTO:WLFIOUSD", "CRYPTO:PEPEUSD", "CRYPTO:SKY2USD", "CRYPTO:WLDWUSD", "CRYPTO:ICPUSD")
+        ticks := array.from("DOGE", "XMR", "LINK", "ADA", "LEO", "XLM", "NEAR", "UNI", "BCH", "AVAX", "LTC", "CC", "SUI", "GRAM", "HBAR", "M", "SHIB", "TAO", "CRO", "OKB", "ENA", "AAVE", "ONDO", "PUMP", "ASTER", "MNT", "DOT", "WLFI", "PEPE", "SKY", "WLD", "ICP")
+        ranks := array.from(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24, 26, 27, 28, 29, 30, 32, 33, 36, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50)
+    2 =>
+        symbols := array.from("CRYPTO:VVVUSD", "CRYPTO:MORPHOUSD", "CRYPTO:ARBIUSD", "CRYPTO:BGBUSD", "CRYPTO:ETCUSD", "CRYPTO:LITLUSD", "CRYPTO:POLYGUSD", "CRYPTO:KASUSD", "CRYPTO:JUPIUSD", "CRYPTO:ALGOUSD", "CRYPTO:KCSUSD", "CRYPTO:ATOMUSD", "CRYPTO:CAKEUSD", "CRYPTO:RENDERUSD", "CRYPTO:FILUSD", "CRYPTO:QNTUSD", "CRYPTO:INJUSD", "CRYPTO:DASHUSD", "CRYPTO:VETUSD", "CRYPTO:ETHFIUSD", "CRYPTO:STABLE3USD", "CRYPTO:APTOUSD", "CRYPTO:AERODUSD", "CRYPTO:XDCUSD", "CRYPTO:TRUMPOFUSD", "CRYPTO:STXSUSD", "CRYPTO:CRVUSD", "CRYPTO:PIEVERSEUSD", "CRYPTO:PENGUPUDUSD", "CRYPTO:BIANRENSHENGUSD", "CRYPTO:PYTHUSD", "CRYPTO:PENDLEUSD", "CRYPTO:VIRTUALUSD", "CRYPTO:SPX6USD", "CRYPTO:RAYUSD", "CRYPTO:ZROLUSD", "CRYPTO:SEIUSD", "CRYPTO:FETUSD", "CRYPTO:PONS2USD", "CRYPTO:NIGHTMIUSD")
+        ticks := array.from("VVV", "MORPHO", "ARB", "BGB", "ETC", "LIT", "POL", "KAS", "JUP", "ALGO", "KCS", "ATOM", "CAKE", "RENDER", "FIL", "QNT", "INJ", "DASH", "VET", "ETHFI", "STABLE", "APT", "AERO", "XDC", "TRUMP", "STX", "CRV", "PIEVERSE", "PENGU", "BIANRENSHENG", "PYTH", "PENDLE", "VIRTUAL", "SPX", "RAY", "ZRO", "SEI", "FET", "PONS", "NIGHT")
+        ranks := array.from(51, 53, 54, 55, 57, 58, 60, 61, 62, 63, 64, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 84, 85, 86, 87, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99)
+    3 =>
+        symbols := array.from("CRYPTO:TIA2USD", "CRYPTO:XTZUSD", "CRYPTO:LDOUSD", "CRYPTO:STRKSUSD", "CRYPTO:BSVUSD", "CRYPTO:BTTUSD", "CRYPTO:ARUSD", "CRYPTO:DCRUSD", "CRYPTO:LUNCUSD", "CRYPTO:MONADUSD", "CRYPTO:KITEUSD", "CRYPTO:OPUSD", "CRYPTO:IMXUSD", "CRYPTO:CFXUSD", "CRYPTO:ENSUSD", "CRYPTO:SYRUPUSD", "CRYPTO:BONKUSD", "CRYPTO:XPLUSD", "CRYPTO:JTOUSD", "CRYPTO:FLOKIUSD", "CRYPTO:TWTUSD", "CRYPTO:GRTUSD")
+        ticks := array.from("TIA", "XTZ", "LDO", "STRK", "BSV", "BTT", "AR", "DCR", "LUNC", "MON", "KITE", "OP", "IMX", "CFX", "ENS", "SYRUP", "BONK", "XPL", "JTO", "FLOKI", "TWT", "GRT")
+        ranks := array.from(101, 102, 103, 104, 105, 106, 108, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125)
+int count = symbols.size()
+var array<color> palette = array.from(#56B4E9, #E69F00, #009E73, #CC79A7, #F0E442, #D55E00, #0072B2, #AAEEAA, #F28E8E, #B59AE8, #64D8CB, #E6C290, #829BFF, #E878B5, #9DC76A, #DBA8F0, #77A8A8, #EE9966, #D4CC77, #88C0D0, #C58D5E, #88AAFF, #B9D5A0, #F7B7A3, #CCB9EC, #B4C77E, #50C8A0, #CBA16C, #E9AAC4, #7CAAB5, #E0BC63, #AFB1D9, #E5C4A5, #8ECCDD, #DB9C85, #9BB486, #C4A9CC, #6DB4E8, #D4B28C, #A1C8BE)
+var array<float> bases = array.new<float>(40, na)
+var array<float> hostBases = array.new<float>(40, na)
+var array<int> baseTimes = array.new<int>(40, na)
+var array<float> values = array.new<float>(40, na)
+var array<float> rels = array.new<float>(40, na)
+var array<float> recents = array.new<float>(40, na)
+var array<float> dollars = array.new<float>(40, na)
+var array<int> sourceTimes = array.new<int>(40, na)
+var array<bool> fresh = array.new<bool>(40, false)
+var array<bool> late = array.new<bool>(40, false)
+var array<bool> selfCoin = array.new<bool>(40, false)
+var array<bool> selected = array.new<bool>(40, false)
+var array<label> labels = array.new<label>()
+type Trail
+    array<chart.point> points
+var array<Trail> trails = array.new<Trail>()
+var array<polyline> paths = array.new<polyline>()
+if barstate.isfirst
+    for i = 0 to count - 1
+        trails.push(Trail.new(array.new<chart.point>()))
+
+float seconds = timeframe.in_seconds()
+int recentBars = math.max(1, int(math.ceil(recentMinutes * 60.0 / seconds)))
+if barstate.isfirst and (not timeframe.isintraday or recentBars > 1000)
+    runtime.error("�к����ð��� �����Դϴ�. �ֱ� ���� ������ ��Ʈ 1000�� �̳��� �����ϼ���.")
+if barstate.isfirst and syminfo.currency != "USD" and syminfo.currency != "USDT" and syminfo.currency != "USDC"
+    runtime.error("USD��USDT��USDC ���� ��Ʈ���� ����ϼ���. CRYPTO: USD ������ ���� ���� ������ ���ؾ� �մϴ�.")
+if barstate.isfirst and not chart.is_standard
+    runtime.error("�Ϲ� ĵ�顤�� ��Ʈ���� ����ϼ���. ����Ų �ƽ� �� �ռ� ������ ��� ���ͷ� �������� ������� �ʽ��ϴ�.")
+bool atAnchor = anchorMode == "�ð� ����" ? time_close >= anchorTime : time >= chart.left_visible_bar_time
+var int anchorBar = na
+var int anchorRead = na
+var float hostBase = na
+var float hostEnd = na
+var int endRead = na
+var int endBarTime = na
+if na(anchorBar) and atAnchor
+    anchorBar := time
+    anchorRead := time_close
+    hostBase := close
+bool inRange = time <= chart.right_visible_bar_time
+bool acceptedBar = includeOpen or barstate.isconfirmed
+if inRange and atAnchor and acceptedBar
+    hostEnd := close
+    endRead := time_close
+    endBarTime := time
+float hostRecentRatio = close / close[recentBars]
+string pins = "," + str.replace_all(str.upper(pinsInput), " ", "") + ","
+
+f_self(string tick) =>
+    string b = syminfo.basecurrency
+    b == tick or b == "1000" + tick or b == "1000000" + tick or b == "1M" + tick or b == "K" + tick
+
+f_pct(float value) =>
+    na(value) ? "?" : (value > 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
+
+f_linear(float c) =>
+    float s = c / 255.0
+    s <= 0.04045 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4)
+
+f_ink(color c) =>
+    float l = 0.2126 * f_linear(color.r(c)) + 0.7152 * f_linear(color.g(c)) + 0.0722 * f_linear(color.b(c))
+    l > 0.179 ? color.black : color.white
+
+// Each slot owns its base and readouts. There is no function-local var shared across coins.
+for i = 0 to count - 1
+    string sym = symbols.get(i)
+    [price, recentRatio, sourceTime] = request.security(sym, timeframe.period, [close, close / close[recentBars], time_close], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off, ignore_invalid_symbol=true)
+    bool valid = not na(price) and price > 0 and sourceTime == time_close
+    if atAnchor and valid and na(bases.get(i))
+        bases.set(i, price)
+        hostBases.set(i, close)
+        baseTimes.set(i, time)
+    float base = bases.get(i)
+    float coinReturn = not na(base) ? price / base - 1 : na
+    float relative = not na(base) ? ((price / base) / (close / hostBases.get(i)) - 1) * 100 : na
+    float recent = valid and hostRecentRatio > 0 ? (recentRatio / hostRecentRatio - 1) * 100 : na
+    float y = valid and not na(base) ? hostBases.get(i) * (1 + coinReturn) : na
+    if showLines and inRange and acceptedBar and time >= chart.left_visible_bar_time and not na(y)
+        Trail trace = trails.get(i)
+        trace.points.push(chart.point.from_time(time, y))
+        if trace.points.size() > pointLimit
+            trace.points.shift()
+    if inRange and acceptedBar
+        values.set(i, y)
+        rels.set(i, relative)
+        recents.set(i, recent)
+        dollars.set(i, coinReturn * 100)
+        sourceTimes.set(i, sourceTime)
+        fresh.set(i, valid and not na(base))
+        late.set(i, not na(baseTimes.get(i)) and baseTimes.get(i) > anchorBar)
+        selfCoin.set(i, f_self(ticks.get(i)))
+
+f_eligible(int i) =>
+    fresh.get(i) and not late.get(i) and not selfCoin.get(i) and not na(rels.get(i))
+
+f_state(int i) =>
+    not fresh.get(i) ? "�ڷ� ����/����" : late.get(i) ? "���� �ڷ� ����*" : selfCoin.get(i) ? "���� ����" : na(recents.get(i)) ? "�ֱ� �ڷ� ����" : rels.get(i) >= 0 ? (recents.get(i) >= 0 ? "���� ����" : "���� ��ȭ") : (recents.get(i) >= 0 ? "�ֱ� ����" : "�༼ ����")
+
+f_tip(int i) =>
+    string start = na(baseTimes.get(i)) ? "����" : str.format_time(baseTimes.get(i), "yyyy-MM-dd HH:mm", "Asia/Seoul")
+    string src = na(sourceTimes.get(i)) ? "����" : str.format_time(sourceTimes.get(i), "MM-dd HH:mm", "Asia/Seoul")
+    symbols.get(i) + " | ������ ���� " + str.tostring(ranks.get(i)) + "��\n" + f_state(i) + "\n���� �� ���� KST " + start + "\n�ü� �� ���� KST " + src + "\n�޷� ���� " + f_pct(dollars.get(i)) + "\nȣ��Ʈ ��� " + f_pct(rels.get(i)) + "\n�ֱ� " + str.tostring(recentBars * seconds / 60, "#.##") + "�� ��� " + f_pct(recents.get(i))
+
+// Rank at the current visible endpoint, then draw the entire retained path with that emphasis.
+array<float> keys = array.new<float>(count, -1e20)
+array<int> orderIndex = array.new<int>()
+if barstate.islast
+    for tag in labels
+        label.delete(tag)
+    labels.clear()
+    for path in paths
+        polyline.delete(path)
+    paths.clear()
+    selected.fill(false)
+    for i = 0 to count - 1
+        bool ok = f_eligible(i)
+        float key = sortMode == "���� ����" ? -ranks.get(i) : sortMode == "�ֱ� ����" ? recents.get(i) : rels.get(i)
+        if sortMode == "�� ���� �켱" and ok and not na(recents.get(i))
+            // Category first, recent relative strength second; no mixing of units in the category.
+            key := recents.get(i)
+        keys.set(i, ok and not na(key) ? key : -1e20 - i)
+    orderIndex := keys.sort_indices(order.descending)
+    if sortMode == "�� ���� �켱"
+        array<int> priority = array.new<int>()
+        for i in orderIndex
+            if f_eligible(i) and rels.get(i) < 0 and recents.get(i) >= 0
+                priority.push(i)
+        for i in orderIndex
+            if not (f_eligible(i) and rels.get(i) < 0 and recents.get(i) >= 0)
+                priority.push(i)
+        orderIndex := priority
+    array<int> validOrder = array.new<int>()
+    for i in orderIndex
+        if f_eligible(i)
+            validOrder.push(i)
+    int vn = validOrder.size()
+    if vn > 0
+        for k = 0 to vn - 1
+            int i = validOrder.get(k)
+            if k < edgeCount or k >= vn - edgeCount
+                selected.set(i, true)
+    int labelN = 0
+    for i in orderIndex
+        bool pin = str.contains(pins, "," + ticks.get(i) + ",")
+        bool highlight = pin or (lineMode != "���� ���ø�" and selected.get(i))
+        Trail trace = trails.get(i)
+        if showLines and trace.points.size() > 1 and (lineMode != "���� ���ø�" or pin)
+            color ink = palette.get(i)
+            bool strongLine = lineMode == "��ü" or highlight
+            paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=color.new(ink, strongLine ? 0 : 82), line_width=strongLine ? math.min(4, lineWidth + 1) : 1))
+        if showLabels and showLines and highlight and fresh.get(i) and labelN < 10
+            color c = palette.get(i)
+            string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
+            labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=f_ink(c), size=size.small, tooltip=f_tip(i)))
+            labelN += 1
+
+f_groupCount(int i) =>
+    i == 0 ? 8 : i == 1 ? 32 : i == 2 ? 40 : 22
+
+f_cols(int n) =>
+    int(math.ceil(n * 1.0 / rowsLimit))
+
+f_rows(int n) =>
+    int(math.ceil(n * 1.0 / f_cols(n)))
+
+int groups = f_cols(count)
+int rows = f_rows(count)
+int before = 0
+int totalRows = 0
+for g = 0 to 3
+    int h = 3 + f_rows(f_groupCount(g))
+    totalRows += h
+    if g < groupId
+        before += h
+bool stacked = layoutMode == "������ 4����"
+float startPct = topPct + (stacked ? before * rowPct : 0)
+bool overflows = stacked and topPct + totalRows * rowPct > 99
+// One exact-height spacer replaces dozens of automatic-height phantom text rows.
+// All columns have an explicit width; every visible row has exactly rowPct height.
+var table board = table.new(stacked ? position.top_right : standalonePos, 3 * groups, rows + 4, frame_width=0, border_width=0)
+color bg = color.new(chart.bg_color, 8)
+color fg = chart.fg_color
+color muted = color.new(fg, 40)
+color good = #46BFA4
+color bad = #EB7979
+float colWidth = widthPct / (3 * groups)
+
+f_cell(int c, int r, string text, color ink, color back, string tip) =>
+    board.cell(c, r, text, width=colWidth, height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
+
+if barstate.islast
+    board.clear(0, 0, 3 * groups - 1, rows + 3)
+    if showBoard
+        for c = 0 to 3 * groups - 1
+            board.cell(c, 0, "", width=colWidth, height=startPct, bgcolor=color.new(bg, 100))
+        int peers = 0
+        int beat = 0
+        int recentPeers = 0
+        int recentBeat = 0
+        int missing = 0
+        int lateN = 0
+        for i = 0 to count - 1
+            missing += fresh.get(i) ? 0 : 1
+            lateN += late.get(i) and fresh.get(i) ? 1 : 0
+            if f_eligible(i)
+                peers += 1
+                beat += rels.get(i) > 0 ? 1 : 0
+                if not na(recents.get(i))
+                    recentPeers += 1
+                    recentBeat += recents.get(i) > 0 ? 1 : 0
+        string title = "Flow " + groupChoice
+        string status = overflows ? "���� �հ� >99%: �� ���̸� ���̼���" : na(hostEnd) ? "���� ���� ȭ�� ���Դϴ�" : "���� " + str.tostring(beat) + "/" + str.tostring(peers) + " �� �ֱ� " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)
+        string details = "�ڷ� ����/���� " + str.tostring(missing) + " �� ���� ����* " + str.tostring(lateN) + " �� ȣ��Ʈ " + f_pct(na(hostEnd) ? na : (hostEnd / hostBase - 1) * 100)
+        string anchorLabel = na(anchorRead) ? "���� ����" : str.format_time(anchorRead, "MM-dd HH:mm", "Asia/Seoul") + " KST"
+        for c = 0 to 3 * groups - 1
+            f_cell(c, 1, c == 0 ? title : c == 1 ? "����" : c == 2 ? str.tostring(beat) + "/" + str.tostring(peers) : "", fg, bg, status + "\n" + details)
+            f_cell(c, 2, c == 0 ? anchorLabel : c == 1 ? "�ֱ�" : c == 2 ? str.tostring(recentBars * seconds / 60, "#.##") + "��" : "", overflows ? bad : muted, bg, status + "\n" + details + "\nǥ���� ���ڴ� ��� ȣ��Ʈ ����Դϴ�. ���� ����/���� �� �� ������ �����ϴ�.")
+        for g = 0 to groups - 1
+            f_cell(g * 3, 3, "����", muted, bg, "ƼĿ �� ��ȣ: ���ֱ� ����, �鰭�� ��ȭ. * ���� �ð��� �ڷᰡ ���� ������ ������ �����Դϴ�.")
+            f_cell(g * 3 + 1, 3, "���� ����", muted, bg, "���� �ð� ���� ȣ��Ʈ ��� ��� ���ͷ�")
+            f_cell(g * 3 + 2, 3, "�ֱ�", muted, bg, "�ֱ� ������ �ð� ������ ȣ��Ʈ ��� ��� ���ͷ�. ���ӵ��� �ƴմϴ�.")
+        for k = 0 to groups * rows - 1
+            int c = int(math.floor(k / rows)) * 3
+            int r = 4 + k % rows
+            if k < count
+                int i = orderIndex.get(k)
+                string state = f_state(i)
+                string mark = state == "�ֱ� ����" ? "��" : state == "���� ��ȭ" ? "��" : ""
+                string tick = mark + ticks.get(i) + (late.get(i) ? "*" : "")
+                color ink = palette.get(i)
+                string tip = f_tip(i) + "\n" + details
+                bool ok = fresh.get(i)
+                f_cell(c, r, tick, ok ? f_ink(ink) : muted, ok ? ink : bg, tip)
+                f_cell(c + 1, r, ok ? f_pct(rels.get(i)) : "?", ok ? (rels.get(i) >= 0 ? good : bad) : muted, bg, tip)
+                f_cell(c + 2, r, ok ? f_pct(recents.get(i)) : "?", ok ? (recents.get(i) >= 0 ? good : bad) : muted, bg, tip)
+            else
+                for j = 0 to 2
+                    f_cell(c + j, r, "", muted, bg, "")
