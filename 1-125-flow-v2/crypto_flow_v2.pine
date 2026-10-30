@@ -245,9 +245,10 @@ int before = 0
 int totalRows = 0
 for g = 0 to 3
     int h = 3 + f_rows(f_groupCount(g))
-    totalRows += h
+    // Leave one empty row between groups so adjacent titles and coin rows do not touch.
+    totalRows += h + (g < 3 ? 1 : 0)
     if g < groupId
-        before += h
+        before += h + 1
 bool stacked = layoutMode == "오른쪽 4구간"
 float startPct = topPct + (stacked ? before * rowPct : 0)
 bool overflows = stacked and topPct + totalRows * rowPct > 99
@@ -262,8 +263,8 @@ color bad = #EB7979
 f_width(int c) =>
     widthPct / groups * (c % 3 == 0 ? 0.44 : 0.28)
 
-f_cell(int c, int r, string text, color ink, color back, string tip) =>
-    board.cell(c, r, text, width=f_width(c), height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
+f_cell(int c, int r, string cellText, color ink, color back, string tip) =>
+    board.cell(c, r, cellText, width=f_width(c), height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
 
 if barstate.islast
     board.clear(0, 0, 3 * groups - 1, rows + 3)

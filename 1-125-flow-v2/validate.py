@@ -108,11 +108,11 @@ class NumericalSpecification(unittest.TestCase):
         for limit in range(6, 21):
             previous_end = 3.0
             before_rows = 0
-            for count in counts:
+            for group_index, count in enumerate(counts):
                 groups = math.ceil(count / limit)
                 rows = math.ceil(count / groups)
                 start = 3 + before_rows * 1.65
-                self.assertAlmostEqual(start, previous_end)
+                self.assertAlmostEqual(start - previous_end, 0 if group_index == 0 else 1.65)
                 for k in range(count):
                     c = (k // rows) * 3
                     r = 4 + k % rows
@@ -120,10 +120,10 @@ class NumericalSpecification(unittest.TestCase):
                     self.assertLess(r, rows + 4)
                 self.assertAlmostEqual(groups * (0.44 + 0.28 + 0.28), groups)
                 previous_end = start + (3 + rows) * 1.65
-                before_rows += 3 + rows
-        total_rows = sum(3 + math.ceil(n / math.ceil(n / 12)) for n in counts)
-        self.assertEqual(total_rows, 52)
-        self.assertAlmostEqual(3 + total_rows * 1.65, 88.8)
+                before_rows += 3 + rows + 1
+        total_rows = sum(3 + math.ceil(n / math.ceil(n / 12)) for n in counts) + len(counts) - 1
+        self.assertEqual(total_rows, 55)
+        self.assertAlmostEqual(3 + total_rows * 1.65, 93.75)
 
 
 if __name__ == '__main__':
