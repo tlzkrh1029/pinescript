@@ -1,0 +1,444 @@
+//@version=6
+// TD Research v6.0.0 - independent implementation, informed by Kidze chart research.
+// This is NOT recovered Kidze source or an exact replica. Pink = a candidate Aggressive Combo.
+// Default Combo final-Wick is a research diagnostic; Sequential keeps Open or Close.
+// Independent origins can show extra signals. Size/recycle/TDST policies remain selectable.
+// All state changes and alerts wait for the chart bar to close. No security(), lookahead or varip.
+indicator("TD Research v6 - Sequential / Combo / Aggressive", "TD Research v6", overlay = true, max_labels_count = 500, max_bars_back = 512)
+
+const string GF = "1 | Families"
+const string GS = "2 | Sequential"
+const string GC = "3 | Combo"
+const string GA = "4 | Aggressive candidates"
+const string GL = "5 | Origins and cancellation"
+const string GV = "6 | Display"
+
+bool enableSeq = input.bool(true, "Sequential | red", group = GF)
+bool enableCombo = input.bool(true, "Combo | purple", group = GF)
+bool enableAggSeq = input.bool(false, "Aggressive Sequential | orange", group = GF)
+bool enableAggCombo = input.bool(true, "Aggressive Combo candidate | pink", group = GF, tooltip = "Experimental all-wick Combo. It fits several researched pink13 positions, but the color mapping and full lifecycle remain unproven.")
+
+string seqFinal = input.string("Open or Close", "Sequential final13 price", options = ["Close", "Open or Close", "Wick"], group = GS, tooltip = "Only the final count changes. Universal Wick fixed SUI/SHIB but moved the known ETH13 one day too early; it is not the default.")
+bool seqQ138 = input.bool(true, "Sequential 13 vs 8 qualifier", group = GS)
+bool seqQ85 = input.bool(false, "Sequential 8 vs 5 qualifier", group = GS)
+int seqTicks = input.int(0, "Final13 tolerance | current minimum ticks", minval = 0, maxval = 10, group = GS, tooltip = "Explicit sensitivity setting, default zero. Applied only to final13's base comparison; never to 8vs5/13vs8. Historical tick sizes are not reconstructed.")
+
+string comboFinal = input.string("Wick", "Combo final13 price | experimental default", options = ["Close", "Open or Close", "Wick"], group = GC, tooltip = "Wick changes ONLY count13 of ordinary Combo. Its reference remains the PREVIOUS COUNTED CLOSE. It does not turn all13 counts into Aggressive Combo.")
+bool comboRelaxed = input.bool(true, "Relax ordinary Combo counts 11-13", group = GC)
+int comboTicks = input.int(0, "Combo final13 tolerance | current minimum ticks", minval = 0, maxval = 10, group = GC)
+bool showRefresh = input.bool(true, "Annotate Combo13r after a raw Setup18+", group = GC, tooltip = "Annotation only. Sticky once a same-direction raw18+ occurs while the run is active. It does not restart a countdown. The sticky persistence is an implementation choice.")
+
+bool aggQ138 = input.bool(true, "Aggressive Sequential 13 vs 8", group = GA)
+bool aggQ85 = input.bool(false, "Aggressive Sequential 8 vs 5", group = GA)
+bool aggComboRelaxed = input.bool(true, "Relax Aggressive Combo counts 11-13", group = GA, tooltip = "Its progression reference is the PREVIOUS COUNTED WICK, unlike ordinary Combo. Current researched endpoints do not uniquely identify this late relaxation.")
+
+string originPolicy = input.string("Independent", "Same-direction origin policy", options = ["Independent", "Keep active", "Recycle range", "Newest"], group = GL, tooltip = "Independent preserves each accepted Setup9 origin. Other modes select one active origin per family/direction and are research comparisons, not recovered Kidze lifecycle rules.")
+bool rejectSmaller = input.bool(false, "Reject a smaller new Setup9", group = GL, tooltip = "Compare the new first9 true range with this family's last ADOPTED setup's causally extended true range. Applies even after13. An ignored setup never becomes the new reference.")
+float recycleMin = input.float(100.0, "Recycle range | minimum %", minval = 0.0, maxval = 1000.0, step = 5.0, group = GL)
+float recycleMax = input.float(200.0, "Recycle range | maximum %", minval = 0.0, maxval = 1000.0, step = 5.0, group = GL, tooltip = "Only used in Recycle range mode. New first9 / previous adopted extended range. A larger than200% setup does not automatically reset an active run.")
+bool cancelOpposite = input.bool(true, "Cancel on opposite actual Setup9", group = GL, tooltip = "Cancellation occurs before same-bar count13. Clears opposite runs and their size reference. A repeated display9 at raw18 is not an opposite/new Setup9.")
+bool cancelTDST = input.bool(false, "Cancel on TDST true-extreme break", group = GL, tooltip = "Buy: current true low exceeds that run's Setup9 true high. Sell: true high below its Setup9 true low. Applied before counting; research option, off by default.")
+bool restart22 = input.bool(false, "Raw22 restart | Sequential families only", group = GL, tooltip = "Experimental: replace Seq/AggSeq runs on raw22 and count anew from that bar. Does not invent a new9 or replay Combo. Separate from the raw18 refresh annotation.")
+int maxOrigins = input.int(8, "Maximum active origins per family/direction", minval = 1, maxval = 16, group = GL, tooltip = "At capacity the oldest active origin is removed and the panel's capacity counter increases. This bounds runtime and is not a DeMARK rule.")
+
+bool showSetups = input.bool(true, "Show setups", group = GV)
+bool setupNineOnly = input.bool(true, "Setup display | only 9", group = GV)
+bool wrapSetup = input.bool(true, "Display raw Setup counts as repeated 1-9", group = GV, tooltip = "The internal count continues beyond9. The second displayed9 is raw18 and does not create another countdown.")
+bool showCounts = input.bool(false, "Show intermediate countdown numbers", group = GV)
+bool newestCountsOnly = input.bool(true, "Intermediate numbers | newest adopted origin only", group = GV)
+bool showBackfill = input.bool(false, "Show retrospective Combo1-9 numbers", group = GV, tooltip = "Enable intermediate countdown numbers too. These historical price-bar labels become known ONLY when Setup9 closes. No historical alerts are emitted. The current Setup9 bar can display its count without retrospective labels.")
+bool showDeferred = input.bool(true, "Show qualifier deferrals (+8 / +13)", group = GV)
+bool showCancelMarks = input.bool(false, "Show cancellations", group = GV)
+bool showTDST = input.bool(false, "Plot latest adopted Sequential TDST", group = GV)
+bool showPanel = input.bool(true, "Show status panel", group = GV)
+bool prefix = input.bool(false, "Prefix13 labels with family", group = GV)
+int labelLimit = input.int(400, "Maximum visible historical labels", minval = 50, maxval = 480, group = GV)
+float spacing = input.float(0.25, "Label spacing | ATR", minval = 0.05, maxval = 2.0, step = 0.05, group = GV)
+color seqColor = input.color(color.rgb(220, 42, 42), "Sequential", group = GV)
+color comboColor = input.color(color.rgb(116, 39, 154), "Combo", group = GV)
+color aggSeqColor = input.color(color.rgb(235, 146, 35), "Aggressive Sequential", group = GV)
+color aggComboColor = input.color(color.rgb(231, 75, 177), "Aggressive Combo candidate", group = GV)
+color setupColor = input.color(color.gray, "Setup", group = GV)
+
+// family:0=Seq,1=AggSeq,2=Combo,3=AggCombo; direction:-1=buy,+1=sell.
+type CountRun
+    int family
+    int direction
+    int originBar
+    int originTime
+    int setupStart
+    int chainStart
+    float tdst
+    int n = 0
+    float lastCounted = na
+    float close5 = na
+    float close8 = na
+    bool refresh = false
+    int lastProcessed = -1
+
+type Adopted
+    int chainStart = na
+    float hi = na
+    float lo = na
+    float tdst = na
+    int originBar = na
+
+var array<CountRun> runs = array.new<CountRun>()
+var array<Adopted> anchors = array.new<Adopted>()
+var array<label> labelQueue = array.new<label>()
+// counters:0=capacity removals,1=small rejections,2=kept active,3=cancellations.
+var array<int> counters = array.new_int(4, 0)
+array<int> complete = array.new_int(8, 0)
+array<bool> refreshed = array.new_bool(8, false)
+array<string> completionTips = array.new_string(8, "")
+float atr14 = ta.atr(14)
+float pad = math.max(nz(atr14, high - low), syminfo.mintick * 10.0) * spacing
+float trueHi = math.max(high, nz(close[1], high))
+float trueLo = math.min(low, nz(close[1], low))
+
+f_slot(int family, int direction) =>
+    family * 2 + (direction == 1 ? 1 : 0)
+
+f_enabled(int family) =>
+    switch family
+        0 => enableSeq
+        1 => enableAggSeq
+        2 => enableCombo
+        => enableAggCombo
+
+f_name(int family) =>
+    switch family
+        0 => "Sequential"
+        1 => "Aggressive Sequential"
+        2 => "Combo"
+        => "Aggressive Combo candidate"
+
+f_short(int family) =>
+    switch family
+        0 => "S"
+        1 => "AS"
+        2 => "C"
+        => "AC*"
+
+f_color(int family) =>
+    switch family
+        0 => seqColor
+        1 => aggSeqColor
+        2 => comboColor
+        => aggComboColor
+
+f_compare(float value, float boundary, int direction, bool strict, float tolerance) =>
+    direction == -1 ? (strict ? value < boundary + tolerance : value <= boundary + tolerance) : (strict ? value > boundary - tolerance : value >= boundary - tolerance)
+
+f_emitLabel(int x, float y, string txt, color ink, string tip, string fontSize, int direction) =>
+    string labelStyle = direction == -1 ? label.style_label_up : label.style_label_down
+    label item = label.new(x, y, txt, xloc = xloc.bar_index, yloc = yloc.price, color = color.new(color.black, 100), style = labelStyle, textcolor = ink, size = fontSize, tooltip = tip)
+    array.push(labelQueue, item)
+    if array.size(labelQueue) > labelLimit
+        label.delete(array.shift(labelQueue))
+    item
+
+f_tip(CountRun r) =>
+    f_name(r.family) + (r.direction == -1 ? " | BUY" : " | SELL") + "\nOrigin bar open: " + str.format_time(r.originTime, "yyyy-MM-dd HH:mm", "UTC") + " UTC\nOrigin bar: " + str.tostring(r.originBar) + "\nRun starts only when this bar closes."
+
+f_intermediate(CountRun r, int offset, int status) =>
+    Adopted anchor = array.get(anchors, f_slot(r.family, r.direction))
+    bool selected = not newestCountsOnly or anchor.originBar == r.originBar
+    bool eligible = selected and ((status > 0 and status < 13 and showCounts) or (status < 0 and showDeferred))
+    if eligible
+        float base = r.direction == -1 ? low[offset] : high[offset]
+        float gap = nz(pad[offset], pad) * (1.5 + r.family * 1.5)
+        float y = base + r.direction * gap
+        string txt = status < 0 ? "+" + str.tostring(-status) : str.tostring(status)
+        string provenance = offset > 0 ? "\nRetrospective price bar; first known at Setup9 confirmation." : "\nConfirmed price bar."
+        f_emitLabel(bar_index - offset, y, txt, color.new(f_color(r.family), status < 0 ? 0 : 35), f_tip(r) + provenance, size.tiny, r.direction)
+    eligible
+
+f_comboAccept(CountRun r, int offset, float value, float wick) =>
+    float tolerance = r.n == 12 ? comboTicks * syminfo.mintick : 0.0
+    bool progression = na(r.lastCounted) or f_compare(value, r.lastCounted, r.direction, false, tolerance)
+    bool accepted = progression
+    if r.n < 10 or not comboRelaxed
+        float boundary = r.direction == -1 ? low[offset + 2] : high[offset + 2]
+        float prevWick = r.direction == -1 ? low[offset + 1] : high[offset + 1]
+        accepted := progression and f_compare(value, boundary, r.direction, false, 0.0) and f_compare(wick, prevWick, r.direction, false, 0.0) and f_compare(value, close[offset + 1], r.direction, true, 0.0)
+    accepted
+
+// Mutates only this run. Returns accepted count, negative deferred count, or0.
+f_advance(CountRun r, int offset) =>
+    float c = close[offset]
+    float o = open[offset]
+    float wick = r.direction == -1 ? low[offset] : high[offset]
+    bool last = r.n == 12
+    bool accepted = false
+    int status = 0
+    if r.family < 2
+        float boundary = r.direction == -1 ? low[offset + 2] : high[offset + 2]
+        float tolerance = last ? seqTicks * syminfo.mintick : 0.0
+        float value = r.family == 1 ? wick : c
+        accepted := f_compare(value, boundary, r.direction, false, tolerance)
+        if last and r.family == 0
+            if seqFinal == "Open or Close"
+                accepted := accepted or f_compare(o, boundary, r.direction, false, tolerance)
+            else if seqFinal == "Wick"
+                accepted := accepted or f_compare(wick, boundary, r.direction, false, tolerance)
+        bool qualifier85 = r.family == 0 ? seqQ85 : aggQ85
+        bool qualifier138 = r.family == 0 ? seqQ138 : aggQ138
+        if accepted and r.n == 7 and qualifier85 and (na(r.close5) or not f_compare(wick, r.close5, r.direction, false, 0.0))
+            accepted := false
+            status := -8
+        if accepted and last and qualifier138 and (na(r.close8) or not f_compare(wick, r.close8, r.direction, false, 0.0))
+            accepted := false
+            status := -13
+    else if r.family == 2
+        accepted := f_comboAccept(r, offset, c, wick)
+        if last
+            if comboFinal == "Open or Close"
+                accepted := accepted or f_comboAccept(r, offset, o, wick)
+            else if comboFinal == "Wick"
+                accepted := accepted or f_comboAccept(r, offset, wick, wick)
+    else
+        accepted := na(r.lastCounted) or f_compare(wick, r.lastCounted, r.direction, false, 0.0)
+        if r.n < 10 or not aggComboRelaxed
+            float boundary = r.direction == -1 ? low[offset + 2] : high[offset + 2]
+            float prevWick = r.direction == -1 ? low[offset + 1] : high[offset + 1]
+            accepted := accepted and f_compare(wick, boundary, r.direction, false, 0.0) and f_compare(wick, prevWick, r.direction, true, 0.0)
+    if accepted
+        r.n += 1
+        r.lastCounted := r.family == 3 ? wick : c
+        if r.n == 5
+            r.close5 := c
+        if r.n == 8
+            r.close8 := c
+        status := r.n
+    r.lastProcessed := bar_index - offset
+    status
+
+f_removeDirection(int direction, string reason, bool clearAnchors) =>
+    if array.size(runs) > 0
+        for i = array.size(runs) - 1 to 0
+            CountRun r = array.get(runs, i)
+            if r.direction == direction
+                if showCancelMarks
+                    f_emitLabel(bar_index, direction == -1 ? low - pad : high + pad, "x", f_color(r.family), f_tip(r) + "\nCancelled: " + reason, size.tiny, direction)
+                array.remove(runs, i)
+                array.set(counters, 3, array.get(counters, 3) + 1)
+    if clearAnchors
+        for family = 0 to 3
+            array.set(anchors, f_slot(family, direction), Adopted.new())
+    true
+
+f_start(int family, int direction, int chainStart, float chainHi, float chainLo, bool raw22) =>
+    int slot = f_slot(family, direction)
+    Adopted anchor = array.get(anchors, slot)
+    float span = chainHi - chainLo
+    float oldSpan = anchor.hi - anchor.lo
+    float ratio = not na(oldSpan) and oldSpan > 0 ? span / oldSpan * 100.0 : na
+    int active = 0
+    if array.size(runs) > 0
+        for r in runs
+            if r.family == family and r.direction == direction
+                active += 1
+    bool small = rejectSmaller and not na(oldSpan) and span < oldSpan and not raw22
+    bool accept = active == 0 or originPolicy == "Independent" or originPolicy == "Newest" or raw22 or (originPolicy == "Recycle range" and not na(ratio) and ratio >= recycleMin and ratio <= recycleMax)
+    if small
+        array.set(counters, 1, array.get(counters, 1) + 1)
+        accept := false
+    else if not accept
+        array.set(counters, 2, array.get(counters, 2) + 1)
+    if accept
+        if (originPolicy != "Independent" or raw22) and array.size(runs) > 0
+            for i = array.size(runs) - 1 to 0
+                CountRun old = array.get(runs, i)
+                if old.family == family and old.direction == direction
+                    array.remove(runs, i)
+                    array.set(counters, 3, array.get(counters, 3) + 1)
+            active := 0
+        if active >= maxOrigins
+            int oldest = na
+            for i = 0 to array.size(runs) - 1
+                CountRun candidate = array.get(runs, i)
+                if na(oldest) and candidate.family == family and candidate.direction == direction
+                    oldest := i
+            if not na(oldest)
+                array.remove(runs, oldest)
+                array.set(counters, 0, array.get(counters, 0) + 1)
+        float tdst = direction == -1 ? chainHi : chainLo
+        CountRun r = CountRun.new(family, direction, bar_index, time, raw22 ? bar_index : bar_index - 8, chainStart, tdst)
+        array.push(runs, r)
+        anchor.chainStart := chainStart
+        anchor.hi := chainHi
+        anchor.lo := chainLo
+        anchor.tdst := tdst
+        anchor.originBar := bar_index
+        // Replay exactly once on confirmed9; current bar is INCLUDED here.
+        if family >= 2 and not raw22
+            for offset = 8 to 0
+                int status = f_advance(r, offset)
+                if offset == 0 or showBackfill
+                    f_intermediate(r, offset, status)
+    accept
+
+f_status(int family, int direction) =>
+    int active = 0
+    int highest = 0
+    if array.size(runs) > 0
+        for r in runs
+            if r.family == family and r.direction == direction
+                active += 1
+                highest := math.max(highest, r.n)
+    f_enabled(family) ? str.tostring(active) + " / " + str.tostring(highest) : "off"
+
+var int buyRaw = 0
+var int sellRaw = 0
+var int buyStart = na
+var int sellStart = na
+var float buyHi = na
+var float buyLo = na
+var float sellHi = na
+var float sellLo = na
+var int committed = na
+
+if barstate.isfirst
+    for slot = 0 to 7
+        array.push(anchors, Adopted.new())
+    if recycleMin > recycleMax
+        runtime.error("Recycle minimum must not exceed maximum.")
+
+if barstate.isconfirmed and (na(committed) or committed != bar_index)
+    committed := bar_index
+    if bar_index >= 5
+        bool buyContinues = close < close[4] and (buyRaw > 0 or close[1] > close[5])
+        bool sellContinues = close > close[4] and (sellRaw > 0 or close[1] < close[5])
+        buyRaw := buyContinues ? buyRaw + 1 : 0
+        sellRaw := sellContinues ? sellRaw + 1 : 0
+        if buyRaw == 1
+            buyStart := bar_index
+            buyHi := trueHi
+            buyLo := trueLo
+        else if buyRaw > 1
+            buyHi := math.max(buyHi, trueHi)
+            buyLo := math.min(buyLo, trueLo)
+        if sellRaw == 1
+            sellStart := bar_index
+            sellHi := trueHi
+            sellLo := trueLo
+        else if sellRaw > 1
+            sellHi := math.max(sellHi, trueHi)
+            sellLo := math.min(sellLo, trueLo)
+        // Extend ONLY the adopted reference, using prices known now.
+        for slot = 0 to 7
+            Adopted a = array.get(anchors, slot)
+            bool buy = slot % 2 == 0
+            if buy and buyRaw > 0 and a.chainStart == buyStart
+                a.hi := buyHi
+                a.lo := buyLo
+            if not buy and sellRaw > 0 and a.chainStart == sellStart
+                a.hi := sellHi
+                a.lo := sellLo
+        // Opposite9 and TDST invalidation precede current-bar13.
+        if cancelOpposite
+            if buyRaw == 9
+                f_removeDirection(1, "opposite Setup9", true)
+            if sellRaw == 9
+                f_removeDirection(-1, "opposite Setup9", true)
+        if cancelTDST and array.size(runs) > 0
+            for i = array.size(runs) - 1 to 0
+                CountRun r = array.get(runs, i)
+                bool broken = r.direction == -1 ? trueLo > r.tdst : trueHi < r.tdst
+                if broken
+                    if showCancelMarks
+                        f_emitLabel(bar_index, r.direction == -1 ? low - pad : high + pad, "x", f_color(r.family), f_tip(r) + "\nCancelled: TDST true-extreme break", size.tiny, r.direction)
+                    array.remove(runs, i)
+                    array.set(counters, 3, array.get(counters, 3) + 1)
+        for family = 0 to 3
+            if f_enabled(family)
+                if buyRaw == 9
+                    f_start(family, -1, buyStart, buyHi, buyLo, false)
+                if sellRaw == 9
+                    f_start(family, 1, sellStart, sellHi, sellLo, false)
+                if restart22 and family < 2
+                    if buyRaw == 22
+                        f_start(family, -1, buyStart, buyHi, buyLo, true)
+                    if sellRaw == 22
+                        f_start(family, 1, sellStart, sellHi, sellLo, true)
+        if showSetups
+            if buyRaw > 0
+                int displayed = wrapSetup ? (buyRaw - 1) % 9 + 1 : buyRaw
+                if not setupNineOnly or displayed == 9
+                    bool perfected = buyRaw == 9 and (math.min(low, low[1]) <= math.min(low[2], low[3]))
+                    f_emitLabel(bar_index, low - pad * 0.5, str.tostring(displayed) + (perfected ? "*" : ""), setupColor, "BUY Setup | raw " + str.tostring(buyRaw) + "\nOnly raw9 starts countdowns. * means perfected at9.", displayed == 9 ? size.large : size.small, -1)
+            if sellRaw > 0
+                int displayed = wrapSetup ? (sellRaw - 1) % 9 + 1 : sellRaw
+                if not setupNineOnly or displayed == 9
+                    bool perfected = sellRaw == 9 and (math.max(high, high[1]) >= math.max(high[2], high[3]))
+                    f_emitLabel(bar_index, high + pad * 0.5, str.tostring(displayed) + (perfected ? "*" : ""), setupColor, "SELL Setup | raw " + str.tostring(sellRaw) + "\nOnly raw9 starts countdowns. * means perfected at9.", displayed == 9 ? size.large : size.small, 1)
+        if array.size(runs) > 0
+            for i = array.size(runs) - 1 to 0
+                CountRun r = array.get(runs, i)
+                if (r.direction == -1 ? buyRaw : sellRaw) >= 18
+                    r.refresh := true
+                // Combo's new origin bar was counted during replay; never count twice.
+                if r.lastProcessed != bar_index
+                    int status = f_advance(r, 0)
+                    if status == 13
+                        int slot = f_slot(r.family, r.direction)
+                        array.set(complete, slot, array.get(complete, slot) + 1)
+                        array.set(refreshed, slot, array.get(refreshed, slot) or (showRefresh and r.family >= 2 and r.refresh))
+                        string previous = array.get(completionTips, slot)
+                        array.set(completionTips, slot, previous + (str.length(previous) > 0 ? "\n\n" : "") + f_tip(r))
+                        array.remove(runs, i)
+                    else
+                        f_intermediate(r, 0, status)
+        // Aggregate same-family/same-bar completions; never hide another family.
+        for slot = 0 to 7
+            int amount = array.get(complete, slot)
+            if amount > 0
+                int family = int(slot / 2)
+                int direction = slot % 2 == 0 ? -1 : 1
+                string txt = (prefix ? f_short(family) + " " : "") + "13" + (array.get(refreshed, slot) ? "r" : "") + (amount > 1 ? "x" + str.tostring(amount) : "")
+                float base = direction == -1 ? low : high
+                float safePad = math.min(pad, math.abs(base) * 0.06 / 8.0)
+                float y = base + direction * safePad * (2.0 + family * 2.0)
+                f_emitLabel(bar_index, y, txt, f_color(family), array.get(completionTips, slot) + "\nClosed-bar signal. Same-family origins: " + str.tostring(amount), size.large, direction)
+
+Adopted buySeqAnchor = array.get(anchors, 0)
+Adopted sellSeqAnchor = array.get(anchors, 1)
+plot(showTDST and enableSeq ? buySeqAnchor.tdst : na, "Buy Setup TDST resistance", color = color.new(seqColor, 40), style = plot.style_linebr)
+plot(showTDST and enableSeq ? sellSeqAnchor.tdst : na, "Sell Setup TDST support", color = color.new(comboColor, 40), style = plot.style_linebr)
+
+var table panel = table.new(position.top_right, 4, 7, border_width = 1)
+if barstate.islast
+    if showPanel
+        color bg = color.new(color.black, 16)
+        table.cell(panel, 0, 0, "TD Research v6", text_color = color.white, bgcolor = bg)
+        table.cell(panel, 1, 0, "Buy runs / count", text_color = color.white, bgcolor = bg)
+        table.cell(panel, 2, 0, "Sell runs / count", text_color = color.white, bgcolor = bg)
+        table.cell(panel, 3, 0, "Final13", text_color = color.white, bgcolor = bg)
+        for family = 0 to 3
+            table.cell(panel, 0, family + 1, f_short(family), text_color = f_color(family), bgcolor = bg)
+            table.cell(panel, 1, family + 1, f_status(family, -1), text_color = color.white, bgcolor = bg)
+            table.cell(panel, 2, family + 1, f_status(family, 1), text_color = color.white, bgcolor = bg)
+            string basis = family == 0 ? seqFinal : family == 2 ? comboFinal + "*" : "Wick"
+            table.cell(panel, 3, family + 1, basis, text_color = color.white, bgcolor = bg)
+        table.cell(panel, 0, 5, "Raw Setup", text_color = color.silver, bgcolor = bg)
+        table.cell(panel, 1, 5, str.tostring(buyRaw), text_color = color.white, bgcolor = bg)
+        table.cell(panel, 2, 5, str.tostring(sellRaw), text_color = color.white, bgcolor = bg)
+        table.cell(panel, 3, 5, originPolicy, text_color = color.white, bgcolor = bg)
+        int dropped = array.get(counters, 0)
+        table.cell(panel, 0, 6, dropped > 0 ? "CAP WARNING" : "Confirmed bars", text_color = dropped > 0 ? color.orange : color.silver, bgcolor = bg)
+        table.cell(panel, 1, 6, "Dropped " + str.tostring(dropped), text_color = color.white, bgcolor = bg)
+        table.cell(panel, 2, 6, "Small " + str.tostring(array.get(counters, 1)), text_color = color.white, bgcolor = bg)
+        table.cell(panel, 3, 6, "* candidate", text_color = aggComboColor, bgcolor = bg)
+    else
+        table.clear(panel, 0, 0, 3, 6)
+
+alertcondition(array.get(complete, 0) > 0, "Sequential Buy13", "TD Research v6: Sequential BUY13 on {{ticker}} {{interval}} | close {{close}}")
+alertcondition(array.get(complete, 1) > 0, "Sequential Sell13", "TD Research v6: Sequential SELL13 on {{ticker}} {{interval}} | close {{close}}")
+alertcondition(array.get(complete, 2) > 0, "Aggressive Sequential Buy13", "TD Research v6: Aggressive Sequential BUY13 on {{ticker}} {{interval}}")
+alertcondition(array.get(complete, 3) > 0, "Aggressive Sequential Sell13", "TD Research v6: Aggressive Sequential SELL13 on {{ticker}} {{interval}}")
+alertcondition(array.get(complete, 4) > 0, "Combo Buy13", "TD Research v6: Combo BUY13 on {{ticker}} {{interval}} | close {{close}}")
+alertcondition(array.get(complete, 5) > 0, "Combo Sell13", "TD Research v6: Combo SELL13 on {{ticker}} {{interval}} | close {{close}}")
+alertcondition(array.get(complete, 6) > 0, "Aggressive Combo candidate Buy13", "TD Research v6: candidate Aggressive Combo BUY13 on {{ticker}} {{interval}}")
+alertcondition(array.get(complete, 7) > 0, "Aggressive Combo candidate Sell13", "TD Research v6: candidate Aggressive Combo SELL13 on {{ticker}} {{interval}}")
+alertcondition(array.sum(complete) > 0, "Any13", "TD Research v6: confirmed13 on {{ticker}} {{interval}} | close {{close}}")
