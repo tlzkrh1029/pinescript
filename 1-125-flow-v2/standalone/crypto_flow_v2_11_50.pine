@@ -1,5 +1,5 @@
 //@version=6
-// Crypto Flow v2.1.1. Original four indicators are preserved in ../1-125-flow/.
+// Crypto Flow v2.2.0. Original four indicators are preserved in ../1-125-flow/.
 // Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
 // One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
 indicator(title="Flow v2 (11-50)", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
@@ -30,6 +30,7 @@ float borderPct = input.float(0.1, "테두리 보정: 행당 %", minval=0, maxva
 string standalonePos = input.string(position.top_right, "단독 표 위치", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. 표 배치", display=display.none)
 float heatRel = input.float(4, "히트맵 최대: 기준 이후 %", minval=0.1, maxval=50, step=0.5, group="4. 표 색", tooltip="값의 크기가 이 값 이상이면 칸 바탕이 가장 진합니다. 0에 가까울수록 표 바탕색에 가깝습니다.", display=display.none)
 float heatRecent = input.float(1.5, "히트맵 최대: 최근 %", minval=0.1, maxval=20, step=0.1, group="4. 표 색", display=display.none)
+int dimMinutes = input.int(15, "최근 열 흐리게: 잰 시간이 분 미만", minval=0, maxval=1440, group="4. 표 색", tooltip="진행 중인 봉 때문에 최근 열이 실제로 잰 시간이 이 값보다 짧으면, 최근 열의 이름과 숫자를 흐리게 표시합니다. 0이면 흐리게 표시하지 않습니다.", display=display.none)
 
 int groupId = groupChoice == "1-10" ? 0 : groupChoice == "11-50" ? 1 : groupChoice == "51-100" ? 2 : 3
 var array<string> symbols = array.new<string>()
@@ -87,24 +88,35 @@ if barstate.isfirst and syminfo.currency != "USD" and syminfo.currency != "USDT"
     runtime.error("USD·USDT·USDC 가격 차트에서 사용하세요. CRYPTO: USD 지수와 같은 가격 단위로 비교해야 합니다.")
 if barstate.isfirst and not chart.is_standard
     runtime.error("일반 캔들·바 차트에서 사용하세요. 하이킨 아시 등 합성 가격은 상대 수익률 기준으로 사용하지 않습니다.")
-bool atAnchor = anchorMode == "시각 고정" ? time_close >= anchorTime : time >= chart.left_visible_bar_time
+// The base is the price at the anchor moment: the close of the bar that ends at (or first after) it.
+// On screen, that moment is the open of the leftmost visible bar, so its price is the close of the bar before it.
+bool atAnchor = time_close >= (anchorMode == "시각 고정" ? anchorTime : chart.left_visible_bar_time)
 var int anchorBar = na
 var int anchorRead = na
 var float hostBase = na
 var float hostEnd = na
 var int endRead = na
-var int endBarTime = na
+var int endRecentStart = na
+var bool endLive = false
 if na(anchorBar) and atAnchor
     anchorBar := time
     anchorRead := time_close
     hostBase := close
 bool inRange = time <= chart.right_visible_bar_time
 bool acceptedBar = includeOpen or barstate.isconfirmed
+int recentStartTime = time_close[recentBars]
 if inRange and atAnchor and acceptedBar
     hostEnd := close
     endRead := time_close
-    endBarTime := time
+    endRecentStart := recentStartTime
+    endLive := not barstate.isconfirmed
 float hostRecentRatio = time_close - time_close[recentBars] == recentBars * seconds * 1000 ? close / close[recentBars] : na
+// The recent window ends at the price it reads: now on a bar still in progress, the bar's close otherwise.
+// On a 1h chart at 23:20 it spans 23:00-23:20, so the column is named for the 20 minutes it really measured.
+int recentEnd = endLive ? math.min(timenow, endRead) : endRead
+int recentShown = na(endRecentStart) or na(recentEnd) ? int(math.round(recentBars * seconds / 60)) : math.max(1, int(math.floor((recentEnd - endRecentStart) / 60000.0)))
+string recentLabel = "최근 " + str.tostring(recentShown) + "분"
+bool recentShort = endLive and dimMinutes > 0 and recentShown < dimMinutes
 string pins = "," + str.replace_all(str.upper(pinsInput), " ", "") + ","
 
 f_self(string tick) =>
@@ -122,20 +134,21 @@ for i = 0 to count - 1
     if atAnchor and valid and na(bases.get(i))
         bases.set(i, price)
         hostBases.set(i, close)
-        baseTimes.set(i, time)
+        baseTimes.set(i, time_close)
     float base = bases.get(i)
     float coinReturn = not na(base) ? price / base - 1 : na
     float relative = not na(base) ? ((price / base) / (close / hostBases.get(i)) - 1) * 100 : na
     float recent = valid and hostRecentRatio > 0 ? (recentRatio / hostRecentRatio - 1) * 100 : na
     float y = valid and not na(base) ? hostBases.get(i) * (1 + coinReturn) : na
-    if showLines and inRange and acceptedBar and time >= chart.left_visible_bar_time
+    // Each price is drawn at the moment it was read (the bar's close time), so the line starts at the anchor moment.
+    if showLines and inRange and acceptedBar and time_close >= chart.left_visible_bar_time
         Trail trace = trails.get(i)
         if na(y)
             // Never bridge a missing-data interval with a fabricated straight segment.
             // Keep the original return base, but restart this coin's visual trail after the gap.
             trace.points.clear()
         else
-            trace.points.push(chart.point.from_time(time, y))
+            trace.points.push(chart.point.from_time(time_close, y))
             if trace.points.size() > pointLimit
                 trace.points.shift()
     if inRange and acceptedBar
@@ -145,7 +158,7 @@ for i = 0 to count - 1
         dollars.set(i, coinReturn * 100)
         sourceTimes.set(i, sourceTime)
         fresh.set(i, valid and not na(base))
-        late.set(i, not na(baseTimes.get(i)) and baseTimes.get(i) > anchorBar)
+        late.set(i, not na(baseTimes.get(i)) and baseTimes.get(i) > anchorRead)
         selfCoin.set(i, f_self(ticks.get(i)))
 
 f_eligible(int i) =>
@@ -160,7 +173,7 @@ f_state(int i) =>
 f_tip(int i) =>
     string start = na(baseTimes.get(i)) ? "없음" : str.format_time(baseTimes.get(i), "yyyy-MM-dd HH:mm", "Asia/Seoul")
     string src = na(sourceTimes.get(i)) ? "없음" : str.format_time(sourceTimes.get(i), "MM-dd HH:mm", "Asia/Seoul")
-    symbols.get(i) + " | 스냅샷 시총 " + str.tostring(ranks.get(i)) + "위\n" + f_state(i) + "\n기준 봉 시작 KST " + start + "\n시세 봉 마감 KST " + src + "\n달러 기준 " + f_pct(dollars.get(i)) + "\n호스트 대비 " + f_pct(rels.get(i)) + "\n최근 " + str.tostring(recentBars * seconds / 60, "#.##") + "분 대비 " + f_pct(recents.get(i))
+    symbols.get(i) + " | 스냅샷 시총 " + str.tostring(ranks.get(i)) + "위\n" + f_state(i) + "\n기준 시각 KST " + start + "\n시세 봉 마감 KST " + src + "\n달러 기준 " + f_pct(dollars.get(i)) + "\n호스트 대비 " + f_pct(rels.get(i)) + "\n" + recentLabel + " 대비 " + f_pct(recents.get(i))
 
 // Rank at the current visible endpoint, then draw the entire retained path with that emphasis.
 array<float> keys = array.new<float>(count, -1e20)
@@ -225,7 +238,7 @@ if barstate.islast
             if showLabels and showLines and highlight and fresh.get(i) and labelN < 10 and pin == (pass == 0)
                 color c = palette.get(i)
                 string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
-                labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold))
+                labels.push(label.new(endRead, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold))
                 labelN += 1
 
 f_groupCount(int i) =>
@@ -267,6 +280,8 @@ color bg = color.new(chart.bg_color, 8)
 color headBg = f_mix(chart.bg_color, fg, 0.12, 8)
 color lineInk = f_mix(chart.bg_color, fg, 0.18, 0)
 color muted = color.new(fg, 40)
+// The recent column while its window is still short.
+color dimInk = color.new(fg, 62)
 color good = #46BFA4
 color bad = #EB7979
 color hotUp = f_mix(chart.bg_color, #089981, 0.7, 8)
@@ -337,7 +352,7 @@ if barstate.islast and showBoard
     string details = "자료 지연/없음 " + str.tostring(missing) + " · 별도 기준* " + str.tostring(lateN) + " · 호스트 " + f_pct(na(hostEnd) ? na : (hostEnd / hostBase - 1) * 100)
     string anchorFull = na(anchorRead) ? "없음" : str.format_time(anchorRead, "yyyy-MM-dd HH:mm", "Asia/Seoul") + " KST"
     string sinceLabel = na(anchorRead) ? "기준 이후" : str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"
-    string recentLabel = "최근 " + str.tostring(recentBars * seconds / 60, "#.##") + "분"
+    string recentFrom = na(endRecentStart) ? "" : str.format_time(endRecentStart, "HH:mm", "Asia/Seoul") + " 이후 "
     string headTip = status + "\n" + details + "\n기준 " + anchorFull + "\n표·라벨 숫자는 모두 호스트 대비 상대 수익률(%)입니다. 현재 마감/진행 중 봉 설정을 따릅니다."
     string moodTip = "\n막대 10칸 중 채운 칸이 비율입니다. 과반이면 초록, 절반 미만이면 빨강입니다."
     // A one-group table is too narrow for the bars, so it keeps the counts and their colour only.
@@ -357,7 +372,7 @@ if barstate.islast and showBoard
         f_cell(c, 2, "", fg, headBg, "")
         f_cell(c + 1, 2, "TICKER", fg, headBg, "티커 앞 기호: ↑최근 우위, ↓강세 둔화. * 기준 시각의 자료가 없어 별도로 시작한 코인입니다. 왼쪽 색 칸은 차트 선의 색입니다.", true)
         f_cell(c + 2, 2, sinceLabel + " %", fg, headBg, "기준 시각(" + anchorFull + ") 이후 호스트 대비 상대 수익률(%). 바탕색이 진할수록 크기가 큽니다.", true)
-        f_cell(c + 3, 2, recentLabel + " %", fg, headBg, recentLabel + " 동안의 호스트 대비 상대 수익률(%). 가속도가 아닙니다.", true)
+        f_cell(c + 3, 2, recentLabel + " %", recentShort ? dimInk : fg, headBg, recentFrom + recentLabel + " 동안의 호스트 대비 상대 수익률(%). 가속도가 아닙니다. 진행 중인 봉에서는 그 봉이 시작된 뒤 지난 시간만큼만 잽니다." + (recentShort ? "\n잰 시간이 " + str.tostring(dimMinutes) + "분보다 짧아 흐리게 표시합니다." : ""), true)
     for k = 0 to groups * rows - 1
         int c = int(math.floor(k / rows)) * 4
         int r = 3 + k % rows
@@ -373,7 +388,7 @@ if barstate.islast and showBoard
             f_cell(c, r, "", fg, ok ? palette.get(i) : color.new(fg, 80), tip)
             f_cell(c + 1, r, tick, ok ? fg : muted, bg, tip, true)
             f_cell(c + 2, r, ok ? f_num(rel) : "—", ok and not na(rel) ? fg : muted, ok and not na(rel) ? f_heat(rel, heatRel) : bg, tip, true, true)
-            f_cell(c + 3, r, ok ? f_num(recent) : "—", ok and not na(recent) ? fg : muted, ok and not na(recent) ? f_heat(recent, heatRecent) : bg, tip, true, true)
+            f_cell(c + 3, r, ok ? f_num(recent) : "—", ok and not na(recent) ? (recentShort ? dimInk : fg) : muted, ok and not na(recent) and not recentShort ? f_heat(recent, heatRecent) : bg, tip, true, true)
         else
             for j = 0 to 3
                 f_cell(c + j, r, "", muted, bg, "")

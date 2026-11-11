@@ -100,6 +100,26 @@ class SourceContract(unittest.TestCase):
         self.assertIn('sinceLabel + " %"', SOURCE)
         self.assertIn('recentLabel + " %"', SOURCE)
 
+    def test_anchor_and_line_times_follow_the_price_moment(self):
+        # Both modes take the close of the bar that ends at the anchor moment.
+        self.assertIn('bool atAnchor = time_close >= (anchorMode == "시각 고정" ? anchorTime : chart.left_visible_bar_time)', SOURCE)
+        self.assertNotIn('time >= chart.left_visible_bar_time', SOURCE)
+        # Each price is drawn at the time it was read, and the end labels follow.
+        self.assertIn('chart.point.from_time(time_close, y)', SOURCE)
+        self.assertIn('time_close >= chart.left_visible_bar_time', SOURCE)
+        self.assertIn('label.new(endRead, values.get(i)', SOURCE)
+        self.assertIn('baseTimes.set(i, time_close)', SOURCE)
+        self.assertIn('baseTimes.get(i) > anchorRead', SOURCE)
+        self.assertIn('str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"', SOURCE)
+
+    def test_recent_column_names_the_time_it_measured(self):
+        self.assertIn('int recentEnd = endLive ? math.min(timenow, endRead) : endRead', SOURCE)
+        self.assertIn('math.max(1, int(math.floor((recentEnd - endRecentStart) / 60000.0)))', SOURCE)
+        self.assertIn('string recentLabel = "최근 " + str.tostring(recentShown) + "분"', SOURCE)
+        self.assertIn('bool recentShort = endLive and dimMinutes > 0 and recentShown < dimMinutes', SOURCE)
+        self.assertIn('recentShort ? dimInk : fg', SOURCE)
+        self.assertIn('not recentShort ? f_heat(recent, heatRecent) : bg', SOURCE)
+
     def test_merged_cells_are_built_once_and_never_cleared(self):
         build = SOURCE[SOURCE.index('if barstate.isfirst and showBoard'):SOURCE.index('if barstate.islast and showBoard')]
         self.assertIn('board.merge_cells(0, 0, cols - 1, 0)', build)
@@ -161,6 +181,26 @@ class NumericalSpecification(unittest.TestCase):
         self.assertEqual(math.ceil(60 / 45) * 45, 90)
         # Ten source bars spread across 3h must not be called the host's 150 minutes.
         self.assertNotEqual(3 * 60 * 60, 10 * 15 * 60)
+
+    def test_measured_recent_minutes(self):
+        hour = 60 * 60 * 1000
+        # 1h chart at 23:20: the window starts at the previous close (23:00).
+        start, now = 23 * hour, 23 * hour + 20 * 60 * 1000
+        self.assertEqual(max(1, (now - start) // 60000), 20)
+        # 15m chart at 23:20: four bars back from the 23:15 bar ends at 22:30.
+        start = 22 * hour + 30 * 60 * 1000
+        self.assertEqual(max(1, (now - start) // 60000), 50)
+        # Just after the hour on a 1h chart the window is at least one minute.
+        self.assertEqual(max(1, (23 * hour + 20000 - 23 * hour) // 60000), 1)
+
+    def test_screen_left_anchor_is_the_previous_close(self):
+        # 1h bars open at 11:00 and 12:00; the leftmost visible bar opens at 12:00.
+        bars = [(11, 12), (12, 13), (13, 14)]
+        left = 12
+        anchor = next(b for b in bars if b[1] >= left)
+        self.assertEqual(anchor, (11, 12))
+        # Its close is the price at 12:00, drawn at 12:00.
+        self.assertEqual(anchor[1], left)
 
     def test_fixed_anchor_common_close(self):
         anchor = 12 * 60
