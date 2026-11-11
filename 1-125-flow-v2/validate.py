@@ -118,12 +118,15 @@ class SourceContract(unittest.TestCase):
         # Swatch column in the slot colour, light bold ticker, monospace heat-mapped numbers, header band, centred text.
         self.assertIn('f_cell(c, r, "", fg, ok ? palette.get(i) : color.new(fg, 80), tip)', SOURCE)
         self.assertIn('f_cell(c + 1, r, tick, ok ? fg : muted, bg, tip, true)', SOURCE)
-        self.assertIn('f_heat(rel, heatRel) : bg, tip, false, true)', SOURCE)
-        self.assertIn('f_heat(recent, heatRecent) : bg, tip, false, true)', SOURCE)
+        # Numbers are bold and monospace.
+        self.assertIn('f_heat(rel, heatRel) : bg, tip, true, true)', SOURCE)
+        self.assertIn('f_heat(recent, heatRecent) : bg, tip, true, true)', SOURCE)
+        self.assertIn('int fontPt = input.int(16, "표 글자 크기: pt"', SOURCE)
         self.assertIn('text_font_family=mono ? font.family_monospace : font.family_default', SOURCE)
         self.assertIn('text_halign=text.align_center', SOURCE)
         self.assertIn('color headBg = f_mix(chart.bg_color, fg, 0.12, 8)', SOURCE)
-        self.assertIn('f_cell(c + 1, 2, "코인", fg, headBg', SOURCE)
+        self.assertIn('f_cell(c + 1, 2, "TICKER", fg, headBg', SOURCE)
+        self.assertNotIn('"코인"', SOURCE)
         self.assertIn('str.repeat("█", fill) + str.repeat("░", 10 - fill)', SOURCE)
         self.assertIn('2 * k > m ? good : 2 * k < m ? bad : fg', SOURCE)
         self.assertIn('float groupPct = widthPct / 4', SOURCE)
