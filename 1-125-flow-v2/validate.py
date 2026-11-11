@@ -68,14 +68,13 @@ class SourceContract(unittest.TestCase):
     def test_table_contract_and_unicode(self):
         self.assertIn('height=rowPct', SOURCE)
         self.assertIn('height=startPct', SOURCE)
-        self.assertIn('frame_width=0, border_width=0', SOURCE)
+        self.assertIn('frame_width=0, border_width=1, border_color=lineInk', SOURCE)
         self.assertIn('순위 구간', SOURCE)
         self.assertNotIn('\ufffd', SOURCE)
         self.assertNotIn('__UNIVERSE__', SOURCE)
 
     def test_ticker_text_is_bold_pure_black(self):
         self.assertIn('color tickerInk = #000000', SOURCE)
-        self.assertIn('f_cell(c, r, tick, ok ? tickerInk : muted, ok ? ink : bg, tip, true)', SOURCE)
         self.assertIn('text_formatting=bold ? text.format_bold : text.format_none', SOURCE)
         self.assertIn('textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold)', SOURCE)
         palette = re.findall(r'#[0-9A-Fa-f]{6}', re.search(r'palette = array.from\(([^)]*)\)', SOURCE).group(1))
@@ -93,14 +92,49 @@ class SourceContract(unittest.TestCase):
     def test_title_row_counts_use_host_wording(self):
         self.assertIn('"호스트 상회 " + str.tostring(beat) + "/" + str.tostring(peers)', SOURCE)
         self.assertIn('" · 최근 호스트 상회 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)', SOURCE)
+        self.assertIn('"상회 " + str.tostring(beat) + "/" + str.tostring(peers) + (bars ? "  " + f_bar(beat, peers) : "")', SOURCE)
+        self.assertIn('"최근 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers) + (bars ? "  " + f_bar(recentBeat, recentPeers) : "")', SOURCE)
         self.assertNotIn('"강함', SOURCE)
-        # One wide cell for the counts, merged once, so narrow columns do not truncate the labels.
-        self.assertIn('if barstate.isfirst\n    board.merge_cells(1, 1, 3 * groups - 1, 1)', SOURCE)
-        # The updates clear around the merged title row, never through it.
-        self.assertIn('board.clear(0, 0, 3 * groups - 1, 0)\n    board.clear(0, 2, 3 * groups - 1, rows + 2)', SOURCE)
-        self.assertNotIn('board.clear(0, 0, 3 * groups - 1, rows', SOURCE)
         self.assertIn('str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"', SOURCE)
         self.assertIn('string recentLabel = "최근 "', SOURCE)
+        self.assertIn('sinceLabel + " %"', SOURCE)
+        self.assertIn('recentLabel + " %"', SOURCE)
+
+    def test_merged_cells_are_built_once_and_never_cleared(self):
+        build = SOURCE[SOURCE.index('if barstate.isfirst and showBoard'):SOURCE.index('if barstate.islast and showBoard')]
+        self.assertIn('board.merge_cells(0, 0, cols - 1, 0)', build)
+        self.assertIn('board.merge_cells(0, 1, 1, 1)', build)
+        self.assertIn('board.merge_cells(countA, 1, countB - 1, 1)', build)
+        self.assertIn('board.merge_cells(countB, 1, cols - 1, 1)', build)
+        self.assertEqual(SOURCE.count('merge_cells('), 4)
+        self.assertNotIn('board.clear(', SOURCE)
+        update = SOURCE[SOURCE.index('if barstate.islast and showBoard'):]
+        # Rows 0 and 1 hold the merged cells; the update only uses setters there.
+        self.assertNotRegex(update, r'(f_cell|board\.cell)\([^,]+, [01],')
+        for setter in ('cell_set_text(countA, 1', 'cell_set_text(countB, 1', 'cell_set_tooltip(0, 1'):
+            self.assertIn(setter, update)
+
+    def test_board_design(self):
+        # Swatch column in the slot colour, light bold ticker, monospace heat-mapped numbers, header band, centred text.
+        self.assertIn('f_cell(c, r, "", fg, ok ? palette.get(i) : color.new(fg, 80), tip)', SOURCE)
+        self.assertIn('f_cell(c + 1, r, tick, ok ? fg : muted, bg, tip, true)', SOURCE)
+        self.assertIn('f_heat(rel, heatRel) : bg, tip, false, true)', SOURCE)
+        self.assertIn('f_heat(recent, heatRecent) : bg, tip, false, true)', SOURCE)
+        self.assertIn('text_font_family=mono ? font.family_monospace : font.family_default', SOURCE)
+        self.assertIn('text_halign=text.align_center', SOURCE)
+        self.assertIn('color headBg = f_mix(chart.bg_color, fg, 0.12, 8)', SOURCE)
+        self.assertIn('f_cell(c + 1, 2, "코인", fg, headBg', SOURCE)
+        self.assertIn('str.repeat("█", fill) + str.repeat("░", 10 - fill)', SOURCE)
+        self.assertIn('2 * k > m ? good : 2 * k < m ? bad : fg', SOURCE)
+        self.assertIn('float groupPct = widthPct / 4', SOURCE)
+
+    def test_bar_and_mood_examples(self):
+        bar = lambda k, m: round(10 * k / m) if m else 0
+        self.assertEqual(bar(27, 40), 7)
+        self.assertEqual(bar(2, 8), 2)
+        self.assertEqual(bar(0, 0), 0)
+        mood = lambda k, m: 'good' if 2 * k > m else 'bad' if 2 * k < m else 'fg'
+        self.assertEqual([mood(27, 40), mood(2, 8), mood(11, 22)], ['good', 'bad', 'fg'])
 
 class NumericalSpecification(unittest.TestCase):
     def test_ratio_is_not_percentage_point_subtraction(self):
@@ -133,26 +167,37 @@ class NumericalSpecification(unittest.TestCase):
 
     def test_layout_every_supported_density(self):
         counts = [8, 32, 40, 22]
+        row, line = 1.65, 0.1
         for limit in range(6, 21):
             previous_end = 3.0
-            before_rows = 0
+            before_rows = before_lines = 0
             for group_index, count in enumerate(counts):
                 groups = math.ceil(count / limit)
                 rows = math.ceil(count / groups)
-                start = 3 + before_rows * 1.65
-                self.assertAlmostEqual(start - previous_end, 0 if group_index == 0 else 1.65)
+                start = 3 + before_rows * row + before_lines * line
+                self.assertAlmostEqual(start - previous_end, 0 if group_index == 0 else row)
                 for k in range(count):
-                    c = (k // rows) * 3
+                    c = (k // rows) * 4
                     r = 3 + k % rows
-                    self.assertLess(c + 2, 3 * groups)
+                    self.assertLess(c + 3, 4 * groups)
                     self.assertLess(r, rows + 3)
-                self.assertAlmostEqual(groups * (0.44 + 0.28 + 0.28), groups)
-                previous_end = start + (2 + rows) * 1.65
-                before_rows += 2 + rows + 1
-        total_rows = sum(2 + math.ceil(n / math.ceil(n / 12)) for n in counts) + len(counts) - 1
+                # Counts split at a group boundary and never overlap the two-column title cell.
+                count_b = 3 if groups == 1 else 4 * math.ceil(groups / 2)
+                self.assertGreater(count_b, 2)
+                self.assertLess(count_b, 4 * groups)
+                h = 2 + rows
+                previous_end = start + h * row + h * line
+                before_rows += h + 1
+                before_lines += h
+        # Every group is a quarter of the width, swatch included.
+        width, swatch = 46, 0.4
+        group = swatch + (width / 4 - swatch) * (36 + 28 + 28) / 92
+        self.assertAlmostEqual(group, width / 4)
+        heights = [2 + math.ceil(n / math.ceil(n / 12)) for n in counts]
+        total_rows = sum(heights) + len(counts) - 1
         self.assertEqual(total_rows, 51)
-        self.assertAlmostEqual(3 + total_rows * 1.65, 87.15)
-
+        self.assertEqual(sum(heights), 48)
+        self.assertAlmostEqual(3 + total_rows * row + sum(heights) * line, 91.95)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
