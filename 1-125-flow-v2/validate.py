@@ -90,6 +90,12 @@ class SourceContract(unittest.TestCase):
             luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
             # WCAG contrast of pure black text on the slot colour.
             self.assertGreaterEqual((luminance + 0.05) / 0.05, 4.5, colour)
+    def test_title_row_counts_use_host_wording(self):
+        self.assertIn('"호스트 상회 " + str.tostring(beat) + "/" + str.tostring(peers)', SOURCE)
+        self.assertIn('" · 최근 호스트 상회 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)', SOURCE)
+        self.assertNotIn('"강함', SOURCE)
+        # One wide cell for the counts, merged once, so narrow columns do not truncate the labels.
+        self.assertIn('if barstate.isfirst\n    board.merge_cells(1, 1, 3 * groups - 1, 1)', SOURCE)
 
 class NumericalSpecification(unittest.TestCase):
     def test_ratio_is_not_percentage_point_subtraction(self):
