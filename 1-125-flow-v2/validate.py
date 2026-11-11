@@ -73,6 +73,29 @@ class SourceContract(unittest.TestCase):
         self.assertNotIn('\ufffd', SOURCE)
         self.assertNotIn('__UNIVERSE__', SOURCE)
 
+    def test_ticker_text_is_bold_pure_black(self):
+        self.assertIn('color tickerInk = #000000', SOURCE)
+        self.assertIn('f_cell(c, r, tick, ok ? tickerInk : muted, ok ? ink : bg, tip, true)', SOURCE)
+        self.assertIn('text_formatting=bold ? text.format_bold : text.format_none', SOURCE)
+        self.assertIn('textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold)', SOURCE)
+        palette = re.findall(r'#[0-9A-Fa-f]{6}', re.search(r'palette = array.from\(([^)]*)\)', SOURCE).group(1))
+        self.assertEqual(len(palette), 40)
+
+        def linear(value):
+            s = value / 255
+            return s / 12.92 if s <= 0.04045 else ((s + 0.055) / 1.055) ** 2.4
+
+        for colour in palette:
+            r, g, b = (int(colour[i:i + 2], 16) for i in (1, 3, 5))
+            luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
+            # WCAG contrast of pure black text on the slot colour.
+            self.assertGreaterEqual((luminance + 0.05) / 0.05, 4.5, colour)
+    def test_title_row_counts_use_host_wording(self):
+        self.assertIn('"호스트 상회 " + str.tostring(beat) + "/" + str.tostring(peers)', SOURCE)
+        self.assertIn('" · 최근 호스트 상회 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)', SOURCE)
+        self.assertNotIn('"강함', SOURCE)
+        # One wide cell for the counts, merged once, so narrow columns do not truncate the labels.
+        self.assertIn('if barstate.isfirst\n    board.merge_cells(1, 1, 3 * groups - 1, 1)', SOURCE)
 
 class NumericalSpecification(unittest.TestCase):
     def test_ratio_is_not_percentage_point_subtraction(self):
