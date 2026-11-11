@@ -1,5 +1,5 @@
 //@version=6
-// Crypto Flow v2.0.0. Original four indicators are preserved in ../1-125-flow/.
+// Crypto Flow v2.0.1. Original four indicators are preserved in ../1-125-flow/.
 // Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
 // One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
 indicator(title="Flow v2 (51-100)", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
@@ -51,7 +51,10 @@ if barstate.isfirst
             ticks := array.from("TIA", "XTZ", "LDO", "STRK", "BSV", "BTT", "AR", "DCR", "LUNC", "MON", "KITE", "OP", "IMX", "CFX", "ENS", "SYRUP", "BONK", "XPL", "JTO", "FLOKI", "TWT", "GRT")
             ranks := array.from(101, 102, 103, 104, 105, 106, 108, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125)
 int count = symbols.size()
-var array<color> palette = array.from(#56B4E9, #E69F00, #009E73, #CC79A7, #F0E442, #D55E00, #0072B2, #AAEEAA, #F28E8E, #B59AE8, #64D8CB, #E6C290, #829BFF, #E878B5, #9DC76A, #DBA8F0, #77A8A8, #EE9966, #D4CC77, #88C0D0, #C58D5E, #88AAFF, #B9D5A0, #F7B7A3, #CCB9EC, #B4C77E, #50C8A0, #CBA16C, #E9AAC4, #7CAAB5, #E0BC63, #AFB1D9, #E5C4A5, #8ECCDD, #DB9C85, #9BB486, #C4A9CC, #6DB4E8, #D4B28C, #A1C8BE)
+var array<color> palette = array.from(#56B4E9, #E69F00, #009E73, #CC79A7, #F0E442, #D55E00, #1580C4, #AAEEAA, #F28E8E, #B59AE8, #64D8CB, #E6C290, #829BFF, #E878B5, #9DC76A, #DBA8F0, #77A8A8, #EE9966, #D4CC77, #88C0D0, #C58D5E, #88AAFF, #B9D5A0, #F7B7A3, #CCB9EC, #B4C77E, #50C8A0, #CBA16C, #E9AAC4, #7CAAB5, #E0BC63, #AFB1D9, #E5C4A5, #8ECCDD, #DB9C85, #9BB486, #C4A9CC, #6DB4E8, #D4B28C, #A1C8BE)
+// Ticker text on the slot colours. color.black is #363A45, which reads faint on the brighter slots;
+// pure black keeps at least 4.9:1 contrast on every slot colour.
+color tickerInk = #000000
 var array<float> bases = array.new<float>(40, na)
 var array<float> hostBases = array.new<float>(40, na)
 var array<int> baseTimes = array.new<int>(40, na)
@@ -107,14 +110,6 @@ f_self(string tick) =>
 
 f_pct(float value) =>
     na(value) ? "—" : (value > 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
-
-f_linear(float c) =>
-    float s = c / 255.0
-    s <= 0.04045 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4)
-
-f_ink(color c) =>
-    float l = 0.2126 * f_linear(color.r(c)) + 0.7152 * f_linear(color.g(c)) + 0.0722 * f_linear(color.b(c))
-    l > 0.179 ? color.black : color.white
 
 // Each slot owns its base and readouts. There is no function-local var shared across coins.
 for i = 0 to count - 1
@@ -227,7 +222,7 @@ if barstate.islast
             if showLabels and showLines and highlight and fresh.get(i) and labelN < 10 and pin == (pass == 0)
                 color c = palette.get(i)
                 string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
-                labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=f_ink(c), size=size.small, tooltip=f_tip(i)))
+                labels.push(label.new(endBarTime, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold))
                 labelN += 1
 
 f_groupCount(int i) =>
@@ -263,8 +258,8 @@ color bad = #EB7979
 f_width(int c) =>
     widthPct / groups * (c % 3 == 0 ? 0.44 : 0.28)
 
-f_cell(int c, int r, string cellText, color ink, color back, string tip) =>
-    board.cell(c, r, cellText, width=f_width(c), height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip)
+f_cell(int c, int r, string cellText, color ink, color back, string tip, bool bold = false) =>
+    board.cell(c, r, cellText, width=f_width(c), height=rowPct, text_color=ink, bgcolor=back, text_size=fontPt, text_halign=c % 3 == 0 ? text.align_left : text.align_right, tooltip=tip, text_formatting=bold ? text.format_bold : text.format_none)
 
 if barstate.islast
     board.clear(0, 0, 3 * groups - 1, rows + 3)
@@ -308,7 +303,7 @@ if barstate.islast
                 color ink = palette.get(i)
                 string tip = f_tip(i) + "\n" + details
                 bool ok = fresh.get(i)
-                f_cell(c, r, tick, ok ? f_ink(ink) : muted, ok ? ink : bg, tip)
+                f_cell(c, r, tick, ok ? tickerInk : muted, ok ? ink : bg, tip, true)
                 f_cell(c + 1, r, ok ? f_pct(rels.get(i)) : "—", ok ? (rels.get(i) >= 0 ? good : bad) : muted, bg, tip)
                 f_cell(c + 2, r, ok ? f_pct(recents.get(i)) : "—", ok ? (recents.get(i) >= 0 ? good : bad) : muted, bg, tip)
             else
