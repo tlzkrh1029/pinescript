@@ -92,8 +92,8 @@ class SourceContract(unittest.TestCase):
     def test_title_row_counts_use_host_wording(self):
         self.assertIn('"호스트 상회 " + str.tostring(beat) + "/" + str.tostring(peers)', SOURCE)
         self.assertIn('" · 최근 호스트 상회 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers)', SOURCE)
-        self.assertIn('"상회 " + str.tostring(beat) + "/" + str.tostring(peers) + (bars ? "  " + f_bar(beat, peers) : "")', SOURCE)
-        self.assertIn('"최근 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers) + (bars ? "  " + f_bar(recentBeat, recentPeers) : "")', SOURCE)
+        self.assertIn('"상회 " + str.tostring(beat) + "/" + str.tostring(peers) + (bars ? " " + f_bar(beat, peers) : "")', SOURCE)
+        self.assertIn('"최근 " + str.tostring(recentBeat) + "/" + str.tostring(recentPeers) + (bars ? " " + f_bar(recentBeat, recentPeers) : "")', SOURCE)
         self.assertNotIn('"강함', SOURCE)
         self.assertIn('str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"', SOURCE)
         self.assertIn('string recentLabel = "최근 "', SOURCE)
@@ -119,6 +119,21 @@ class SourceContract(unittest.TestCase):
         self.assertIn('bool recentShort = endLive and dimMinutes > 0 and recentShown < dimMinutes', SOURCE)
         self.assertIn('recentShort ? dimInk : fg', SOURCE)
         self.assertIn('not recentShort ? f_heat(recent, heatRecent) : bg', SOURCE)
+
+    def test_columns_fit_their_text_and_share_one_ruler(self):
+        # Text-sized columns (width 0) except the fixed swatch, so a narrower chart never truncates.
+        self.assertIn('c % 4 == 0 ? swatchPct : 0', SOURCE)
+        self.assertIn('table.new(stacked ? position.top_right : standalonePos, cols, rows + 4,', SOURCE)
+        self.assertIn('int rulerRow = rows + 3', SOURCE)
+        build = SOURCE[SOURCE.index('if barstate.isfirst and showBoard'):SOURCE.index('if barstate.islast and showBoard')]
+        # The ruler is built once, in see-through text, with the widest ticker and recent-column name.
+        self.assertIn('j == 1 ? "↓BIANRENSHENG" : j == 3 ? widest : ""', build)
+        self.assertIn('text_color=color.new(fg, 100), bgcolor=color.new(bg, 100)', build)
+        self.assertIn('height=rulerPct', build)
+        tickers = re.findall(r'"([^"]+)"', ''.join(re.findall(r'ticks := array.from\(([^\n]+)\)', SOURCE)))
+        self.assertEqual(max(tickers, key=len), 'BIANRENSHENG')
+        update = SOURCE[SOURCE.index('if barstate.islast and showBoard'):]
+        self.assertNotIn('rulerRow', update)
 
     def test_merged_cells_are_built_once_and_never_cleared(self):
         build = SOURCE[SOURCE.index('if barstate.isfirst and showBoard'):SOURCE.index('if barstate.islast and showBoard')]
@@ -149,7 +164,7 @@ class SourceContract(unittest.TestCase):
         self.assertNotIn('"코인"', SOURCE)
         self.assertIn('str.repeat("█", fill) + str.repeat("░", 10 - fill)', SOURCE)
         self.assertIn('2 * k > m ? good : 2 * k < m ? bad : fg', SOURCE)
-        self.assertIn('float groupPct = widthPct / 4', SOURCE)
+        self.assertNotIn('widthPct', SOURCE)
 
     def test_bar_and_mood_examples(self):
         bar = lambda k, m: round(10 * k / m) if m else 0
@@ -210,14 +225,14 @@ class NumericalSpecification(unittest.TestCase):
 
     def test_layout_every_supported_density(self):
         counts = [8, 32, 40, 22]
-        row, line = 1.65, 0.1
+        row, line, ruler = 1.65, 0.1, 0.05
         for limit in range(6, 21):
             previous_end = 3.0
             before_rows = before_lines = 0
             for group_index, count in enumerate(counts):
                 groups = math.ceil(count / limit)
                 rows = math.ceil(count / groups)
-                start = 3 + before_rows * row + before_lines * line
+                start = 3 + before_rows * row + group_index * ruler + before_lines * line
                 self.assertAlmostEqual(start - previous_end, 0 if group_index == 0 else row)
                 for k in range(count):
                     c = (k // rows) * 4
@@ -229,18 +244,15 @@ class NumericalSpecification(unittest.TestCase):
                 self.assertGreater(count_b, 2)
                 self.assertLess(count_b, 4 * groups)
                 h = 2 + rows
-                previous_end = start + h * row + h * line
+                # The ruler row sits under the coin rows and adds its own edge.
+                previous_end = start + h * row + ruler + (h + 1) * line
                 before_rows += h + 1
-                before_lines += h
-        # Every group is a quarter of the width, swatch included.
-        width, swatch = 46, 0.4
-        group = swatch + (width / 4 - swatch) * (36 + 28 + 28) / 92
-        self.assertAlmostEqual(group, width / 4)
+                before_lines += h + 1
         heights = [2 + math.ceil(n / math.ceil(n / 12)) for n in counts]
         total_rows = sum(heights) + len(counts) - 1
         self.assertEqual(total_rows, 51)
         self.assertEqual(sum(heights), 48)
-        self.assertAlmostEqual(3 + total_rows * row + sum(heights) * line, 91.95)
+        self.assertAlmostEqual(3 + total_rows * row + 4 * ruler + (sum(heights) + 4) * line, 92.55)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
