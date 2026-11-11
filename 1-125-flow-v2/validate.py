@@ -96,6 +96,11 @@ class SourceContract(unittest.TestCase):
         self.assertNotIn('"강함', SOURCE)
         # One wide cell for the counts, merged once, so narrow columns do not truncate the labels.
         self.assertIn('if barstate.isfirst\n    board.merge_cells(1, 1, 3 * groups - 1, 1)', SOURCE)
+        # The updates clear around the merged title row, never through it.
+        self.assertIn('board.clear(0, 0, 3 * groups - 1, 0)\n    board.clear(0, 2, 3 * groups - 1, rows + 2)', SOURCE)
+        self.assertNotIn('board.clear(0, 0, 3 * groups - 1, rows', SOURCE)
+        self.assertIn('str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"', SOURCE)
+        self.assertIn('string recentLabel = "최근 "', SOURCE)
 
 class NumericalSpecification(unittest.TestCase):
     def test_ratio_is_not_percentage_point_subtraction(self):
@@ -138,15 +143,15 @@ class NumericalSpecification(unittest.TestCase):
                 self.assertAlmostEqual(start - previous_end, 0 if group_index == 0 else 1.65)
                 for k in range(count):
                     c = (k // rows) * 3
-                    r = 4 + k % rows
+                    r = 3 + k % rows
                     self.assertLess(c + 2, 3 * groups)
-                    self.assertLess(r, rows + 4)
+                    self.assertLess(r, rows + 3)
                 self.assertAlmostEqual(groups * (0.44 + 0.28 + 0.28), groups)
-                previous_end = start + (3 + rows) * 1.65
-                before_rows += 3 + rows + 1
-        total_rows = sum(3 + math.ceil(n / math.ceil(n / 12)) for n in counts) + len(counts) - 1
-        self.assertEqual(total_rows, 55)
-        self.assertAlmostEqual(3 + total_rows * 1.65, 93.75)
+                previous_end = start + (2 + rows) * 1.65
+                before_rows += 2 + rows + 1
+        total_rows = sum(2 + math.ceil(n / math.ceil(n / 12)) for n in counts) + len(counts) - 1
+        self.assertEqual(total_rows, 51)
+        self.assertAlmostEqual(3 + total_rows * 1.65, 87.15)
 
 
 if __name__ == '__main__':
