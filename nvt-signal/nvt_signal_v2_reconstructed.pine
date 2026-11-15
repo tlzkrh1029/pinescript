@@ -1,0 +1,32 @@
+//@version=6
+//
+// Reconstruction of gliderfund's protected "NVT (original) - Network Value to Transactions", version 2
+// (2024-11-05; same pine id PUB;mGO6NQAZK4oHjEzHPwWWWTIYWDGJkBQF as version 1).
+//
+// Verified bar by bar against values extracted from the chart (1D 6,109 bars and 1W 836 bars, and 1D with
+// Transaction Period 30): NVT = Glassnode market cap / SMA(Glassnode total transfer volume in USD), both
+// requested on the chart's timeframe, and Signal = EMA(NVT, Length Signal).
+// From metaInfo: input names/defaults/minimums/order, plot titles/colours/widths, alert titles.
+// Inferred: alert conditions and messages (the v2 metaInfo has titles only), and "Force Daily View", which had
+// no visible effect on 1W with its default true; it is kept for input parity only.
+//
+// Glassnode data on TradingView arrives about two days late, so the last bars repeat the latest known value.
+//
+indicator("NVT - Network Value to Transactions", shorttitle = "NVT", overlay = false)
+
+txPeriod   = input.int(90,    "Transaction Period", minval = 1)
+forceDaily = input.bool(true, "Force Daily View across all Time Frames")
+showSignal = input.bool(true, "Show Signal Line")
+signalLen  = input.int(13,    "Length Signal", minval = 1)
+
+cap    = request.security("GLASSNODE:BTC_MARKETCAP", timeframe.period, close)
+volSma = request.security("GLASSNODE:BTC_TOTALVOLUMEUSD", timeframe.period, ta.sma(close, txPeriod))
+nvt    = cap / volSma
+signal = ta.ema(nvt, signalLen)
+
+plot(nvt, "NVT", color = #787B86, linewidth = 2)
+plot(showSignal ? signal : na, "Signal", color = #FF9800)
+
+alertcondition(ta.cross(nvt, signal),      "2. Signal Line Cross",          "NVT Signal Line Cross!")
+alertcondition(ta.crossover(nvt, signal),  "2a. Bullish Signal Line Cross", "NVT Bullish Signal Line Cross!")
+alertcondition(ta.crossunder(nvt, signal), "2b. Bearish Signal Line Cross", "NVT Bearish Signal Line Cross!")
