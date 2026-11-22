@@ -76,7 +76,7 @@ class SourceContract(unittest.TestCase):
     def test_ticker_text_is_bold_pure_black(self):
         self.assertIn('color tickerInk = #000000', SOURCE)
         self.assertIn('text_formatting=bold ? text.format_bold : text.format_none', SOURCE)
-        self.assertIn('textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold)', SOURCE)
+        self.assertIn('textcolor=tickerInk, size=aside ? labelPt + 2 : labelPt, tooltip=f_tip(i), text_formatting=text.format_bold)', SOURCE)
         palette = re.findall(r'#[0-9A-Fa-f]{6}', re.search(r'palette = array.from\(([^)]*)\)', SOURCE).group(1))
         self.assertEqual(len(palette), 40)
 
@@ -84,7 +84,8 @@ class SourceContract(unittest.TestCase):
             s = value / 255
             return s / 12.92 if s <= 0.04045 else ((s + 0.055) / 1.055) ** 2.4
 
-        for colour in palette:
+        # The slot colours and the fixed BTC/ETH colours all carry black tag text.
+        for colour in palette + ['#F7931A', '#627EEA']:
             r, g, b = (int(colour[i:i + 2], 16) for i in (1, 3, 5))
             luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
             # WCAG contrast of pure black text on the slot colour.
@@ -107,7 +108,10 @@ class SourceContract(unittest.TestCase):
         # Each price is drawn at the time it was read, and the end labels follow.
         self.assertIn('chart.point.from_time(time_close, y)', SOURCE)
         self.assertIn('time_close >= chart.left_visible_bar_time', SOURCE)
-        self.assertIn('label.new(endRead, values.get(i)', SOURCE)
+        # Tags start at the line end (BTC/ETH move further right from there).
+        self.assertIn('float yv = values.get(i)', SOURCE)
+        self.assertIn('label.new(lx, yv, s,', SOURCE)
+        self.assertIn(': endRead\n', SOURCE)
         self.assertIn('baseTimes.set(i, time_close)', SOURCE)
         self.assertIn('baseTimes.get(i) > anchorRead', SOURCE)
         self.assertIn('str.format_time(anchorRead, "HH:mm", "Asia/Seoul") + " 이후"', SOURCE)
@@ -135,6 +139,94 @@ class SourceContract(unittest.TestCase):
         update = SOURCE[SOURCE.index('if barstate.islast and showBoard'):]
         self.assertNotIn('rulerRow', update)
 
+    def test_btc_eth_colours_and_tags(self):
+        self.assertIn('inks.push(t == "BTC" ? #F7931A : t == "ETH" ? #627EEA : t == "TRX" ? #F28E8E : t == "ZEC" ? #D4CC77 : palette.get(i))', SOURCE)
+        self.assertEqual(SOURCE.count('palette.get(i)'), 1)
+        self.assertEqual(SOURCE.count('bool pin = f_pinned(i)'), 2)
+        self.assertIn('str.contains(pins, "," + ticks.get(i) + ",") or (majorsAlways and f_major(i))', SOURCE)
+        self.assertIn('int labelPt = input.int(12, "선 라벨 글자 크기: pt"', SOURCE)
+        self.assertIn('bool aside = majorsAlways and f_major(i) and asidePct > 0', SOURCE)
+        self.assertIn('int lx = aside ? endRead + (back ? -asideShift : asideShift) : endRead', SOURCE)
+        self.assertIn('line.new(endRead, yv, lx, yv, xloc=xloc.bar_time, color=c, style=line.style_dotted, width=1)', SOURCE)
+
+        def lab(h):
+            rgb = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+            x = (0.4124 * lin[0] + 0.3576 * lin[1] + 0.1805 * lin[2]) / 0.95047
+            y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+            z = (0.0193 * lin[0] + 0.1192 * lin[1] + 0.9505 * lin[2]) / 1.08883
+            f = lambda t: t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+            return (116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z)))
+
+        # In the 1-10 table, TRX and ZEC now sit far from BTC orange, ETH blue and the other slots (CIE76 > 25).
+        others = {'BTC': '#F7931A', 'ETH': '#627EEA', 'BNB': '#009E73', 'XRP': '#CC79A7', 'SOL': '#F0E442', 'HYPE': '#AAEEAA'}
+        for name, colour in (('TRX', '#F28E8E'), ('ZEC', '#D4CC77')):
+            for other, ref in others.items():
+                self.assertGreater(math.dist(lab(colour), lab(ref)), 25, (name, other))
+        self.assertLess(math.dist(lab('#D55E00'), lab('#F7931A')), 25)
+
+    def test_outlier_clipping(self):
+        self.assertIn('float fenceHi = q3 + 3 * (q3 - q1)', SOURCE)
+        self.assertIn('float fenceLo = l1 - 3 * (l3 - l1)', SOURCE)
+        self.assertIn('clipUp.set(i, coinTop.get(i) > fenceHi and coinTop.get(i) >= 5)', SOURCE)
+        self.assertIn('clipDown.set(i, coinLow.get(i) < fenceLo and coinLow.get(i) <= -5)', SOURCE)
+        self.assertIn('capHi := normalTop + 0.12 * span', SOURCE)
+        self.assertIn('f_clipped(trace.points, ink, width,', SOURCE)
+        self.assertIn('line_style=dotted ? line.style_dotted : line.style_solid', SOURCE)
+        self.assertIn('mark := "▲"', SOURCE)
+        self.assertIn('mark := "▼"', SOURCE)
+        self.assertIn('max_polylines_count=100, max_lines_count=10', SOURCE)
+        self.assertIn('force_overlay=true)', SOURCE)
+
+        def pctl(xs, q):
+            s = sorted(xs)
+            i = (len(s) - 1) * q / 100
+            lo = int(i)
+            hi = min(lo + 1, len(s) - 1)
+            return s[lo] + (s[hi] - s[lo]) * (i - lo)
+
+        tops = [1.2, 2.0, 2.4, 3.1, 3.3, 4.0, 8.5, 45.0]
+        q1, q3 = pctl(tops, 25), pctl(tops, 75)
+        flagged = [t for t in tops if t > q3 + 3 * (q3 - q1) and t >= 5]
+        self.assertEqual(flagged, [45.0])
+
+        # Mirror of f_clipped: solid inside, dotted along the edge outside, pieces meeting at the crossings.
+        def clipped(src, hi, lo):
+            out, seg, mode, prev = [], [], 0, None
+            def draw(pts, dotted):
+                if len(pts) > 1:
+                    out.append(('dotted' if dotted else 'solid', [(round(t, 2), round(v, 2)) for t, v in pts]))
+            for t, v in src:
+                m = 1 if hi is not None and v > hi else -1 if lo is not None and v < lo else 0
+                if prev is None:
+                    mode = m
+                elif m != mode:
+                    pt, pv = prev
+                    if mode != 0:
+                        e = hi if mode == 1 else lo
+                        c = (pt + (t - pt) * (e - pv) / (v - pv), e)
+                        seg.append(c)
+                        draw(seg, True)
+                        seg = [c]
+                    if m != 0:
+                        e = hi if m == 1 else lo
+                        c = (pt + (t - pt) * (e - pv) / (v - pv), e)
+                        seg.append(c)
+                        draw(seg, False)
+                        seg = [c]
+                    mode = m
+                seg.append((t, v) if m == 0 else (t, hi if m == 1 else lo))
+                prev = (t, v)
+            draw(seg, mode != 0)
+            return out
+
+        pieces = clipped([(0, 0), (1, 4), (2, 30), (3, 25)], 10, None)
+        self.assertEqual(pieces, [('solid', [(0, 0), (1, 4), (1.23, 10)]), ('dotted', [(1.23, 10), (2, 10), (3, 10)])])
+        swing = clipped([(0, 12), (1, 15), (2, 3), (3, -8), (4, -2)], 10, -5)
+        self.assertEqual([k for k, _ in swing], ['dotted', 'solid', 'dotted', 'solid'])
+        for (_, a), (_, b) in zip(swing, swing[1:]):
+            self.assertEqual(a[-1], b[0])
+
     def test_merged_cells_are_built_once_and_never_cleared(self):
         build = SOURCE[SOURCE.index('if barstate.isfirst and showBoard'):SOURCE.index('if barstate.islast and showBoard')]
         self.assertIn('board.merge_cells(0, 0, cols - 1, 0)', build)
@@ -151,7 +243,7 @@ class SourceContract(unittest.TestCase):
 
     def test_board_design(self):
         # Swatch column in the slot colour, light bold ticker, monospace heat-mapped numbers, header band, centred text.
-        self.assertIn('f_cell(c, r, "", fg, ok ? palette.get(i) : color.new(fg, 80), tip)', SOURCE)
+        self.assertIn('f_cell(c, r, "", fg, ok ? inks.get(i) : color.new(fg, 80), tip)', SOURCE)
         self.assertIn('f_cell(c + 1, r, tick, ok ? fg : muted, bg, tip, true)', SOURCE)
         # Numbers are bold and monospace.
         self.assertIn('f_heat(rel, heatRel) : bg, tip, true, true)', SOURCE)
