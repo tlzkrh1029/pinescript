@@ -1,8 +1,8 @@
 //@version=6
-// Crypto Flow v2.3.0. Original four indicators are preserved in ../1-125-flow/.
+// Crypto Flow v2.4.0. Original four indicators are preserved in ../1-125-flow/.
 // Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
 // One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
-indicator(title="Flow v2 (1-10)", overlay=true, max_labels_count=20, max_polylines_count=40, max_bars_back=1200, dynamic_requests=true)
+indicator(title="Flow v2 (1-10)", overlay=true, max_labels_count=20, max_polylines_count=100, max_lines_count=10, max_bars_back=1200, dynamic_requests=true)
 
 string groupChoice = "1-10"
 string anchorMode = input.string("화면 왼쪽", "기준", options=["화면 왼쪽", "시각 고정"], group="1. 비교", display=display.none)
@@ -18,6 +18,10 @@ string pinsInput = input.string("", "직접 선택 티커 (쉼표 구분)", grou
 int lineWidth = input.int(1, "선 두께", minval=1, maxval=4, group="2. 선과 라벨", display=display.none)
 int pointLimit = input.int(1500, "선마다 보관할 최근 최대 봉", minval=100, maxval=3000, group="2. 선과 라벨", tooltip="표의 기준 계산은 유지하며 선만 최근 이 봉 수까지 그립니다. 12~24시간은 1분봉에서도 기본값으로 들어갑니다.", display=display.none)
 bool showLabels = input.bool(true, "강조 선의 끝 라벨", group="2. 선과 라벨", tooltip="각 인스턴스에서 최대 10개입니다. 라벨 숫자와 표는 모두 호스트 대비 상대 수익률입니다.", display=display.none)
+int labelPt = input.int(12, "선 라벨 글자 크기: pt", minval=8, maxval=24, group="2. 선과 라벨", tooltip="BTC·ETH 라벨은 이보다 2pt 크게 그립니다. 라벨이 커질수록 값이 비슷한 코인의 라벨끼리 더 많이 겹칩니다.", display=display.none)
+bool majorsAlways = input.bool(true, "BTC·ETH 항상 표시", group="2. 선과 라벨", tooltip="1-10위 지표에서 BTC와 ETH는 상하위에 들지 않아도 선과 라벨을 그리고, 라벨을 다른 라벨 오른쪽에 따로 둡니다.", display=display.none)
+float asidePct = input.float(10, "BTC·ETH 라벨 간격: 화면 폭의 %", minval=0, maxval=40, step=0.5, group="2. 선과 라벨", tooltip="BTC·ETH 라벨을 선 끝에서 오른쪽으로 띄우는 거리이며, 점선으로 선 끝과 이어 줍니다. 다른 라벨과 겹치면 늘리고, 표에 가려지면 줄이세요. 0이면 다른 라벨처럼 선 끝에 둡니다.", display=display.none)
+bool clipOutliers = input.bool(true, "극단값 자르기", group="2. 선과 라벨", tooltip="같은 구간의 다른 코인들과 동떨어지게 움직인 코인(사분위 범위의 3배 밖이면서 5% 이상)은 구간의 보통 범위 끝까지만 실선으로 그리고, 넘는 부분은 그 경계에 붙여 점선으로 그립니다. 라벨에는 ▲/▼와 실제 값을 적습니다. 그러면 세로 축이 나머지 코인에 맞춰집니다.", display=display.none)
 
 bool showBoard = input.bool(true, "순위표 표시", group="3. 표 배치", display=display.none)
 string layoutMode = input.string("오른쪽 4구간", "표 배치", options=["오른쪽 4구간", "단독 표"], group="3. 표 배치", display=display.none)
@@ -58,6 +62,13 @@ var array<color> palette = array.from(#56B4E9, #E69F00, #009E73, #CC79A7, #F0E44
 // Ticker text on the slot colours. color.black is #363A45, which reads faint on the brighter slots;
 // pure black keeps at least 4.9:1 contrast on every slot colour.
 color tickerInk = #000000
+// BTC and ETH keep their own colours (Bitcoin orange, Ethereum blue). TRX and ZEC leave the orange and blue
+// slots they would share with them for TRON-like red and Zcash-like gold, both from the palette.
+var array<color> inks = array.new<color>()
+if barstate.isfirst
+    for i = 0 to count - 1
+        string t = ticks.get(i)
+        inks.push(t == "BTC" ? #F7931A : t == "ETH" ? #627EEA : t == "TRX" ? #F28E8E : t == "ZEC" ? #D4CC77 : palette.get(i))
 var array<float> bases = array.new<float>(40, na)
 var array<float> hostBases = array.new<float>(40, na)
 var array<int> baseTimes = array.new<int>(40, na)
@@ -71,6 +82,8 @@ var array<bool> late = array.new<bool>(40, false)
 var array<bool> selfCoin = array.new<bool>(40, false)
 var array<bool> selected = array.new<bool>(40, false)
 var array<label> labels = array.new<label>()
+// The dashed edge of the normal range and the dotted BTC/ETH leaders.
+var array<line> guides = array.new<line>()
 type Trail
     array<chart.point> points
 var array<Trail> trails = array.new<Trail>()
@@ -124,6 +137,44 @@ f_self(string tick) =>
 
 f_pct(float value) =>
     na(value) ? "—" : (value > 0 ? "+" : "") + str.tostring(value, "0.00") + "%"
+
+f_major(int i) =>
+    ticks.get(i) == "BTC" or ticks.get(i) == "ETH"
+
+f_pinned(int i) =>
+    str.contains(pins, "," + ticks.get(i) + ",") or (majorsAlways and f_major(i))
+
+f_draw(array<chart.point> pts, color ink, int width, bool dotted) =>
+    if pts.size() > 1
+        paths.push(polyline.new(pts, curved=false, closed=false, xloc=xloc.bar_time, line_color=ink, line_style=dotted ? line.style_dotted : line.style_solid, line_width=width))
+
+// Splits a trail at the clipping edges: solid inside the normal range, dotted along the edge outside it.
+f_clipped(array<chart.point> src, color ink, int width, float hiP, float loP) =>
+    array<chart.point> seg = array.new<chart.point>()
+    int mode = 0
+    chart.point prev = na
+    for p in src
+        int m = not na(hiP) and p.price > hiP ? 1 : not na(loP) and p.price < loP ? -1 : 0
+        // A trail can start outside the range (after a data gap), so the first point sets the mode.
+        if na(prev)
+            mode := m
+        else if m != mode
+            if mode != 0
+                float e = mode == 1 ? hiP : loP
+                chart.point c = chart.point.from_time(prev.time + int(math.round((p.time - prev.time) * (e - prev.price) / (p.price - prev.price))), e)
+                seg.push(c)
+                f_draw(seg, ink, width, true)
+                seg := array.from(c)
+            if m != 0
+                float e = m == 1 ? hiP : loP
+                chart.point c = chart.point.from_time(prev.time + int(math.round((p.time - prev.time) * (e - prev.price) / (p.price - prev.price))), e)
+                seg.push(c)
+                f_draw(seg, ink, width, false)
+                seg := array.from(c)
+            mode := m
+        seg.push(m == 0 ? p : chart.point.from_time(p.time, m == 1 ? hiP : loP))
+        prev := p
+    f_draw(seg, ink, width, mode != 0)
 
 // Each slot owns its base and readouts. There is no function-local var shared across coins.
 for i = 0 to count - 1
@@ -184,6 +235,9 @@ if barstate.islast
     for path in paths
         polyline.delete(path)
     paths.clear()
+    for guide in guides
+        line.delete(guide)
+    guides.clear()
     selected.fill(false)
     for i = 0 to count - 1
         bool ok = f_rankable(i)
@@ -219,25 +273,102 @@ if barstate.islast
             int i = validOrder.get(k)
             if k < edgeCount or k >= vn - edgeCount
                 selected.set(i, true)
+    // Rule 8: a coin whose line runs far outside its group's (beyond Q3 + 3 IQR of the group's extremes, and 5% or more)
+    // is drawn up to the edge of the group's normal range, so the price scale fits the other coins.
+    array<float> coinTop = array.new<float>(count, na)
+    array<float> coinLow = array.new<float>(count, na)
+    array<float> tops = array.new<float>()
+    array<float> lows = array.new<float>()
+    for i = 0 to count - 1
+        Trail trace = trails.get(i)
+        float hb = hostBases.get(i)
+        if trace.points.size() > 1 and not na(hb)
+            float maxR = -1e20
+            float minR = 1e20
+            for pt in trace.points
+                float r = (pt.price / hb - 1) * 100
+                maxR := math.max(maxR, r)
+                minR := math.min(minR, r)
+            coinTop.set(i, maxR)
+            coinLow.set(i, minR)
+            tops.push(maxR)
+            lows.push(minR)
+    array<bool> clipUp = array.new<bool>(count, false)
+    array<bool> clipDown = array.new<bool>(count, false)
+    float capHi = na
+    float capLo = na
+    if clipOutliers and tops.size() >= 5
+        float q1 = tops.percentile_linear_interpolation(25)
+        float q3 = tops.percentile_linear_interpolation(75)
+        float l1 = lows.percentile_linear_interpolation(25)
+        float l3 = lows.percentile_linear_interpolation(75)
+        float fenceHi = q3 + 3 * (q3 - q1)
+        float fenceLo = l1 - 3 * (l3 - l1)
+        float normalTop = -1e20
+        float normalLow = 1e20
+        for i = 0 to count - 1
+            if not na(coinTop.get(i))
+                clipUp.set(i, coinTop.get(i) > fenceHi and coinTop.get(i) >= 5)
+                clipDown.set(i, coinLow.get(i) < fenceLo and coinLow.get(i) <= -5)
+                if not clipUp.get(i)
+                    normalTop := math.max(normalTop, coinTop.get(i))
+                if not clipDown.get(i)
+                    normalLow := math.min(normalLow, coinLow.get(i))
+        // The edges sit 12% of the normal range beyond its highest and lowest lines.
+        float span = normalTop - normalLow
+        capHi := normalTop + 0.12 * span
+        capLo := normalLow - 0.12 * span
     int labelN = 0
+    // The range edges are marked only when a clipped line is actually drawn.
+    bool edgeUp = false
+    bool edgeDown = false
     // Draw context first and foreground second. Pins get their label allocation first.
     for pass = 0 to 1
         for i in orderIndex
-            bool pin = str.contains(pins, "," + ticks.get(i) + ",")
+            bool pin = f_pinned(i)
             bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
             bool foreground = lineMode == "전체" or highlight
             Trail trace = trails.get(i)
             if showLines and trace.points.size() > 1 and (lineMode != "직접 선택만" or pin) and foreground == (pass == 1)
-                color ink = palette.get(i)
-                paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=color.new(ink, foreground ? 0 : 82), line_width=foreground ? lineWidth : 1))
+                color ink = color.new(inks.get(i), foreground ? 0 : 82)
+                int width = foreground ? lineWidth : 1
+                if clipUp.get(i) or clipDown.get(i)
+                    float hb = hostBases.get(i)
+                    f_clipped(trace.points, ink, width, clipUp.get(i) ? hb * (1 + capHi / 100) : na, clipDown.get(i) ? hb * (1 + capLo / 100) : na)
+                    edgeUp := edgeUp or clipUp.get(i)
+                    edgeDown := edgeDown or clipDown.get(i)
+                else
+                    paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=ink, line_width=width))
+    if not na(hostBase)
+        for side = 0 to 1
+            if side == 0 ? edgeUp : edgeDown
+                float edge = hostBase * (1 + (side == 0 ? capHi : capLo) / 100)
+                guides.push(line.new(chart.left_visible_bar_time, edge, endRead, edge, xloc=xloc.bar_time, color=color.new(chart.fg_color, 70), style=line.style_dashed, width=1))
+    bool back = chart.right_visible_bar_time < last_bar_time
+    int asideShift = int((chart.right_visible_bar_time - chart.left_visible_bar_time) * asidePct / 100)
     for pass = 0 to 1
         for i in orderIndex
-            bool pin = str.contains(pins, "," + ticks.get(i) + ",")
+            bool pin = f_pinned(i)
             bool highlight = pin or (lineMode != "직접 선택만" and selected.get(i))
             if showLabels and showLines and highlight and fresh.get(i) and labelN < 10 and pin == (pass == 0)
-                color c = palette.get(i)
-                string s = ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
-                labels.push(label.new(endRead, values.get(i), s, xloc=xloc.bar_time, style=chart.right_visible_bar_time < last_bar_time ? label.style_label_right : label.style_label_left, color=c, textcolor=tickerInk, size=size.small, tooltip=f_tip(i), text_formatting=text.format_bold))
+                color c = inks.get(i)
+                float hb = hostBases.get(i)
+                float yv = values.get(i)
+                string mark = ""
+                // A clipped line's tag sits on the edge and keeps the real value.
+                if clipUp.get(i) and yv > hb * (1 + capHi / 100)
+                    yv := hb * (1 + capHi / 100)
+                    mark := "▲"
+                if clipDown.get(i) and yv < hb * (1 + capLo / 100)
+                    yv := hb * (1 + capLo / 100)
+                    mark := "▼"
+                string s = mark + ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
+                // BTC and ETH tags stand apart, right of the other tags, with a dotted leader from the line end.
+                bool aside = majorsAlways and f_major(i) and asidePct > 0
+                int lx = aside ? endRead + (back ? -asideShift : asideShift) : endRead
+                if aside
+                    guides.push(line.new(endRead, yv, lx, yv, xloc=xloc.bar_time, color=c, style=line.style_dotted, width=1))
+                labels.push(label.new(lx, yv, s, xloc=xloc.bar_time, style=back ? label.style_label_right : label.style_label_left, color=c, textcolor=tickerInk, size=aside ? labelPt + 2 : labelPt, tooltip=f_tip(i), text_formatting=text.format_bold))
                 labelN += 1
 
 f_groupCount(int i) =>
@@ -293,8 +424,9 @@ int countA = 2
 int countB = groups == 1 ? 3 : 4 * int(math.ceil(groups / 2.0))
 // One exact-height spacer replaces dozens of automatic-height phantom text rows.
 // Every visible row has exactly rowPct height. Rows: spacer, title, column names, coins, ruler.
+// force_overlay keeps the table on the main chart when the indicator is moved to a pane of its own.
 int rulerRow = rows + 3
-var table board = table.new(stacked ? position.top_right : standalonePos, cols, rows + 4, frame_width=0, border_width=1, border_color=lineInk)
+var table board = table.new(stacked ? position.top_right : standalonePos, cols, rows + 4, frame_width=0, border_width=1, border_color=lineInk, force_overlay=true)
 
 // Columns size to their text (width 0), so a narrower chart never truncates the text; only the swatch has a fixed width.
 // The ruler row makes the four tables' columns equally wide.
@@ -393,7 +525,7 @@ if barstate.islast and showBoard
             bool ok = fresh.get(i)
             float rel = rels.get(i)
             float recent = recents.get(i)
-            f_cell(c, r, "", fg, ok ? palette.get(i) : color.new(fg, 80), tip)
+            f_cell(c, r, "", fg, ok ? inks.get(i) : color.new(fg, 80), tip)
             f_cell(c + 1, r, tick, ok ? fg : muted, bg, tip, true)
             f_cell(c + 2, r, ok ? f_num(rel) : "—", ok and not na(rel) ? fg : muted, ok and not na(rel) ? f_heat(rel, heatRel) : bg, tip, true, true)
             f_cell(c + 3, r, ok ? f_num(recent) : "—", ok and not na(recent) ? (recentShort ? dimInk : fg) : muted, ok and not na(recent) and not recentShort ? f_heat(recent, heatRecent) : bg, tip, true, true)
