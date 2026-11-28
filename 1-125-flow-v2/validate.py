@@ -166,11 +166,17 @@ class SourceContract(unittest.TestCase):
         self.assertLess(math.dist(lab('#D55E00'), lab('#F7931A')), 25)
 
     def test_outlier_clipping(self):
-        self.assertIn('float fenceHi = q3 + 3 * (q3 - q1)', SOURCE)
-        self.assertIn('float fenceLo = l1 - 3 * (l3 - l1)', SOURCE)
-        self.assertIn('clipUp.set(i, coinTop.get(i) > fenceHi and coinTop.get(i) >= 5)', SOURCE)
-        self.assertIn('clipDown.set(i, coinLow.get(i) < fenceLo and coinLow.get(i) <= -5)', SOURCE)
-        self.assertIn('capHi := normalTop + 0.12 * span', SOURCE)
+        # One common edge in every instance, so a clipped line always sits beyond every unclipped line.
+        self.assertIn('float clipPct = input.float(10, "극단값 경계: ±%"', SOURCE)
+        self.assertIn('float capHi = clipPct', SOURCE)
+        self.assertIn('float capLo = -clipPct', SOURCE)
+        self.assertIn('if r > capHi\n                    clipUp.set(i, true)', SOURCE)
+        self.assertNotIn('percentile', SOURCE)
+        # Clipped tags go into the band beyond the edge, by the value they show, on the shared log scale.
+        self.assertIn('0.3 * clipPct * math.min(1.0, math.log10(math.max(math.abs(v), clipPct) / clipPct))', SOURCE)
+        self.assertIn('yv := hb * (1 + (capHi + f_band(shownR)) / 100)', SOURCE)
+        self.assertIn('yv := hb * (1 + (capLo - f_band(shownR)) / 100)', SOURCE)
+        self.assertIn('for m in array.from(1.5, 2.0, 3.0, 5.0)', SOURCE)
         self.assertIn('f_clipped(trace.points, ink, width,', SOURCE)
         self.assertIn('line_style=dotted ? line.style_dotted : line.style_solid', SOURCE)
         self.assertIn('mark := "▲"', SOURCE)
@@ -178,17 +184,18 @@ class SourceContract(unittest.TestCase):
         self.assertIn('max_polylines_count=100, max_lines_count=10', SOURCE)
         self.assertIn('force_overlay=true)', SOURCE)
 
-        def pctl(xs, q):
-            s = sorted(xs)
-            i = (len(s) - 1) * q / 100
-            lo = int(i)
-            hi = min(lo + 1, len(s) - 1)
-            return s[lo] + (s[hi] - s[lo]) * (i - lo)
+        def band(v, n=10):
+            return 0.3 * n * min(1.0, math.log10(max(abs(v), n) / n))
 
-        tops = [1.2, 2.0, 2.4, 3.1, 3.3, 4.0, 8.5, 45.0]
-        q1, q3 = pctl(tops, 25), pctl(tops, 75)
-        flagged = [t for t in tops if t > q3 + 3 * (q3 - q1) and t >= 5]
-        self.assertEqual(flagged, [45.0])
+        # The 2026-11-28 screenshot: TRUMP (-12.82%) and WLFI (-45.39%) from different groups.
+        trump, wlfi = -10 - band(-12.82), -10 - band(-45.39)
+        self.assertAlmostEqual(band(-12.82), 0.32, places=2)
+        self.assertAlmostEqual(band(-45.39), 1.97, places=2)
+        self.assertGreater(trump, wlfi)
+        self.assertEqual(band(-10), 0)
+        self.assertEqual(band(150), band(100))
+        values = [12, 15, 20, 30, 45, 80]
+        self.assertEqual(sorted(values, key=band), values)
 
         # Mirror of f_clipped: solid inside, dotted along the edge outside, pieces meeting at the crossings.
         def clipped(src, hi, lo):
@@ -251,7 +258,9 @@ class SourceContract(unittest.TestCase):
         self.assertIn('int fontPt = input.int(16, "표 글자 크기: pt"', SOURCE)
         self.assertIn('text_font_family=mono ? font.family_monospace : font.family_default', SOURCE)
         self.assertIn('text_halign=text.align_center', SOURCE)
-        self.assertIn('color headBg = f_mix(chart.bg_color, fg, 0.12, 8)', SOURCE)
+        self.assertIn('color headBg = f_mix(chart.bg_color, fg, 0.12, tableAlpha)', SOURCE)
+        self.assertIn('color bg = color.new(chart.bg_color, tableAlpha)', SOURCE)
+        self.assertIn('int tableAlpha = input.int(40, "표 바탕 투명도: %"', SOURCE)
         self.assertIn('f_cell(c + 1, 2, "TICKER", fg, headBg', SOURCE)
         self.assertNotIn('"코인"', SOURCE)
         self.assertIn('str.repeat("█", fill) + str.repeat("░", 10 - fill)', SOURCE)

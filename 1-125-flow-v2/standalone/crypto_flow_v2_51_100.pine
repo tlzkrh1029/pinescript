@@ -1,5 +1,5 @@
 //@version=6
-// Crypto Flow v2.4.0. Original four indicators are preserved in ../1-125-flow/.
+// Crypto Flow v2.5.0. Original four indicators are preserved in ../1-125-flow/.
 // Membership: unchanged 2026-09-21 snapshot (102 symbols). Not a live market-cap ranking.
 // One source, four instances. Only the selected group's 8/32/40/22 symbols are requested.
 indicator(title="Flow v2 (51-100)", overlay=true, max_labels_count=20, max_polylines_count=100, max_lines_count=10, max_bars_back=1200, dynamic_requests=true)
@@ -21,7 +21,8 @@ bool showLabels = input.bool(true, "강조 선의 끝 라벨", group="2. 선과 
 int labelPt = input.int(12, "선 라벨 글자 크기: pt", minval=8, maxval=24, group="2. 선과 라벨", tooltip="BTC·ETH 라벨은 이보다 2pt 크게 그립니다. 라벨이 커질수록 값이 비슷한 코인의 라벨끼리 더 많이 겹칩니다.", display=display.none)
 bool majorsAlways = input.bool(true, "BTC·ETH 항상 표시", group="2. 선과 라벨", tooltip="1-10위 지표에서 BTC와 ETH는 상하위에 들지 않아도 선과 라벨을 그리고, 라벨을 다른 라벨 오른쪽에 따로 둡니다.", display=display.none)
 float asidePct = input.float(10, "BTC·ETH 라벨 간격: 화면 폭의 %", minval=0, maxval=40, step=0.5, group="2. 선과 라벨", tooltip="BTC·ETH 라벨을 선 끝에서 오른쪽으로 띄우는 거리이며, 점선으로 선 끝과 이어 줍니다. 다른 라벨과 겹치면 늘리고, 표에 가려지면 줄이세요. 0이면 다른 라벨처럼 선 끝에 둡니다.", display=display.none)
-bool clipOutliers = input.bool(true, "극단값 자르기", group="2. 선과 라벨", tooltip="같은 구간의 다른 코인들과 동떨어지게 움직인 코인(사분위 범위의 3배 밖이면서 5% 이상)은 구간의 보통 범위 끝까지만 실선으로 그리고, 넘는 부분은 그 경계에 붙여 점선으로 그립니다. 라벨에는 ▲/▼와 실제 값을 적습니다. 그러면 세로 축이 나머지 코인에 맞춰집니다.", display=display.none)
+bool clipOutliers = input.bool(true, "극단값 자르기", group="2. 선과 라벨", tooltip="공통 경계(±%)를 넘는 선은 경계까지만 실선으로 그리고, 넘는 부분은 경계에 붙여 점선으로 그립니다. 그 선의 라벨은 경계 바깥의 얇은 띠에 실제 값 순서대로(로그 눈금) 놓고 ▲/▼와 실제 값을 적습니다. 네 지표가 같은 경계를 쓰므로 구간이 달라도 순서가 맞습니다.", display=display.none)
+float clipPct = input.float(10, "극단값 경계: ±%", minval=1, maxval=100, step=1, group="2. 선과 라벨", tooltip="네 인스턴스에서 같게 맞추세요. 시장 전체가 이 값보다 크게 움직이는 날에는 많은 선이 경계에 붙으므로 값을 키우세요.", display=display.none)
 
 bool showBoard = input.bool(true, "순위표 표시", group="3. 표 배치", display=display.none)
 string layoutMode = input.string("오른쪽 4구간", "표 배치", options=["오른쪽 4구간", "단독 표"], group="3. 표 배치", display=display.none)
@@ -33,6 +34,7 @@ float borderPct = input.float(0.1, "테두리 보정: 행당 %", minval=0, maxva
 string standalonePos = input.string(position.top_right, "단독 표 위치", options=[position.top_right, position.top_left, position.bottom_right, position.bottom_left], group="3. 표 배치", display=display.none)
 float heatRel = input.float(4, "히트맵 최대: 기준 이후 %", minval=0.1, maxval=50, step=0.5, group="4. 표 색", tooltip="값의 크기가 이 값 이상이면 칸 바탕이 가장 진합니다. 0에 가까울수록 표 바탕색에 가깝습니다.", display=display.none)
 float heatRecent = input.float(1.5, "히트맵 최대: 최근 %", minval=0.1, maxval=20, step=0.1, group="4. 표 색", display=display.none)
+int tableAlpha = input.int(40, "표 바탕 투명도: %", minval=0, maxval=90, group="4. 표 색", tooltip="표는 언제나 선과 라벨 위에 그려집니다. 바탕을 투명하게 할수록 표 아래로 지나가는 선과 라벨이 비쳐 보입니다. 글자는 투명해지지 않습니다.", display=display.none)
 int dimMinutes = input.int(15, "최근 열 흐리게: 잰 시간이 분 미만", minval=0, maxval=1440, group="4. 표 색", tooltip="진행 중인 봉 때문에 최근 열이 실제로 잰 시간이 이 값보다 짧으면, 최근 열의 이름과 숫자를 흐리게 표시합니다. 0이면 흐리게 표시하지 않습니다.", display=display.none)
 
 int groupId = groupChoice == "1-10" ? 0 : groupChoice == "11-50" ? 1 : groupChoice == "51-100" ? 2 : 3
@@ -147,6 +149,12 @@ f_pinned(int i) =>
 f_draw(array<chart.point> pts, color ink, int width, bool dotted) =>
     if pts.size() > 1
         paths.push(polyline.new(pts, curved=false, closed=false, xloc=xloc.bar_time, line_color=ink, line_style=dotted ? line.style_dotted : line.style_solid, line_width=width))
+
+// Tags of clipped lines sit beyond the edge in a thin band (30% of the edge value), placed by value on a log scale:
+// at the edge for clipPct, at the far side for ten times clipPct or more. Every instance uses the same scale,
+// so the tags keep their value order across groups.
+f_band(float v) =>
+    0.3 * clipPct * math.min(1.0, math.log10(math.max(math.abs(v), clipPct) / clipPct))
 
 // Splits a trail at the clipping edges: solid inside the normal range, dotted along the edge outside it.
 f_clipped(array<chart.point> src, color ink, int width, float hiP, float loP) =>
@@ -273,51 +281,22 @@ if barstate.islast
             int i = validOrder.get(k)
             if k < edgeCount or k >= vn - edgeCount
                 selected.set(i, true)
-    // Rule 8: a coin whose line runs far outside its group's (beyond Q3 + 3 IQR of the group's extremes, and 5% or more)
-    // is drawn up to the edge of the group's normal range, so the price scale fits the other coins.
-    array<float> coinTop = array.new<float>(count, na)
-    array<float> coinLow = array.new<float>(count, na)
-    array<float> tops = array.new<float>()
-    array<float> lows = array.new<float>()
+    // Every line that goes beyond the common ±clipPct range is drawn up to that edge and dotted along it.
+    // All four instances use the same edges, so a clipped line always sits beyond every unclipped line.
+    float capHi = clipPct
+    float capLo = -clipPct
+    array<bool> clipUp = array.new<bool>(count, false)
+    array<bool> clipDown = array.new<bool>(count, false)
     for i = 0 to count - 1
         Trail trace = trails.get(i)
         float hb = hostBases.get(i)
-        if trace.points.size() > 1 and not na(hb)
-            float maxR = -1e20
-            float minR = 1e20
+        if clipOutliers and trace.points.size() > 1 and not na(hb)
             for pt in trace.points
                 float r = (pt.price / hb - 1) * 100
-                maxR := math.max(maxR, r)
-                minR := math.min(minR, r)
-            coinTop.set(i, maxR)
-            coinLow.set(i, minR)
-            tops.push(maxR)
-            lows.push(minR)
-    array<bool> clipUp = array.new<bool>(count, false)
-    array<bool> clipDown = array.new<bool>(count, false)
-    float capHi = na
-    float capLo = na
-    if clipOutliers and tops.size() >= 5
-        float q1 = tops.percentile_linear_interpolation(25)
-        float q3 = tops.percentile_linear_interpolation(75)
-        float l1 = lows.percentile_linear_interpolation(25)
-        float l3 = lows.percentile_linear_interpolation(75)
-        float fenceHi = q3 + 3 * (q3 - q1)
-        float fenceLo = l1 - 3 * (l3 - l1)
-        float normalTop = -1e20
-        float normalLow = 1e20
-        for i = 0 to count - 1
-            if not na(coinTop.get(i))
-                clipUp.set(i, coinTop.get(i) > fenceHi and coinTop.get(i) >= 5)
-                clipDown.set(i, coinLow.get(i) < fenceLo and coinLow.get(i) <= -5)
-                if not clipUp.get(i)
-                    normalTop := math.max(normalTop, coinTop.get(i))
-                if not clipDown.get(i)
-                    normalLow := math.min(normalLow, coinLow.get(i))
-        // The edges sit 12% of the normal range beyond its highest and lowest lines.
-        float span = normalTop - normalLow
-        capHi := normalTop + 0.12 * span
-        capLo := normalLow - 0.12 * span
+                if r > capHi
+                    clipUp.set(i, true)
+                if r < capLo
+                    clipDown.set(i, true)
     int labelN = 0
     // The range edges are marked only when a clipped line is actually drawn.
     bool edgeUp = false
@@ -339,12 +318,18 @@ if barstate.islast
                     edgeDown := edgeDown or clipDown.get(i)
                 else
                     paths.push(polyline.new(trace.points, curved=false, closed=false, xloc=xloc.bar_time, line_color=ink, line_width=width))
+    bool back = chart.right_visible_bar_time < last_bar_time
     if not na(hostBase)
         for side = 0 to 1
             if side == 0 ? edgeUp : edgeDown
-                float edge = hostBase * (1 + (side == 0 ? capHi : capLo) / 100)
+                float dir = side == 0 ? 1 : -1
+                float edge = hostBase * (1 + dir * clipPct / 100)
                 guides.push(line.new(chart.left_visible_bar_time, edge, endRead, edge, xloc=xloc.bar_time, color=color.new(chart.fg_color, 70), style=line.style_dashed, width=1))
-    bool back = chart.right_visible_bar_time < last_bar_time
+                // Faint ticks show the band's log scale, beside the line end and clear of the tags.
+                if showLabels
+                    for m in array.from(1.5, 2.0, 3.0, 5.0)
+                        float tv = dir * clipPct * m
+                        labels.push(label.new(endRead, hostBase * (1 + (dir * clipPct + dir * f_band(tv)) / 100), (tv > 0 ? "+" : "") + str.tostring(tv, "#.#") + "%", xloc=xloc.bar_time, style=back ? label.style_label_left : label.style_label_right, color=color.new(chart.bg_color, 100), textcolor=color.new(chart.fg_color, 55), size=math.max(6, labelPt - 3)))
     int asideShift = int((chart.right_visible_bar_time - chart.left_visible_bar_time) * asidePct / 100)
     for pass = 0 to 1
         for i in orderIndex
@@ -355,12 +340,14 @@ if barstate.islast
                 float hb = hostBases.get(i)
                 float yv = values.get(i)
                 string mark = ""
-                // A clipped line's tag sits on the edge and keeps the real value.
-                if clipUp.get(i) and yv > hb * (1 + capHi / 100)
-                    yv := hb * (1 + capHi / 100)
+                // A clipped line's tag sits in the band beyond the edge, placed by the value it shows.
+                float endR = (yv / hb - 1) * 100
+                float shownR = nz(rels.get(i), endR)
+                if clipUp.get(i) and endR > capHi
+                    yv := hb * (1 + (capHi + f_band(shownR)) / 100)
                     mark := "▲"
-                if clipDown.get(i) and yv < hb * (1 + capLo / 100)
-                    yv := hb * (1 + capLo / 100)
+                if clipDown.get(i) and endR < capLo
+                    yv := hb * (1 + (capLo - f_band(shownR)) / 100)
                     mark := "▼"
                 string s = mark + ticks.get(i) + (late.get(i) ? "* " : " ") + f_pct(rels.get(i))
                 // BTC and ETH tags stand apart, right of the other tags, with a dotted leader from the line end.
@@ -408,16 +395,17 @@ f_mix(color a, color b, float t, float transp) =>
     color.rgb(color.r(a) + (color.r(b) - color.r(a)) * t, color.g(a) + (color.g(b) - color.g(a)) * t, color.b(a) + (color.b(b) - color.b(a)) * t, transp)
 
 color fg = chart.fg_color
-color bg = color.new(chart.bg_color, 8)
-color headBg = f_mix(chart.bg_color, fg, 0.12, 8)
+// Cell backgrounds take the table transparency; text and colour swatches stay solid.
+color bg = color.new(chart.bg_color, tableAlpha)
+color headBg = f_mix(chart.bg_color, fg, 0.12, tableAlpha)
 color lineInk = f_mix(chart.bg_color, fg, 0.18, 0)
 color muted = color.new(fg, 40)
 // The recent column while its window is still short.
 color dimInk = color.new(fg, 62)
 color good = #46BFA4
 color bad = #EB7979
-color hotUp = f_mix(chart.bg_color, #089981, 0.7, 8)
-color hotDown = f_mix(chart.bg_color, #F23645, 0.7, 8)
+color hotUp = f_mix(chart.bg_color, #089981, 0.7, tableAlpha)
+color hotDown = f_mix(chart.bg_color, #F23645, 0.7, tableAlpha)
 float swatchPct = 0.4
 // The counts split the title row at a group boundary; a one-group table gives each count one value column.
 int countA = 2
